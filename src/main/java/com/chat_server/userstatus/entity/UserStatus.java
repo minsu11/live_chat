@@ -1,4 +1,4 @@
-package com.chat_server.userstatus;
+package com.chat_server.userstatus.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;

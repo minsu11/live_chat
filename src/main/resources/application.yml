@@ -14,5 +14,8 @@ spring:
       min-idle: 5
       max-total: 5
       test-on-borrow: true
-      initial-size: 5
-
+logging:
+  level:
+    root: info
+server:
+  port: 7070

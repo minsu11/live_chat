@@ -1,13 +1,11 @@
 package com.chat_server.user.entity;
 
 import com.chat_server.gender.entity.Gender;
-import com.chat_server.userstatus.UserStatus;
+import com.chat_server.userstatus.entity.UserStatus;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 /**
@@ -22,10 +20,11 @@ import java.util.Date;
  * 25. 2. 24.        parkminsu       최초 생성
  */
 @Getter
-@Setter
 @Entity
 @Table(name = "user")
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class User {
     @Id
     @Column(name = "user_id")
@@ -48,7 +47,7 @@ public class User {
     private String userNickname;
 
     @Column(name = "user_created_at")
-    private Date userCreatedAt;
+    private LocalDateTime userCreatedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "gender_id")
