@@ -15,6 +15,6 @@ import org.springframework.stereotype.Repository;
  * -----------------------------------------------------------
  * 25. 2. 26.        parkminsu       최초 생성
  */
-public interface UserRepository extends JpaRepository<User,Long> {
+public interface UserRepository extends JpaRepository<User,Long>, UserRepositoryCustom {
     boolean existsByUserInputId(String inputId);
 }

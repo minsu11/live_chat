@@ -1,7 +1,10 @@
 package com.chat_server.security;
 
+import com.chat_server.security.handler.FailHandler;
 import com.chat_server.security.handler.SuccessHandler;
 import com.chat_server.security.service.UserAuthService;
+import com.chat_server.user.service.UserService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.Authenticator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -36,7 +39,7 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
     private final AuthenticationConfiguration authenticationConfiguration;
     private final UserAuthService userAuthService;
-
+    private final ObjectMapper objectMapper;
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
@@ -52,6 +55,7 @@ public class SecurityConfig {
         UserAuthenticationFilter userAuthenticationFilter = new UserAuthenticationFilter(passwordEncoder());
         userAuthenticationFilter.setFilterProcessesUrl("/login");
         userAuthenticationFilter.setAuthenticationSuccessHandler(successHandler());
+        userAuthenticationFilter.setAuthenticationFailureHandler(failHandler());
         http.addFilterBefore(userAuthenticationFilter, UserAuthenticationFilter.class);
         return http.build();
     }
@@ -60,8 +64,6 @@ public class SecurityConfig {
     public AuthenticationManager userAuthenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
     }
-
-
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
@@ -73,9 +75,14 @@ public class SecurityConfig {
 
     @Bean
     public SuccessHandler successHandler() {
-        return new SuccessHandler();
+        return new SuccessHandler(objectMapper);
     }
 
+    @Bean
+    public FailHandler failHandler() {
+        return new FailHandler();
+
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
