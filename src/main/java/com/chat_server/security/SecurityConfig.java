@@ -1,19 +1,14 @@
 package com.chat_server.security;
 
-import com.chat_server.security.handler.FailHandler;
-import com.chat_server.security.handler.SuccessHandler;
+import com.chat_server.security.handler.CustomFailHandler;
+import com.chat_server.security.handler.CustomSuccessHandler;
 import com.chat_server.security.service.UserAuthService;
-import com.chat_server.user.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sun.net.httpserver.Authenticator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.AbstractConfiguredSecurityBuilder;
-import org.springframework.security.config.annotation.SecurityConfigurerAdapter;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -47,10 +42,9 @@ public class SecurityConfig {
                         (
                                 authorizeRequests ->
                                         authorizeRequests.requestMatchers("/login","/api/v1/users/register").permitAll()
+
                         )
                 .formLogin(AbstractHttpConfigurer::disable);
-
-
 
         UserAuthenticationFilter userAuthenticationFilter = new UserAuthenticationFilter(passwordEncoder());
         userAuthenticationFilter.setFilterProcessesUrl("/login");
@@ -74,13 +68,13 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SuccessHandler successHandler() {
-        return new SuccessHandler(objectMapper);
+    public CustomSuccessHandler successHandler() {
+        return new CustomSuccessHandler(objectMapper);
     }
 
     @Bean
-    public FailHandler failHandler() {
-        return new FailHandler();
+    public CustomFailHandler failHandler() {
+        return new CustomFailHandler();
 
     }
 

@@ -18,6 +18,6 @@ import lombok.NoArgsConstructor;
 @Getter
 @AllArgsConstructor
 public class UserAuthDto {
-    private String userId;
-    private String password;
+    private String userInputId;
+    private String userInputPassword;
 }

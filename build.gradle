@@ -41,7 +41,6 @@ dependencies {
 
     // QueryDSL 의존성 추가
     implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
-    implementation 'com.querydsl:querydsl-core'
 
     // Annotation Processor (QClass 생성)
     annotationProcessor 'com.querydsl:querydsl-apt:5.0.0:jakarta'

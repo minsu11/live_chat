@@ -3,7 +3,6 @@ package com.chat_server.security.service;
 import com.chat_server.security.PrincipalUser;
 import com.chat_server.security.dto.UserAuthDto;
 import com.chat_server.user.repository.UserRepository;
-import com.chat_server.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -11,7 +10,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Objects;
+import java.util.*;
 
 /**
  * packageName    : com.chat_server.security.service
@@ -37,11 +36,10 @@ public class UserAuthService implements UserDetailsService {
         if(Objects.isNull(username) || username.isEmpty()) {
             throw new UsernameNotFoundException("Username is null or empty");
         }
-
         UserAuthDto userAuthDto = userRepository.findByUserName(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Username " + username + " not found"));
-
-
-        return new PrincipalUser(userAuthDto.getUserId(), userAuthDto.getPassword());
+        // principal user 생성
+        return new PrincipalUser(userAuthDto.getUserInputId(), userAuthDto.getUserInputPassword());
     }
+
 }

@@ -6,7 +6,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
-import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 
 import java.io.IOException;
 
@@ -22,7 +21,7 @@ import java.io.IOException;
  * 25. 2. 28.        parkminsu       최초 생성
  */
 @Slf4j
-public class FailHandler implements AuthenticationFailureHandler {
+public class CustomFailHandler implements AuthenticationFailureHandler {
     // log 남기기, 그리고 계정 잠금
     // todo servicce 하나 만들어서, 로그인 횟수 별로 잠금 기능 구현하기
 

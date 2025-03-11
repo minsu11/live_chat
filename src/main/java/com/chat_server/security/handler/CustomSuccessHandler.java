@@ -1,9 +1,7 @@
 package com.chat_server.security.handler;
 
 import com.chat_server.common.dto.response.ApiResponse;
-import com.chat_server.security.PrincipalUser;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -31,7 +29,7 @@ import java.io.IOException;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class SuccessHandler implements AuthenticationSuccessHandler {
+public class CustomSuccessHandler implements AuthenticationSuccessHandler {
     private final ObjectMapper objectMapper;
 
     // 성공 시
@@ -52,7 +50,7 @@ public class SuccessHandler implements AuthenticationSuccessHandler {
         }
         session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, securityContext);
 
-        ApiResponse<String> apiResponse = ApiResponse.success(200, "login success");
+        ApiResponse apiResponse = ApiResponse.success(200, "login success");
 
         objectMapper.writeValue(response.getWriter(), apiResponse);
 
