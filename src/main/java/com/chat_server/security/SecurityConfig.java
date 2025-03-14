@@ -1,6 +1,7 @@
 package com.chat_server.security;
 
 import com.chat_server.security.handler.CustomFailHandler;
+import com.chat_server.security.handler.CustomLogoutSuccessHandler;
 import com.chat_server.security.handler.CustomSuccessHandler;
 import com.chat_server.security.service.UserAuthService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -42,7 +43,6 @@ public class SecurityConfig {
                         (
                                 authorizeRequests ->
                                         authorizeRequests.requestMatchers("/login","/api/v1/users/register").permitAll()
-
                         )
                 .formLogin(AbstractHttpConfigurer::disable);
 
@@ -75,7 +75,11 @@ public class SecurityConfig {
     @Bean
     public CustomFailHandler failHandler() {
         return new CustomFailHandler();
+    }
 
+    @Bean
+    public CustomLogoutSuccessHandler logoutSuccessHandler() {
+        return new CustomLogoutSuccessHandler();
     }
 
     @Bean

@@ -14,8 +14,15 @@ spring:
       min-idle: 5
       max-total: 5
       test-on-borrow: true
+      test-on-return: true
+      test-on-create: true
 logging:
   level:
     root: info
 server:
   port: 7070
+redis:
+  host: localhost
+  port: 6379
+  timeout: 3000
+
