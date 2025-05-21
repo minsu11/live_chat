@@ -39,7 +39,8 @@ public class SecurityConfig {
                                 authorizeRequests ->
                                         authorizeRequests.requestMatchers("/api/v1/users/login", "/api/v1/users/register").permitAll()
                         )
-                .formLogin(AbstractHttpConfigurer::disable);
+                .formLogin(AbstractHttpConfigurer::disable)
+        ;
 
 
         return http.build();
