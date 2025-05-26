@@ -1,5 +1,6 @@
 package com.chat_server.user.service.impl;
 
+import com.chat_server.authentication.dto.UserPrincipal;
 import com.chat_server.gender.entity.Gender;
 import com.chat_server.gender.exception.GenderNotFoundException;
 import com.chat_server.gender.repository.GenderRepository;
@@ -16,11 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 
 /**
  * packageName    : com.chat_server.user.service
@@ -43,21 +40,20 @@ public class UserServiceImpl implements UserService {
     private final GenderRepository genderRepository;
 
 
-
     @Override
     public void signUp(UserRegisterRequest registerRequest) {
         String id = registerRequest.userId();
         log.debug("service start");
-        if(userRepository.existsByUserInputId(id)){
+        if (userRepository.existsByUserInputId(id)) {
             throw new UserAleadyExistException("이미 존재하는 회원 입니다.");
         }
 
         UserStatus userStatus =
                 userStatusRepository.findByUserStatusName("활성")
-                .orElseThrow(()-> new UserStatusNotFoundException("user status not found"));
+                        .orElseThrow(() -> new UserStatusNotFoundException("user status not found"));
 
         Gender gender = genderRepository.findByGenderName(registerRequest.gender())
-                .orElseThrow(()-> new GenderNotFoundException("gender not found"));
+                .orElseThrow(() -> new GenderNotFoundException("gender not found"));
 
         User user = User.builder()
                 .userInputId(registerRequest.userId())
@@ -74,4 +70,12 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
+    @Override
+    public UserPrincipal loadUserByUserId(String userId) {
+        // todo 유저 아이디로 권한만 가지고 오면 되는 거 아닌가? 상태도 가지고 와야하나?
+        // 음...
+        UserPrincipal userPrincipal = new UserPrincipal();
+
+        return userPrincipal;
+    }
 }
