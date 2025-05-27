@@ -1,8 +1,12 @@
 package com.chat_server.user.repository.impl;
 
+import com.chat_server.user.dto.response.UserAuthenticationResponse;
 import com.chat_server.user.entity.QUser;
 import com.chat_server.user.repository.UserRepositoryCustom;
+import com.querydsl.core.types.Projections;
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
+
+import java.util.Optional;
 
 /**
  * packageName    : com.chat_server.user.repository.impl
@@ -24,4 +28,17 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
     }
 
 
+    @Override
+    public Optional<UserAuthenticationResponse> getUserByUserId(String userId) {
+
+        return Optional.ofNullable(
+                from(qUser)
+                        .select(Projections.constructor(
+                                UserAuthenticationResponse.class,
+                                qUser.userStatus.userStatusName
+                        ))
+                        .where(qUser.userStatus.userStatusName.eq("활성"))
+                        .fetchOne()
+        );
+    }
 }

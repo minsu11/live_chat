@@ -1,6 +1,8 @@
 package com.chat_server.common.filter;
 
+import com.chat_server.authentication.dto.UserPrincipal;
 import com.chat_server.authentication.verifier.JwtVerifier;
+import com.chat_server.user.service.UserService;
 import com.chat_server.util.CookieUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -30,7 +32,11 @@ import java.io.IOException;
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
     private final JwtVerifier jwtVerifier;
+
+    private final UserService userService;
+
 
     // redis service
     // jwt token 검증
@@ -47,10 +53,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             Claims claims = jwtVerifier.parseClaims(accessToken);
-            //
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(claims.getId(), null, null);
+            // principal 가지고옴
+            UserPrincipal userPrincipal = userService.loadUserByUserId(claims.getId());
 
-            SecurityContextHolder.getContext().setAuthentication();
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userPrincipal, null, null);
+
+            // context holder에 저장
+            SecurityContextHolder.getContext().setAuthentication(authentication);
 
         } catch (JwtException ignored) {
             // 여기서 token 검증

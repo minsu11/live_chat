@@ -4,9 +4,12 @@ import com.chat_server.authentication.dto.UserPrincipal;
 import com.chat_server.gender.entity.Gender;
 import com.chat_server.gender.exception.GenderNotFoundException;
 import com.chat_server.gender.repository.GenderRepository;
+import com.chat_server.user.domain.UserType;
 import com.chat_server.user.dto.request.UserRegisterRequest;
+import com.chat_server.user.dto.response.UserAuthenticationResponse;
 import com.chat_server.user.entity.User;
 import com.chat_server.user.exception.UserAleadyExistException;
+import com.chat_server.user.exception.UserNotFoundException;
 import com.chat_server.user.repository.UserRepository;
 import com.chat_server.user.service.UserService;
 import com.chat_server.userstatus.entity.UserStatus;
@@ -72,10 +75,11 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserPrincipal loadUserByUserId(String userId) {
-        // todo 유저 아이디로 권한만 가지고 오면 되는 거 아닌가? 상태도 가지고 와야하나?
-        // 음...
-        UserPrincipal userPrincipal = new UserPrincipal();
+        log.debug("User Service loadUserByUserId start");
+        UserAuthenticationResponse response = userRepository.getUserByUserId(userId)
+                .orElseThrow(UserNotFoundException::new);
 
-        return userPrincipal;
+        return new UserPrincipal(userId, UserType.USER, response.userStatus());
+
     }
 }

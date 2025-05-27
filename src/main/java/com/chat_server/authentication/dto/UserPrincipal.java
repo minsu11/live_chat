@@ -28,14 +28,12 @@ import java.util.Collections;
 @Getter
 public class UserPrincipal implements UserDetails {
 
-    private final String userId;
     private final String username;
     private final UserType userType;
     private final UserStatus userStatus;
     private final Collection<? extends GrantedAuthority> authorities;
 
-    public UserPrincipal(String userId, String username, UserType userType, UserStatus userStatus) {
-        this.userId = userId;
+    public UserPrincipal(String username, UserType userType, UserStatus userStatus) {
         this.username = username;
         this.userType = userType;
         this.userStatus = userStatus;

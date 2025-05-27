@@ -1,6 +1,9 @@
 package com.chat_server.user.repository;
 
+import com.chat_server.user.dto.response.UserAuthenticationResponse;
 import org.springframework.data.repository.NoRepositoryBean;
+
+import java.util.Optional;
 
 /**
  * packageName    : com.chat_server.user.repository
@@ -15,5 +18,6 @@ import org.springframework.data.repository.NoRepositoryBean;
  */
 @NoRepositoryBean
 public interface UserRepositoryCustom {
-
+    Optional<UserAuthenticationResponse> getUserByUserId(String userId);
 }
+
