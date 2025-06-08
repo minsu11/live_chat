@@ -37,7 +37,7 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
                                 UserAuthenticationResponse.class,
                                 qUser.userStatus.userStatusName
                         ))
-                        .where(qUser.userStatus.userStatusName.eq("활성"))
+                        .where(qUser.userStatus.userStatusName.eq("활성").and(qUser.userUuid.eq(userId)))
                         .fetchOne()
         );
     }

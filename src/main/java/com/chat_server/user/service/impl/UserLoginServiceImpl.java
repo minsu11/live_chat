@@ -34,7 +34,8 @@ public class UserLoginServiceImpl implements UserLoginService {
         // 기본적인 validation은 api server에서 할 예정
         log.info("Login request: {}", loginRequest);
         ApiResponse<LoginTokenResponse> loginTokenResponse = authServerAdaptor.login(loginRequest);
+        log.info("Login response: {}", loginTokenResponse);
         return loginTokenResponse;
     }
-    
+
 }

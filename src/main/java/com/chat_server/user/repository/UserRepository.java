@@ -2,7 +2,6 @@ package com.chat_server.user.repository;
 
 import com.chat_server.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 /**
  * packageName    : com.chat_server.user.repository
@@ -15,6 +14,6 @@ import org.springframework.stereotype.Repository;
  * -----------------------------------------------------------
  * 25. 2. 26.        parkminsu       최초 생성
  */
-public interface UserRepository extends JpaRepository<User,Long>, UserRepositoryCustom {
+public interface UserRepository extends JpaRepository<User, Long>, UserRepositoryCustom {
     boolean existsByUserInputId(String inputId);
 }
