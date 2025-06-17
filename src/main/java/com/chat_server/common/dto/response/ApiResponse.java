@@ -25,26 +25,26 @@ public class ApiResponse<T> {
     private String message;
     private T data;
 
-    public static <T> ApiResponse success(int status, String message, T data) {
-        return new ApiResponse(status, message, data);
+    public static <T> ApiResponse<T> success(int status, String message, T data) {
+        return new ApiResponse<T>(status, message, data);
     }
 
-    public static <T> ApiResponse success(int status, String message) {
+    public static <T> ApiResponse<T> success(int status, String message) {
         return success(status, message, null);
     }
 
-    public static <T> ApiResponse success(int status) {
+    public static <T> ApiResponse<T> success(int status) {
         return success(status, ApiMessageEnum.성공.getMessage(), null);
     }
 
-    public static <T> ApiResponse success(int status, T data) {
+    public static <T> ApiResponse<T> success(int status, T data) {
         return success(status, ApiMessageEnum.성공.getMessage(), data);
     }
 
-    public static <T> ApiResponse error(int status, String message) {
-        return new ApiResponse(status, message, null);
+    public static <T> ApiResponse<T> error(int status, String message) {
+        return new ApiResponse<T>(status, message, null);
     }
-    public static <T> ApiResponse error(int status) {
+    public static <T> ApiResponse<T> error(int status) {
         return error(status, ApiMessageEnum.에러.getMessage());
     }
 }

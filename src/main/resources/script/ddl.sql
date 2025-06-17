@@ -17,6 +17,7 @@ CREATE TABLE `user` (
                         `gender_id`	int	NOT NULL,
                         `user_status_id`	int	NOT NULL,
                         `user_name`	varchar(20)	NOT NULL,
+                        `user_uuid` varchar(100) NOT NULL ,
                         `user_input_id`	varchar(20)	NOT NULL,
                         `user_input_password`	varchar(30)	NOT NULL,
                         `user_age`	int	NOT NULL,
