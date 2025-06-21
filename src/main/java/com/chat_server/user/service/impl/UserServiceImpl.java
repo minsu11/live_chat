@@ -21,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * packageName    : com.chat_server.user.service
@@ -45,7 +46,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void signUp(UserRegisterRequest registerRequest) {
-        String id = registerRequest.userId();
+        String id = registerRequest.id();
         log.debug("service start");
         if (userRepository.existsByUserInputId(id)) {
             throw new UserAleadyExistException("이미 존재하는 회원 입니다.");
@@ -57,17 +58,16 @@ public class UserServiceImpl implements UserService {
 
         Gender gender = genderRepository.findByGenderName(registerRequest.gender())
                 .orElseThrow(() -> new GenderNotFoundException("gender not found"));
-
         User user = User.builder()
-                .userInputId(registerRequest.userId())
+                .userInputId(registerRequest.id())
                 .userInputPassword(registerRequest.password())
                 .userAge(registerRequest.age())
                 .userName(registerRequest.name())
-                .userNickname(registerRequest.nickname())
+                .userNickname(registerRequest.nickName())
                 .userStatus(userStatus)
                 .gender(gender)
                 .userCreatedAt(LocalDateTime.now())
-
+                .userUuid(UUID.randomUUID().toString())
                 .build();
 
         userRepository.save(user);

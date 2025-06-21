@@ -4,8 +4,10 @@ import com.chat_server.common.dto.response.ApiResponse;
 import com.chat_server.user.dto.request.LoginRequest;
 import com.chat_server.user.dto.response.LoginTokenResponse;
 import com.chat_server.user.service.UserLoginService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -32,12 +34,22 @@ public class UserLoginController {
     private final UserLoginService userLoginService;
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LoginTokenResponse>> login(@RequestBody LoginRequest user) {
+    public ResponseEntity<ApiResponse<LoginTokenResponse>> login(@RequestBody LoginRequest user,
+                                                                 HttpServletResponse response) {
         log.info("login controller start");
         log.info("Login request: {}", user);
         ApiResponse<LoginTokenResponse> loginTokenResponse = userLoginService.login(user);
         log.debug("Login response: {}", loginTokenResponse);
         log.info("login controller end");
+
+        ResponseCookie cookie = ResponseCookie.from("accessToken", loginTokenResponse.getData().accessToken())
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .sameSite("Strict")
+                .maxAge(3600)
+                .build();
+        response.setHeader("Set-Cookie", cookie.toString());
         return ResponseEntity.ok(loginTokenResponse);
 
     }

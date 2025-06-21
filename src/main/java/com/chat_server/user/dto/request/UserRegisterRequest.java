@@ -4,6 +4,7 @@ import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 
 /**
@@ -19,7 +20,7 @@ import java.util.HashMap;
  */
 public record UserRegisterRequest(@NotBlank
                                   @Size(min = 8,max = 20)
-                                  String userId,
+                                  String id,
 
                                   @NotBlank
                                   String password,
@@ -30,7 +31,7 @@ public record UserRegisterRequest(@NotBlank
 
                                   @NotBlank
                                   @Size(min = 2,max = 20)
-                                  String nickname,
+                                  String nickName,
 
                                   @NotNull
                                   @Min(value = 0)
@@ -38,6 +39,11 @@ public record UserRegisterRequest(@NotBlank
                                   Integer age,
 
                                   @NotBlank
-                                  String gender
+                                  String gender,
+
+                                  String email,
+
+                                  String  birth,
+                                  String phoneNumber
                                   ) {
 }
