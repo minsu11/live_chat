@@ -1,6 +1,6 @@
-package com.chat_server.authentication.verifier;
+package com.chat_server.security.verifier;
 
-import com.chat_server.authentication.provider.RsaKeyProvider;
+import com.chat_server.security.provider.RsaKeyProvider;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;

@@ -13,5 +13,5 @@ package com.chat_server.user.dto.response;
  * ----------------------------------------------------------- </br>
  * 25. 5. 11.        parkminsu       최초 생성 </br>
  */
-public record LoginTokenResponse(String accessToken) {
+public record LoginTokenResponse(String accessToken, String accessTokenExpiration) {
 }

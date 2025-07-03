@@ -1,6 +1,6 @@
 package com.chat_server.user.service;
 
-import com.chat_server.authentication.dto.UserPrincipal;
+import com.chat_server.security.dto.UserPrincipal;
 import com.chat_server.user.dto.request.UserRegisterRequest;
 
 /**

@@ -1,6 +1,6 @@
 package com.chat_server.user.service.impl;
 
-import com.chat_server.authentication.dto.UserPrincipal;
+import com.chat_server.security.dto.UserPrincipal;
 import com.chat_server.gender.entity.Gender;
 import com.chat_server.gender.exception.GenderNotFoundException;
 import com.chat_server.gender.repository.GenderRepository;

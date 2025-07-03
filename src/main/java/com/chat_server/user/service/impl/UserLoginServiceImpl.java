@@ -8,6 +8,7 @@ import com.chat_server.user.service.UserLoginService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 /**
@@ -30,10 +31,10 @@ public class UserLoginServiceImpl implements UserLoginService {
     private final AuthServerAdaptor authServerAdaptor;
 
     @Override
-    public ApiResponse<LoginTokenResponse> login(LoginRequest loginRequest) {
+    public ResponseEntity<ApiResponse<LoginTokenResponse>> login(LoginRequest loginRequest) {
         // 기본적인 validation은 api server에서 할 예정
         log.info("Login request: {}", loginRequest);
-        ApiResponse<LoginTokenResponse> loginTokenResponse = authServerAdaptor.login(loginRequest);
+        ResponseEntity<ApiResponse<LoginTokenResponse>> loginTokenResponse = authServerAdaptor.login(loginRequest);
         log.info("Login response: {}", loginTokenResponse);
         return loginTokenResponse;
     }

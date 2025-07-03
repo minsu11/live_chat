@@ -4,6 +4,7 @@ import com.chat_server.common.dto.response.ApiResponse;
 import com.chat_server.user.dto.request.LoginRequest;
 import com.chat_server.user.dto.response.LoginTokenResponse;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 
 /**
@@ -24,7 +25,7 @@ public interface AuthServerAdaptor {
     // login 연결
     // 여기서 token의 데이터를 받아야함
     @PostMapping("/login")
-    ApiResponse<LoginTokenResponse> login(LoginRequest loginRequest);
+    ResponseEntity<ApiResponse<LoginTokenResponse>> login(LoginRequest loginRequest);
 
     // logout 기능도 추가 예정
 }

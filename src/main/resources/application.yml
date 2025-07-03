@@ -6,6 +6,7 @@ spring:
       ddl-auto: validate
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
+    # 추 후에 환경 파일로 따로 빼야함
     username: root
     password: 1234
     url: jdbc:mysql://localhost:3306/chat_server?serverTimezone=UTC&characterEncoding=UTF-8
@@ -17,7 +18,7 @@ spring:
       test-on-return: true
       test-on-create: true
   profiles:
-    active: dev
+    active: dev,custom
 logging:
   level:
     root: info

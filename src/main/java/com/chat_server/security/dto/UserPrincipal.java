@@ -1,4 +1,4 @@
-package com.chat_server.authentication.dto;
+package com.chat_server.security.dto;
 
 import com.chat_server.user.domain.UserStatus;
 import com.chat_server.user.domain.UserType;

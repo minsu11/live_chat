@@ -1,0 +1,4 @@
+custom:
+  auth:
+    header:
+      token-expiration: X-Token-Expires-In

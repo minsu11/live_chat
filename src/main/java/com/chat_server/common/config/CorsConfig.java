@@ -1,5 +1,6 @@
 package com.chat_server.common.config;
 
+import jakarta.validation.constraints.NotNull;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -17,6 +18,7 @@ public class CorsConfig {
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true) // ✅ 쿠키 인증 허용
+                        .exposedHeaders("X-Token-Expires-In") // 여기!!
                         .maxAge(3600); // Preflight 캐시 시간 (초)
             }
         };
