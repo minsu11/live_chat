@@ -1,9 +1,11 @@
 package com.chat_server.user.repository.impl;
 
+import com.chat_server.user.dto.response.AuthorizationUserResponse;
 import com.chat_server.user.dto.response.UserAuthenticationResponse;
 import com.chat_server.user.entity.QUser;
 import com.chat_server.user.repository.UserRepositoryCustom;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.Expressions;
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
 
 import java.util.Optional;
@@ -39,6 +41,29 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
                         ))
                         .where(qUser.userStatus.userStatusName.eq("활성").and(qUser.userUuid.eq(userId)))
                         .fetchOne()
+        );
+    }
+
+    /**
+     * 유저 권한 확인 메서드
+     * @param userId 식별할 수 있는 id
+     * @return
+     */
+    @Override
+    public Optional<AuthorizationUserResponse> authorizeUserByUserId(String userId, String roleName) {
+
+        return Optional.ofNullable(
+                from(qUser)
+                        .select(
+                                Projections.constructor(
+                                        AuthorizationUserResponse.class,
+                                        qUser.id,
+                                        Expressions.constant(roleName)
+                                )
+                        ).fetchOne()
+
+
+
         );
     }
 }

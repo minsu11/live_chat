@@ -1,5 +1,6 @@
 package com.chat_server.user.repository;
 
+import com.chat_server.user.dto.response.AuthorizationUserResponse;
 import com.chat_server.user.dto.response.UserAuthenticationResponse;
 
 import java.util.Optional;
@@ -17,5 +18,6 @@ import java.util.Optional;
  */
 public interface UserRepositoryCustom {
     Optional<UserAuthenticationResponse> getUserByUserId(String userId);
+    Optional<AuthorizationUserResponse> authorizeUserByUserId(String userId, String roleName);
 }
 
