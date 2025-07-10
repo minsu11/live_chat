@@ -1,9 +1,8 @@
 package com.chat_server.security.filter;
 
 import com.chat_server.security.provider.RsaKeyProvider;
-import com.chat_server.user.dto.response.AuthorizationUserResponse;
+import com.chat_server.user.dto.response.AuthenticatedUser;
 import com.chat_server.user.service.AuthorizationService;
-import com.chat_server.user.service.UserService;
 import io.jsonwebtoken.*;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -12,7 +11,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tomcat.util.http.parser.Authorization;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,7 +20,6 @@ import java.io.IOException;
 import java.security.PublicKey;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -44,20 +41,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Claims claims = parseClaims(token);
                 String userId = claims.getSubject();
 
-                AuthorizationUserResponse authorizationUserResponse = authorizationService.getAuthorizationUserByUserId(userId);
-                List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(authorizationUserResponse.role()));
+                AuthenticatedUser authenticatedUser = authorizationService.getAuthorizationUserByUserId(userId);
+                List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(authenticatedUser.role()));
 
-                var authentication = new UsernamePasswordAuthenticationToken(userId, null, authorities);
-                if(SecurityContextHolder.getContext().getAuthentication() == null) {
-
-                }
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-
+                setAuthenticationIfRequired(authenticatedUser,authorities);
             } catch (ExpiredJwtException e) {
-                // 만료시간
-
                 log.warn("토큰 만료", e);
-
+                //TODO#1 Redis에서 Refresh Token 조회 및 재발급 처리
                 request.setAttribute("exception", "TOKEN_EXPIRED");
             } catch (JwtException | IllegalArgumentException e) {
                 log.warn("토큰 유효성 오류", e);
@@ -90,15 +80,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 .orElse(null);
     }
 
-    private void setAuthenticationIfRequired(Long userId, List<SimpleGrantedAuthority> authorities) {
-        var context =SecurityContextHolder.getContext();
+    private void setAuthenticationIfRequired(AuthenticatedUser authenticatedUser, List<SimpleGrantedAuthority> authorities) {
+        var context = SecurityContextHolder.getContext();
+        // authentication
         var existingAuth = context.getAuthentication();
 
-        if (existingAuth == null || !existingAuth.isAuthenticated() || !existingAuth.getName().equals(userId)) {
-            var authentication = new UsernamePasswordAuthenticationToken(userId, null, authorities);
+        if (existingAuth == null || !existingAuth.isAuthenticated() ) {
+            var authentication = new UsernamePasswordAuthenticationToken(authenticatedUser, null, authorities);
             context.setAuthentication(authentication);
         } else {
-            log.debug("SecurityContext already contains authentication for userId: {}", userId);
+            log.debug("SecurityContext already contains authentication for userId: {}", authenticatedUser);
         }
     }
 

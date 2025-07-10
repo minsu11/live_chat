@@ -1,7 +1,7 @@
 package com.chat_server.user.service;
 
-import com.chat_server.user.dto.response.AuthorizationUserResponse;
+import com.chat_server.user.dto.response.AuthenticatedUser;
 
 public interface AuthorizationService {
-    AuthorizationUserResponse getAuthorizationUserByUserId(String userId);
+    AuthenticatedUser getAuthorizationUserByUserId(String userId);
 }

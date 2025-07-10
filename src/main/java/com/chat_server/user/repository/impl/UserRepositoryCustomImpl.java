@@ -1,6 +1,6 @@
 package com.chat_server.user.repository.impl;
 
-import com.chat_server.user.dto.response.AuthorizationUserResponse;
+import com.chat_server.user.dto.response.AuthenticatedUser;
 import com.chat_server.user.dto.response.UserAuthenticationResponse;
 import com.chat_server.user.entity.QUser;
 import com.chat_server.user.repository.UserRepositoryCustom;
@@ -50,13 +50,13 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
      * @return
      */
     @Override
-    public Optional<AuthorizationUserResponse> authorizeUserByUserId(String userId, String roleName) {
+    public Optional<AuthenticatedUser> authorizeUserByUserId(String userId, String roleName) {
 
         return Optional.ofNullable(
                 from(qUser)
                         .select(
                                 Projections.constructor(
-                                        AuthorizationUserResponse.class,
+                                        AuthenticatedUser.class,
                                         qUser.id,
                                         Expressions.constant(roleName)
                                 )
