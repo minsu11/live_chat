@@ -1,4 +1,4 @@
-package com.chat_server.common.redis.repository;
+package com.chat_server.redis.repository;
 
 import java.util.List;
 import java.util.Optional;

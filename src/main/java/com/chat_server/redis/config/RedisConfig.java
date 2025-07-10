@@ -1,11 +1,9 @@
-package com.chat_server.common.config;
+package com.chat_server.redis.config;
 
-import com.chat_server.common.redis.config.RedisConfig;
+import com.chat_server.redis.propertie.RedisProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.lettuce.core.resource.DefaultClientResources;
-import jakarta.servlet.ServletContext;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.web.servlet.RegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -15,8 +13,6 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.client.RestTemplate;
 
 import java.time.Duration;
 
@@ -33,8 +29,8 @@ import java.time.Duration;
  */
 @Configuration
 @RequiredArgsConstructor
-public class CommonConfig {
-    private final RedisConfig redisConfig;
+public class RedisConfig {
+    private final RedisProperties redisProperties;
     // 해당 설정들은 명시적으로 리소스 관리를 해주기 위한 것,
     // 애플리케이션 종료 시 Shutdown
     private final DefaultClientResources clientResources = DefaultClientResources.create();
@@ -50,8 +46,8 @@ public class CommonConfig {
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
-        config.setHostName(redisConfig.getHost());
-        config.setPort(redisConfig.getPort());
+        config.setHostName(redisProperties.getHost());
+        config.setPort(redisProperties.getPort());
 
         // time out 5초
         LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
@@ -60,11 +56,11 @@ public class CommonConfig {
                 .clientResources(clientResources)
                 .build();
 
-        return new LettuceConnectionFactory(config);
+        return new LettuceConnectionFactory(config, clientConfig);
     }
 
     @Bean
-    public RedisTemplate<String,Object> restTemplate()    {
+    public RedisTemplate<String,Object> redisTemplate()    {
         RedisTemplate<String,Object> template = new RedisTemplate<>();
         ObjectMapper objectMapper = objectMapper();
         template.setConnectionFactory(redisConnectionFactory());
@@ -76,6 +72,7 @@ public class CommonConfig {
 
         // spring에서 bean 등록 후 자동으로 호출이 되긴함
         template.afterPropertiesSet();
+
         return template;
     }
 }
