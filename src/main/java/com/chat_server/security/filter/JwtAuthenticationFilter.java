@@ -1,5 +1,6 @@
 package com.chat_server.security.filter;
 
+import com.chat_server.error.enumulation.ErrorCode;
 import com.chat_server.security.provider.RsaKeyProvider;
 import com.chat_server.user.dto.response.AuthenticatedUser;
 import com.chat_server.user.service.AuthorizationService;
@@ -47,11 +48,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 setAuthenticationIfRequired(authenticatedUser,authorities);
             } catch (ExpiredJwtException e) {
                 log.warn("토큰 만료", e);
-                //TODO#1 Redis에서 Refresh Token 조회 및 재발급 처리
-                request.setAttribute("exception", "TOKEN_EXPIRED");
+                request.setAttribute("exception", ErrorCode.TOKEN_EXPIRED);
             } catch (JwtException | IllegalArgumentException e) {
                 log.warn("토큰 유효성 오류", e);
-                request.setAttribute("exception", "INVALID_TOKEN");
+                request.setAttribute("exception", ErrorCode.INVALID_TOKEN);
             }
         }
 
