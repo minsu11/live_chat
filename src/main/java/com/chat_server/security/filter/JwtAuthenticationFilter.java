@@ -49,6 +49,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 log.warn("토큰 만료", e);
                 //TODO#1 Redis에서 Refresh Token 조회 및 재발급 처리
                 request.setAttribute("exception", "TOKEN_EXPIRED");
+                // 
             } catch (JwtException | IllegalArgumentException e) {
                 log.warn("토큰 유효성 오류", e);
                 request.setAttribute("exception", "INVALID_TOKEN");
