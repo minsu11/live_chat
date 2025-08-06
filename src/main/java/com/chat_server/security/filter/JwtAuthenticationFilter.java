@@ -1,10 +1,9 @@
 package com.chat_server.security.filter;
 
 import com.chat_server.error.enumulation.ErrorCode;
-import com.chat_server.security.provider.RsaKeyProvider;
+import com.chat_server.security.provider.JwtTokenProvider;
 import com.chat_server.user.dto.response.AuthenticatedUser;
 import com.chat_server.user.service.AuthorizationService;
-import io.jsonwebtoken.*;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -18,7 +17,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.security.PublicKey;
 import java.util.Arrays;
 import java.util.List;
 
@@ -26,72 +24,54 @@ import java.util.List;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final RsaKeyProvider rsaKeyProvider;
+    private final JwtTokenProvider jwtTokenProvider;
     private final AuthorizationService authorizationService;
-
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
+        log.debug("http 인가 처리");
         String token = extractTokenFromCookie(request);
 
-        if (token != null) {
-            try {
-                Claims claims = parseClaims(token);
-                String userId = claims.getSubject();
+        if (token != null && jwtTokenProvider.validateToken(token)) {
+            String userId = jwtTokenProvider.getUserId(token);
 
-                AuthenticatedUser authenticatedUser = authorizationService.getAuthorizationUserByUserId(userId);
-                List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(authenticatedUser.role()));
+            AuthenticatedUser authenticatedUser =
+                    authorizationService.getAuthorizationUserByUserId(userId);
 
-                setAuthenticationIfRequired(authenticatedUser,authorities);
-            } catch (ExpiredJwtException e) {
-                log.warn("토큰 만료", e);
+            List<SimpleGrantedAuthority> authorities =
+                    List.of(new SimpleGrantedAuthority(authenticatedUser.role()));
 
-                request.setAttribute("exception", ErrorCode.TOKEN_EXPIRED);
-            } catch (JwtException | IllegalArgumentException e) {
-                log.warn("토큰 유효성 오류", e);
-                request.setAttribute("exception", ErrorCode.INVALID_TOKEN);
-            }
+            setAuthenticationIfRequired(authenticatedUser, authorities);
+        } else {
+            request.setAttribute("exception", ErrorCode.INVALID_TOKEN);
         }
 
         filterChain.doFilter(request, response);
     }
 
-    private Claims parseClaims(String token) {
-        PublicKey publicKey = rsaKeyProvider.getPublicKey();
-        return Jwts.parserBuilder()
-                .setSigningKey(publicKey)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-    }
-
     private String extractTokenFromCookie(HttpServletRequest request) {
-
         if (request.getCookies() == null) {
             return null;
         }
-
         return Arrays.stream(request.getCookies())
-                .filter(c->"access_token".equals(c.getName()))
+                .filter(c -> "access_token".equals(c.getName()))
                 .map(Cookie::getValue)
                 .findFirst()
                 .orElse(null);
     }
 
-    private void setAuthenticationIfRequired(AuthenticatedUser authenticatedUser, List<SimpleGrantedAuthority> authorities) {
+    private void setAuthenticationIfRequired(AuthenticatedUser authenticatedUser,
+                                             List<SimpleGrantedAuthority> authorities) {
         var context = SecurityContextHolder.getContext();
-        // authentication
         var existingAuth = context.getAuthentication();
 
-        if (existingAuth == null || !existingAuth.isAuthenticated() ) {
-            var authentication = new UsernamePasswordAuthenticationToken(authenticatedUser, null, authorities);
+        if (existingAuth == null || !existingAuth.isAuthenticated()) {
+            var authentication =
+                    new UsernamePasswordAuthenticationToken(authenticatedUser, null, authorities);
             context.setAuthentication(authentication);
-        } else {
-            log.debug("SecurityContext already contains authentication for userId: {}", authenticatedUser);
         }
     }
-
 }
