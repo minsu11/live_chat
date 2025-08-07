@@ -19,6 +19,13 @@ spring:
       test-on-create: true
   profiles:
     active: dev,custom
+  mvc:
+    static-path-pattern: /static/**
+  web:
+    resources:
+      add-mappings: false
+
+
 logging:
   level:
     root: info

@@ -20,6 +20,11 @@ public class ErrorMessageProperties {
     private Map<String, String> messages;
 
     public String getMessages(ErrorCode errorCode) {
+        if(errorCode == null) {
+            return "정의되지 않은 오류입니다." +
+                    "";
+        }
+
         return messages.getOrDefault(errorCode.name(),"알 수 없는 에러입니다.");
     }
 }

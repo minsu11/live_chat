@@ -4,5 +4,5 @@ public enum ErrorCode {
     TOKEN_EXPIRED,
     INVALID_TOKEN,
     NO_PERMISSION,
-    UNAUTHORIZED
+    UNAUTHORIZED;
 }

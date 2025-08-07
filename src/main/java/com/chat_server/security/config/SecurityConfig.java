@@ -45,7 +45,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests
                         (
                                 authorizeRequests ->
-                                        authorizeRequests.requestMatchers("/api/v1/users/login", "/api/v1/users/register").permitAll()
+                                        authorizeRequests.requestMatchers("/api/v1/users/login", "/api/v1/users/register",
+                                                "/api/ws/**",
+                                                "/ws/**",
+                                                "/ws/chat/**",
+                                                "/ws-chat/**"
+                                                ).permitAll()
                         )
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(authenticationEntryPoint)
