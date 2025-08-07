@@ -1,13 +1,13 @@
 package com.chat_server.user.repository.impl;
 
-import com.chat_server.security.dto.UserAuthDto;
+import com.chat_server.user.dto.response.AuthenticatedUser;
+import com.chat_server.user.dto.response.UserAuthenticationResponse;
 import com.chat_server.user.entity.QUser;
-import com.chat_server.user.repository.UserRepository;
 import com.chat_server.user.repository.UserRepositoryCustom;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.Expressions;
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
 
-import javax.swing.text.html.Option;
 import java.util.Optional;
 
 /**
@@ -22,27 +22,48 @@ import java.util.Optional;
  * 25. 2. 28.        parkminsu       최초 생성
  */
 
-public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implements UserRepositoryCustom{
+public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implements UserRepositoryCustom {
     private final QUser qUser = QUser.user;
+
     public UserRepositoryCustomImpl() {
         super(QUser.class);
     }
 
 
     @Override
-    public Optional<UserAuthDto> findByUserName(String userName) {
-
+    public Optional<UserAuthenticationResponse> getUserByUserId(String userId) {
 
         return Optional.ofNullable(
                 from(qUser)
                         .select(Projections.constructor(
-                                UserAuthDto.class,
-                                qUser.userInputId,
-                                qUser.userInputPassword
+                                UserAuthenticationResponse.class,
+                                qUser.userStatus.userStatusName
                         ))
-                        .where(qUser.userInputId.eq(userName)
-                                .and(qUser.userStatus.userStatusName.eq("활성"))
+                        .where(qUser.userStatus.userStatusName.eq("활성").and(qUser.userUuid.eq(userId)))
+                        .fetchOne()
+        );
+    }
+
+    /**
+     * 유저 권한 확인 메서드
+     * @param userId 식별할 수 있는 id
+     * @return
+     */
+    @Override
+    public Optional<AuthenticatedUser> authorizeUserByUserId(String userId, String roleName) {
+
+        return Optional.ofNullable(
+                from(qUser)
+                        .select(
+                                Projections.constructor(
+                                        AuthenticatedUser.class,
+                                        qUser.id,
+                                        Expressions.constant(roleName)
+                                )
                         ).fetchOne()
+
+
+
         );
     }
 }

@@ -1,0 +1,4 @@
+auth:
+  server:
+    url: localhost:9090
+

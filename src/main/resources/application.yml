@@ -6,6 +6,7 @@ spring:
       ddl-auto: validate
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
+    # 추 후에 환경 파일로 따로 빼야함
     username: root
     password: 1234
     url: jdbc:mysql://localhost:3306/chat_server?serverTimezone=UTC&characterEncoding=UTF-8
@@ -16,13 +17,42 @@ spring:
       test-on-borrow: true
       test-on-return: true
       test-on-create: true
+  profiles:
+    active: dev,custom
+  mvc:
+    static-path-pattern: /static/**
+  web:
+    resources:
+      add-mappings: false
+
+
 logging:
   level:
     root: info
+    com.chat_server: debug
+    org.springframework: info
+    org.springframework.web.filter: debug
+    org.hibernate.SQL: DEBUG
+    # SQL 로그 보기 (선택)
+    io.netty: WARN
+    reactor.netty: WARN
+    org.apache.http: WARN
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
 server:
   port: 7070
-redis:
-  host: localhost
-  port: 6379
-  timeout: 3000
+custom:
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 3000
+    cache-timeout: 10
 
+
+# 추후 config 서버로 별도로 뺄 예정
+auth:
+  api:
+    address: /api/v1/auth
+
+jwt:
+  public-key-path: classpath:rsa/login_public_key.pem
