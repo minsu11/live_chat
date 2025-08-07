@@ -1,7 +1,7 @@
 -- 테이블: gender
 DROP TABLE IF EXISTS `gender`;
 CREATE TABLE `gender` (
-                          `gender_id` TINYINT NOT NULL,
+                          `gender_id` int NOT NULL auto_increment,
                           `gender_name` VARCHAR(4) NOT NULL,
                           `gender_created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                           PRIMARY KEY (`gender_id`)
@@ -10,7 +10,7 @@ CREATE TABLE `gender` (
 -- 테이블: user_status
 DROP TABLE IF EXISTS `user_status`;
 CREATE TABLE `user_status` (
-                               `user_status_id` TINYINT(1) NOT NULL,
+                               `user_status_id` int NOT NULL auto_increment,
                                `user_status_name` VARCHAR(10) NOT NULL,
                                `user_status_created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                PRIMARY KEY (`user_status_id`)
@@ -19,13 +19,13 @@ CREATE TABLE `user_status` (
 -- 테이블: user
 DROP TABLE IF EXISTS `user`;
 CREATE TABLE `user` (
-                        `user_id` BIGINT NOT NULL,
-                        `gender_id` TINYINT NOT NULL,
-                        `user_status_id` TINYINT(1) NOT NULL,
+                        `user_id` BIGINT NOT NULL auto_increment,
+                        `gender_id` int NOT NULL,
+                        `user_status_id` int NOT NULL,
                         `user_name` VARCHAR(20) NOT NULL,
                         `user_input_id` VARCHAR(20) NOT NULL,
                         `user_input_password` VARCHAR(30) NOT NULL,
-                        `user_age` TINYINT NOT NULL,
+                        `user_age` int NOT NULL,
                         `user_nickname` VARCHAR(20) NOT NULL,
                         `user_created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                         `user_login_lasted` DATETIME NULL,
@@ -35,22 +35,34 @@ CREATE TABLE `user` (
                         FOREIGN KEY (`user_status_id`) REFERENCES `user_status`(`user_status_id`)
 );
 
+
+CREATE TABLE `chat_type` (
+                             `chat_type_id`	int	NOT NULL auto_increment,
+                             `chat_type_name`	varchar(10)	NOT NULL,
+                             primary key (`chat_type_id`)
+);
+
+
+
 -- 테이블: chat_room
 DROP TABLE IF EXISTS `chat_room`;
 CREATE TABLE `chat_room` (
-                             `chat_room_id` BIGINT NOT NULL,
+                             `chat_room_id` BIGINT NOT NULL auto_increment,
+                             `chat_type_id` int NOT NULL,
                              `chat_room_created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                             `chat_room_max_persion` INT NULL,
+                             `chat_room_max_person` INT NULL,
                              `chat_room_name` VARCHAR(50) NULL,
                              `chat_room_description` TEXT NULL,
                              `is_private` BOOLEAN NOT NULL DEFAULT FALSE,
-                             PRIMARY KEY (`chat_room_id`)
+                             PRIMARY KEY (`chat_room_id`),
+                             FOREIGN KEY (`chat_type_id`) REFERENCES `chat_type`(`chat_type_id`)
+
 );
 
 -- 테이블: chat_author
 DROP TABLE IF EXISTS `chat_author`;
 CREATE TABLE `chat_author` (
-                               `chat_author_id` INT NOT NULL,
+                               `chat_author_id` INT NOT NULL auto_increment,
                                `chat_author_name` VARCHAR(10) NOT NULL,
                                `chat_author_creater_created_at` DATETIME NOT NULL,
                                PRIMARY KEY (`chat_author_id`)
@@ -59,7 +71,7 @@ CREATE TABLE `chat_author` (
 -- 테이블: chat_list
 DROP TABLE IF EXISTS `chat_list`;
 CREATE TABLE `chat_list` (
-                             `chat_list_id` BIGINT NOT NULL,
+                             `chat_list_id` BIGINT NOT NULL auto_increment,
                              `user_id` BIGINT NOT NULL,
                              `chat_room_id` BIGINT NOT NULL,
                              `chat_author_id` INT NOT NULL,
@@ -95,6 +107,15 @@ CREATE TABLE `chat_message_read` (
                                      FOREIGN KEY (`user_id`) REFERENCES `user`(`user_id`)
 );
 
+CREATE TABLE `notification_type` (
+                                     `notification_type_id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                                     `notification_type_name` VARCHAR(20) NOT NULL,
+                                     `description` VARCHAR(100) NULL,
+                                     `is_popup` BOOLEAN NOT NULL DEFAULT FALSE,
+                                     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+
 -- 테이블: chat_notification
 DROP TABLE IF EXISTS `chat_notification`;
 CREATE TABLE `chat_notification` (
@@ -102,14 +123,16 @@ CREATE TABLE `chat_notification` (
                                      `user_id` BIGINT NOT NULL,
                                      `chat_room_id` BIGINT NOT NULL,
                                      `chat_message_id` BIGINT NULL,
-                                     `notification_type` VARCHAR(20) NOT NULL,
+                                     `notification_type_id` int NOT NULL, -- FK로 대체
                                      `notification_content` TEXT NOT NULL,
                                      `is_read` BOOLEAN NOT NULL DEFAULT FALSE,
                                      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                      FOREIGN KEY (`user_id`) REFERENCES `user`(`user_id`),
                                      FOREIGN KEY (`chat_room_id`) REFERENCES `chat_room`(`chat_room_id`),
-                                     FOREIGN KEY (`chat_message_id`) REFERENCES `chat_message`(`chat_message_id`)
+                                     FOREIGN KEY (`chat_message_id`) REFERENCES `chat_message`(`chat_message_id`),
+                                     FOREIGN KEY (`notification_type_id`) REFERENCES `notification_type`(`notification_type_id`)
 );
+
 
 -- 테이블: chat_room_setting
 DROP TABLE IF EXISTS `chat_room_setting`;
@@ -125,3 +148,5 @@ CREATE TABLE `chat_room_setting` (
                                      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                      FOREIGN KEY (`chat_room_id`) REFERENCES `chat_room`(`chat_room_id`)
 );
+
+

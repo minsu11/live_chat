@@ -30,7 +30,7 @@ public class ChatAuthor {
     @Column(name = "chat_author_name")
     private String name;
 
-    @Column(name = "chat_author_created_at")
+    @Column(name = "chat_author_creater_created_at")
     private LocalDateTime createdAt;
 
 }

@@ -27,36 +27,21 @@ import java.io.Serializable;
 @NoArgsConstructor
 public class ChatList {
 
-    @EmbeddedId
-    private Pk pk;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "chat_list_id")
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "chat_room_id")
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "chat_room_id", nullable = false)
     private ChatRoom chatRoom;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="chat_author_id")
+    @JoinColumn(name="chat_author_id", nullable = false)
     private ChatAuthor chatAuthor;
-
-    @Getter
-    @Embeddable
-    @NoArgsConstructor
-    @AllArgsConstructor
-    class Pk implements Serializable {
-        @Column(name = "user_id")
-
-        private Long userId;
-
-        @Column(name = "chat_list_id")
-        @GeneratedValue(strategy = GenerationType.IDENTITY)
-        private Long chatId;
-
-    }
-
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("userId")
-    @JoinColumn(name = "user_id", insertable = false, updatable = false)
-    private User user;
-
 }
+
