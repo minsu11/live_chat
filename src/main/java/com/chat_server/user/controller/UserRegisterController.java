@@ -39,6 +39,7 @@ public class UserRegisterController {
         }
 
         userService.signUp(registerRequest);
+        log.info("회원가입 처리 완료");
         return ResponseEntity.status(201).body(ApiResponse.success(201));
     }
 }

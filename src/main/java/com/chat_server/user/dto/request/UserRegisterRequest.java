@@ -19,7 +19,7 @@ import java.util.HashMap;
  * 25. 2. 26.        parkminsu       최초 생성
  */
 public record UserRegisterRequest(@NotBlank
-                                  @Size(min = 8,max = 20)
+                                  @Size(min = 5,max = 20)
                                   String id,
 
                                   @NotBlank
