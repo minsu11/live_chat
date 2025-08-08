@@ -149,4 +149,3 @@ CREATE TABLE `chat_room_setting` (
                                      FOREIGN KEY (`chat_room_id`) REFERENCES `chat_room`(`chat_room_id`)
 );
 
-
