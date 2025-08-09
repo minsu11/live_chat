@@ -2,6 +2,8 @@ package com.chat_server.friend.entity;
 
 import com.chat_server.user.entity.User;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -11,6 +13,8 @@ import java.time.LocalDateTime;
 @Table(name = "friend")
 @Getter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Friend {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

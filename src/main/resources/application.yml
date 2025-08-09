@@ -4,6 +4,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+    open-in-view: false
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     # 추 후에 환경 파일로 따로 빼야함
@@ -24,7 +25,6 @@ spring:
   web:
     resources:
       add-mappings: false
-
 
 logging:
   level:

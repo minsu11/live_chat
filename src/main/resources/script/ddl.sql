@@ -149,3 +149,24 @@ CREATE TABLE `chat_room_setting` (
                                      FOREIGN KEY (`chat_room_id`) REFERENCES `chat_room`(`chat_room_id`)
 );
 
+CREATE TABLE `user_profile` (
+                                `user_profile_id` BIGINT NOT NULL AUTO_INCREMENT,
+                                `user_id` BIGINT NOT NULL,
+                                `image_url` VARCHAR(255) NOT NULL,
+                                `is_current` BOOLEAN NOT NULL DEFAULT FALSE COMMENT '현재 사용중 여부',
+                                `uploaded_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                PRIMARY KEY (`user_profile_id`),
+                                FOREIGN KEY (`user_id`) REFERENCES `user`(`user_id`)
+);
+
+CREATE TABLE `friend` (
+                          `friend_id` BIGINT NOT NULL AUTO_INCREMENT,
+                          `user_id` BIGINT NOT NULL COMMENT '친구를 등록한 사용자 ID',
+                          `friend_user_id` BIGINT NOT NULL COMMENT '등록된 친구의 사용자 ID',
+                          `is_blocked` BOOLEAN NOT NULL DEFAULT FALSE COMMENT '차단 여부',
+                          `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                          PRIMARY KEY (`friend_id`),
+                          UNIQUE KEY `UK_user_friend` (`user_id`, `friend_user_id`),
+                          FOREIGN KEY (`user_id`) REFERENCES `user`(`user_id`),
+                          FOREIGN KEY (`friend_user_id`) REFERENCES `user`(`user_id`)
+);

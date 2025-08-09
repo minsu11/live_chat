@@ -4,6 +4,7 @@ import com.chat_server.error.enumulation.ErrorCode;
 import com.chat_server.security.provider.JwtTokenProvider;
 import com.chat_server.user.dto.response.AuthenticatedUser;
 import com.chat_server.user.service.AuthorizationService;
+import com.chat_server.util.CookieUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -33,7 +34,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
         log.debug("http 인가 처리");
-        String token = extractTokenFromCookie(request);
+
+        String token = CookieUtil.getCookie(request,"accessToken");
 
         if (token != null && jwtTokenProvider.validateToken(token)) {
             String userId = jwtTokenProvider.getUserId(token);
@@ -52,16 +54,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private String extractTokenFromCookie(HttpServletRequest request) {
-        if (request.getCookies() == null) {
-            return null;
-        }
-        return Arrays.stream(request.getCookies())
-                .filter(c -> "access_token".equals(c.getName()))
-                .map(Cookie::getValue)
-                .findFirst()
-                .orElse(null);
-    }
 
     private void setAuthenticationIfRequired(AuthenticatedUser authenticatedUser,
                                              List<SimpleGrantedAuthority> authorities) {

@@ -3,6 +3,8 @@ package com.chat_server.user.repository;
 import com.chat_server.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Optional;
+
 /**
  * packageName    : com.chat_server.user.repository
  * fileName       : UserRepository
@@ -16,4 +18,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
  */
 public interface UserRepository extends JpaRepository<User, Long>, UserRepositoryCustom {
     boolean existsByUserInputId(String inputId);
+    Optional<User> findByUserInputId(String inputId);
 }
