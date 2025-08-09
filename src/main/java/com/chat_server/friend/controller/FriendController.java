@@ -17,7 +17,7 @@ public class FriendController {
     private final FriendService friendService;
 
     @PostMapping()
-    public void getFriendList(@AuthenticationPrincipal ){
+    public void getFriendList(@AuthenticationPrincipal(expression = "userId") Long userId){
 
     }
 
