@@ -4,7 +4,7 @@ package com.chat_server.friend.repository.impl;
 import com.chat_server.common.cursor.CursorKey;
 import com.chat_server.friend.dto.response.UserFriendResponse;
 import com.chat_server.friend.entity.QFriend;
-import com.chat_server.friend.repository.CustomFriendRepository;
+import com.chat_server.friend.repository.FriendRepositoryCustom;
 import com.chat_server.user.entity.QUser;
 import com.chat_server.userprofile.enrtity.QUserProfile; // ← 패키지명/오타 확인!
 import com.querydsl.core.BooleanBuilder;
@@ -15,17 +15,16 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 @Slf4j
-@Repository
-public class CustomFriendRepositoryImpl extends QuerydslRepositorySupport implements CustomFriendRepository {
+public class FriendRepositoryCustomImpl extends QuerydslRepositorySupport implements
+    FriendRepositoryCustom {
     private QFriend qFriend = QFriend.friend1;
     private QUserProfile qUserProfile = QUserProfile.userProfile;
     private QUser qUser = QUser.user;
 
-    public CustomFriendRepositoryImpl() {
+    public FriendRepositoryCustomImpl() {
         super(QFriend.class);
     }
 
@@ -35,11 +34,11 @@ public class CustomFriendRepositoryImpl extends QuerydslRepositorySupport implem
      * - 커서: (lastLowerName, lastId)  ← 예: (bob, 4)  → 즉, Bob(4) '다음부터'
      */
     @Override
-    public Slice<UserFriendResponse> findFriendsWithProfileByCursor(
+    public Slice<UserFriendResponse> getFriendsWithProfileByCursor(
             Long userId, int limit, @Nullable CursorKey cursor) {
 
         // WHERE f.user_id = :me
-        var where = new BooleanBuilder().and(qFriend.user.id.eq(userId));
+        BooleanBuilder where = new BooleanBuilder().and(qFriend.user.id.eq(userId));
 
         // cursor가 있으면 “그 지점 다음부터” 조건 추가
         // (LOWER(name) > :lastLowerName) OR
@@ -69,8 +68,9 @@ public class CustomFriendRepositoryImpl extends QuerydslRepositorySupport implem
                 .fetch();
 
         boolean hasNext = rows.size() > limit;
-        if (hasNext) rows = rows.subList(0, limit);          // 응답은 정확히 limit개만
-
+        if (hasNext) {
+            rows = rows.subList(0, limit);          // 응답은 정확히 limit개만
+        }
         return new SliceImpl<>(rows, PageRequest.of(0, limit), hasNext);
     }
 }

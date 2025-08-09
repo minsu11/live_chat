@@ -1,5 +1,6 @@
 package com.chat_server.security.provider;
 
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ResourceUtils;
@@ -22,6 +23,7 @@ import java.util.Base64;
  * -----------------------------------------------------------
  * 25. 5. 25.        parkminsu       최초 생성
  */
+@Getter
 @Component
 public class RsaKeyProvider {
 
@@ -45,9 +47,6 @@ public class RsaKeyProvider {
         }
     }
 
-    public PublicKey getPublicKey() {
-        return publicKey;
-    }
 }
 
 

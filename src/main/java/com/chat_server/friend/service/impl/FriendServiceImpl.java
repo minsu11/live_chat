@@ -14,6 +14,7 @@ import com.chat_server.user.repository.UserRepository;
 import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,12 +37,12 @@ public class FriendServiceImpl implements FriendService {
     public CursorPageResponse<UserFriendResponse> getFriendsByCursor(Long userId, int limit, @Nullable String cursor) {
         if (limit <= 0 || limit > 200) limit = 50; // 가드레일
 
-        var decoded = CursorCodec.decode(cursor);
-        var slice = friendRepository.findFriendsWithProfileByCursor(userId, limit, decoded);
+        CursorKey decoded = CursorCodec.decode(cursor);
+        Slice<UserFriendResponse> slice = friendRepository.getFriendsWithProfileByCursor(userId, limit, decoded);
 
         String next = null;
         if (slice.hasNext() && !slice.getContent().isEmpty()) {
-            var last = slice.getContent().get(slice.getContent().size() - 1);
+            UserFriendResponse last = slice.getContent().get(slice.getContent().size() - 1);
 
             next = CursorCodec.encode(last.friendName().toLowerCase(Locale.ROOT), last.friendId());
         }

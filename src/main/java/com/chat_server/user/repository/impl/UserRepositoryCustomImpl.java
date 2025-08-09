@@ -1,9 +1,11 @@
 package com.chat_server.user.repository.impl;
 
+import com.chat_server.search.dto.response.SearchUserResponse;
 import com.chat_server.user.dto.response.AuthenticatedUser;
 import com.chat_server.user.dto.response.UserAuthenticationResponse;
 import com.chat_server.user.entity.QUser;
 import com.chat_server.user.repository.UserRepositoryCustom;
+import com.chat_server.userprofile.enrtity.QUserProfile;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Expressions;
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
@@ -24,6 +26,7 @@ import java.util.Optional;
 
 public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implements UserRepositoryCustom {
     private final QUser qUser = QUser.user;
+    private final QUserProfile qUserProfile= QUserProfile.userProfile;
 
     public UserRepositoryCustomImpl() {
         super(QUser.class);
@@ -66,4 +69,23 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
 
         );
     }
+
+    @Override
+    public Optional<SearchUserResponse> getSearchUserByUserId(String userId) {
+
+        return Optional.ofNullable(
+            from(qUser)
+                .select(Projections.constructor(
+                    SearchUserResponse.class,
+                    qUser.userName,
+                    qUserProfile.imageUrl
+                ))
+                .leftJoin(qUserProfile).on(qUserProfile.user.eq(qUser))
+                .where(qUser.userInputId.eq(userId)
+                    .and(qUser.userStatus.userStatusName.eq("활성")))
+                .fetchFirst()
+        );
+    }
+
+
 }
