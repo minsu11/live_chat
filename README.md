@@ -9,7 +9,8 @@
 # 부가 서버
 
 - front 서버 링크: https://github.com/minsu11/live_chat_front
-- auth 서버 링크: 
+- auth 서버 링크: https://github.com/minsu11/live_chat_auth
+
 
 # 기능
 
