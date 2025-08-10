@@ -19,9 +19,10 @@ public class SearchServiceImpl implements SearchService {
     private final UserRepository userRepository;
 
 
+    //todo null로 해야하는지 추후 고민
     @Override
     public SearchUserResponse searchUserByUserId(SearchUserRequest request) {
          return userRepository.getSearchUserByUserId(request.userId())
-            .orElseThrow(UserNotFoundException::new);
+            .orElse(null);
     }
 }

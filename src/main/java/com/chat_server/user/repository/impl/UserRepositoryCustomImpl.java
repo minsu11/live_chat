@@ -55,19 +55,17 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
     @Override
     public Optional<AuthenticatedUser> authorizeUserByUserId(String userId, String roleName) {
 
-        return Optional.ofNullable(
+        Long id  =
                 from(qUser)
                         .select(
-                                Projections.constructor(
-                                        AuthenticatedUser.class,
-                                        qUser.id,
-                                        Expressions.constant(roleName)
-                                )
-                        ).fetchOne()
+                                qUser.id
+                        ).fetchOne();
 
+        if (id == null) {
+            return Optional.empty();
+        }
+        return Optional.of(new AuthenticatedUser(id,"유저"));
 
-
-        );
     }
 
     @Override
@@ -77,6 +75,7 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
             from(qUser)
                 .select(Projections.constructor(
                     SearchUserResponse.class,
+                    qUser.userUuid,
                     qUser.userName,
                     qUserProfile.imageUrl
                 ))

@@ -1,5 +1,6 @@
 package com.chat_server.chatmessage.entity;
 
+import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.user.entity.User;
 import jakarta.persistence.*;
 
@@ -31,6 +32,9 @@ public class ChatMessage {
     @Column(name="is_deleted")
     private Boolean isDeleted;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "chat_room_id")
+    private ChatRoom chatRoom;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="sender_id")

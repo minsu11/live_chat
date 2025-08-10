@@ -35,18 +35,28 @@ public class FriendServiceImpl implements FriendService {
     @Override
     @Transactional(readOnly = true)
     public CursorPageResponse<UserFriendResponse> getFriendsByCursor(Long userId, int limit, @Nullable String cursor) {
-        if (limit <= 0 || limit > 200) limit = 50; // 가드레일
+        log.info("friend service start");
+        if (limit <= 0 || limit > 200) {
+            log.info("limit 가드레일");
+            limit = 50;
+        }// 가드레일
 
+        log.info("decoded before");
         CursorKey decoded = CursorCodec.decode(cursor);
+        log.info("decoded after");
+        log.info("repository before");
         Slice<UserFriendResponse> slice = friendRepository.getFriendsWithProfileByCursor(userId, limit, decoded);
-
+        log.info("repository after");
         String next = null;
+        log.info("next null ");
         if (slice.hasNext() && !slice.getContent().isEmpty()) {
+            log.info("slice ");
             UserFriendResponse last = slice.getContent().get(slice.getContent().size() - 1);
 
             next = CursorCodec.encode(last.friendName().toLowerCase(Locale.ROOT), last.friendId());
         }
 
+        log.info("return ");
         return new CursorPageResponse<>(slice.getContent(), next, slice.hasNext());
     }
 

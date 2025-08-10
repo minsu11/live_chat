@@ -20,14 +20,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class SearchController {
     private final SearchService searchService;
 
-    @PostMapping("/user/search")
+    // 아이디로 검색하기 떄문에 post 요청
+    @PostMapping("/search/users")
     public ResponseEntity<ApiResponse<SearchUserResponse>> searchUser(
         @RequestBody SearchUserRequest request
     ){
+        log.info("search controller");
+        log.info("id : {}", request.userId());
         SearchUserResponse searchUserResponse = searchService.searchUserByUserId(request);
 
         ApiResponse<SearchUserResponse> response = ApiResponse.success(200, "검색에 성공했습니다.",searchUserResponse);
-
+        log.info("response : {}", response.getData());
         return ResponseEntity.ok(response);
     }
 

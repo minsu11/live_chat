@@ -4,6 +4,7 @@ import com.chat_server.chatauthor.entity.ChatAuthor;
 import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.user.entity.User;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -32,16 +33,34 @@ public class ChatList {
     @Column(name = "chat_list_id")
     private Long id;
 
+    @Column(name = "unread_count")
+    private int unreadCount = 0;
+
+    @Column(name = "pinned")
+    private boolean pinned = false;
+
+    @Column(name = "muted")
+    private boolean muted = false;
+
+    @Column(name = "archived")
+    private boolean archived = false;
+
+    @Column(name = "last_read_message_id")
+    private Long lastReadMessageId;
+
+    @Column(name = "last_opened_at")
+    private LocalDateTime lastOpenedAt;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id")
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "chat_room_id", nullable = false)
+    @JoinColumn(name = "chat_room_id")
     private ChatRoom chatRoom;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="chat_author_id", nullable = false)
+    @JoinColumn(name="chat_author_id")
     private ChatAuthor chatAuthor;
 }
 

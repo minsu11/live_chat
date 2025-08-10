@@ -30,9 +30,10 @@ public class FriendController {
             @RequestParam(defaultValue = "50") int limit,
             @RequestParam(required = false) @Nullable String cursor
     ) {
-
+        log.info("friend controller start");
         CursorPageResponse<UserFriendResponse> cursorPageResponse =friendService.getFriendsByCursor(userId, limit, cursor);
         ApiResponse<CursorPageResponse<UserFriendResponse>> response = ApiResponse.success(200,"친구 목록을 반환합니다.", cursorPageResponse);
+
         return ResponseEntity.ok(response);
     }
 
