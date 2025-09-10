@@ -29,7 +29,7 @@ public class RsaKeyProvider {
 
     private final PublicKey publicKey;
 
-    public RsaKeyProvider(@Value("${jwt.public-key-path}") String pemPath) {
+    public RsaKeyProvider(@Value("${auth.key.public-key-path}") String pemPath) {
         this.publicKey = loadPublicKey(pemPath);
     }
 

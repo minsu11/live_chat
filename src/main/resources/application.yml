@@ -55,6 +55,5 @@ custom:
 auth:
   api:
     address: /api/v1/auth
-
-jwt:
-  public-key-path: classpath:rsa/login_public_key.pem
+  key:
+    public-key-path: classpath:rsa/login_public_key.pem
