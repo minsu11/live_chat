@@ -3,3 +3,9 @@ auth:
     url: localhost:9090
   key:
     public-path: classpath:rsa/login_public_key.pem
+spring:
+  data:
+    redis:
+      port: 6379
+      host: localhost
+      password: chocorosa@12
