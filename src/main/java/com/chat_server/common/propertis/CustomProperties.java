@@ -46,7 +46,12 @@ public class CustomProperties {
     @Getter
     @Setter
     public static class Api {
-        private String prefix;
+        @Getter
+        @Setter
+        public static class User{
+            private String prefix;
+
+        }
     }
 }
 
