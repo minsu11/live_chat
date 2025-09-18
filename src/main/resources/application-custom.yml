@@ -7,5 +7,6 @@ custom:
       TOKEN_EXPIRED: "Access Token이 만료되었습니다."
       INVALID_TOKEN: "유효하지 않은 토큰입니다."
       NO_PERMISSION: "접근 권한이 없습니다."
+      NOT_DEFINE: "정의되지 않은 오류 입니다."
   api:
     prefix: "/api/v1"

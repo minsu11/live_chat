@@ -1,7 +1,7 @@
 package com.chat_server.security.handler;
 
+import com.chat_server.common.propertis.CustomProperties;
 import com.chat_server.error.enumulation.ErrorCode;
-import com.chat_server.error.properties.ErrorMessageProperties;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -16,13 +16,13 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
-    private final ErrorMessageProperties errorMessageProperties;
+    private final CustomProperties customProperties;
 
 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException {
         ErrorCode errorCode = (ErrorCode) request.getAttribute("exception");
-        String message = errorMessageProperties.getMessages(errorCode);
+        String message = customProperties.getError().getMessages(errorCode);
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json;charset=UTF-8");
         response.getWriter().write("{\"error\": \"" + errorCode + "\", \"message\": \"" + message + "\"}");
