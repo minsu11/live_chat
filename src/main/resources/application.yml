@@ -55,3 +55,4 @@ custom:
 auth:
   api:
     address: /api/v1/auth
+
