@@ -9,4 +9,4 @@ custom:
       NO_PERMISSION: "접근 권한이 없습니다."
       NOT_DEFINE: "정의되지 않은 오류 입니다."
   api:
-    prefix: "/api/v1"
+    user-prefix: "/api/v1/users"
