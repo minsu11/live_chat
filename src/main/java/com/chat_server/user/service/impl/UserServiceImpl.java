@@ -58,9 +58,11 @@ public class UserServiceImpl implements UserService {
 
         Gender gender = genderRepository.findByGenderName(registerRequest.gender())
                 .orElseThrow(() -> new GenderNotFoundException("gender not found"));
+        String password = passwordEncoder.encode(registerRequest.password());
+
         User user = User.builder()
                 .userInputId(registerRequest.id())
-                .userInputPassword(registerRequest.password())
+                .userInputPassword(password)
                 .userAge(registerRequest.age())
                 .userName(registerRequest.name())
                 .userNickname(registerRequest.nickName())
