@@ -28,10 +28,12 @@ spring:
 
 logging:
   level:
-    root: info
+    root: debug
     com.chat_server: debug
-    org.springframework: info
-    org.springframework.web.filter: info
+    org.springframework: debug
+    org.springframework.web.filter: debug
+    org.springframework.web: debug
+    org.springframework.security: debug
     org.hibernate.SQL: info
     # SQL 로그 보기 (선택)
     io.netty: info
