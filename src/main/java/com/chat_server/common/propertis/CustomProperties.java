@@ -38,7 +38,7 @@ public class CustomProperties {
         private Map<String, String> messages;
 
         public String getMessages(ErrorCode errorCode){
-            log.error(errorCode.toString());
+
             if(messages == null){
                 return "error code 없음";
             }
