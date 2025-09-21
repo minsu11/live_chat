@@ -89,7 +89,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration c = new CorsConfiguration();
-        c.setAllowedOrigins(List.of("http://localhost:8080","https://chatalk.store", "https://www.chatalk.store")); // 프론트 포트
+        c.setAllowedOriginPatterns(List.of("http://localhost:8080","https://chatalk.store", "https://www.chatalk.store")); // 프론트 포트
         c.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
         c.setAllowedHeaders(List.of("*"));
         c.setAllowCredentials(true); // ★ 쿠키 허용
