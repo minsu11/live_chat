@@ -61,9 +61,10 @@ public class UserLoginController {
         Duration duration = Duration.between(ZonedDateTime.now(ZoneOffset.UTC), expiration);
 
         // 쿠키 생성
+        // todo domain 연결 시 다시 true로
         ResponseCookie cookie = ResponseCookie.from("accessToken", loginResponse.getData().accessToken())
-                .httpOnly(true)
-                .secure(true)
+                .httpOnly(false)
+                .secure(false)
                 .path("/")
                 .sameSite("Strict")
                 .maxAge(duration)
