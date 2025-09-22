@@ -30,7 +30,7 @@ public class SearchController {
         log.info("search controller");
         log.info("id : {}", request.userId());
         List<SearchUserResponse> searchUserResponse = searchService.searchUserByUserId(request);
-
+        log.info("search response: {}", searchUserResponse);
         ApiResponse<List<SearchUserResponse>> response = ApiResponse.success(200, "검색에 성공했습니다.",searchUserResponse);
         log.info("response : {}", response.getData());
         return ResponseEntity.ok(response);

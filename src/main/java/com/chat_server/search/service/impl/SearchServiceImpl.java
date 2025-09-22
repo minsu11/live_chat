@@ -21,12 +21,10 @@ public class SearchServiceImpl implements SearchService {
     // todo 추 후 정책이 생기면 별도로 User에 차단, 비활성 등등의 공통 서비스 만들어야함
     private final UserRepository userRepository;
 
-
-    //todo null로 해야하는지 추후 고민
+    // null이 아닌 빈 리스트 반환
     @Override
     @Transactional(readOnly = true)
     public List<SearchUserResponse> searchUserByUserId(SearchUserRequest request) {
-         return userRepository.getSearchUserByUserId(request.userId())
-            .orElse(Collections.emptyList());
+         return userRepository.getSearchUserByUserId(request.userId());
     }
 }
