@@ -25,6 +25,8 @@ spring:
   web:
     resources:
       add-mappings: false
+  jackson:
+    time-zone: Asia/Seoul
 
 logging:
   level:
@@ -57,4 +59,5 @@ custom:
 auth:
   api:
     address: /api/v1/auth
+
 
