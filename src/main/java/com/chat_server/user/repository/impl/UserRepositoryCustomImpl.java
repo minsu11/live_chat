@@ -10,6 +10,7 @@ import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Expressions;
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -69,9 +70,9 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
     }
 
     @Override
-    public Optional<SearchUserResponse> getSearchUserByUserId(String userId) {
+    public List<SearchUserResponse> getSearchUserByUserId(String userId) {
 
-        return Optional.ofNullable(
+        return
             from(qUser)
                 .select(Projections.constructor(
                     SearchUserResponse.class,
@@ -82,8 +83,7 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
                 .leftJoin(qUserProfile).on(qUserProfile.user.eq(qUser))
                 .where(qUser.userInputId.eq(userId)
                     .and(qUser.userStatus.userStatusName.eq("활성")))
-                .fetchFirst()
-        );
+                .fetch();
     }
 
 

@@ -10,6 +10,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
+import java.util.List;
+
 @Slf4j
 @Service
 @Transactional
@@ -21,8 +24,9 @@ public class SearchServiceImpl implements SearchService {
 
     //todo null로 해야하는지 추후 고민
     @Override
-    public SearchUserResponse searchUserByUserId(SearchUserRequest request) {
+    @Transactional(readOnly = true)
+    public List<SearchUserResponse> searchUserByUserId(SearchUserRequest request) {
          return userRepository.getSearchUserByUserId(request.userId())
-            .orElse(null);
+            .orElse(Collections.emptyList());
     }
 }
