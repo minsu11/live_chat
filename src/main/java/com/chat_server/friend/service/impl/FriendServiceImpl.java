@@ -34,7 +34,7 @@ public class FriendServiceImpl implements FriendService {
     // 없으면 빈 리스트를 가지고 옴
     @Override
     @Transactional(readOnly = true)
-    public CursorPageResponse<UserFriendResponse> getFriendsByCursor(String userId, int limit, @Nullable String cursor) {
+    public CursorPageResponse<UserFriendResponse> getFriendsByCursor(Long userId, int limit, @Nullable String cursor) {
         log.info("friend service start");
         if (limit <= 0 || limit > 200) {
             log.info("limit 가드레일");
@@ -61,13 +61,13 @@ public class FriendServiceImpl implements FriendService {
     }
 
     @Override
-    public void saveFriend(UserFriendRegisterRequest registerRequest, String userId) {
+    public void saveFriend(UserFriendRegisterRequest registerRequest, Long userId) {
 
         String friendId = registerRequest.friendId();
         log.info("friend id: {}", friendId);
         log.info("friend id: {}", userId);
 
-        User user = userRepository.findByUserUuid(userId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
 
         User friend = userRepository.findByUserInputId(friendId)

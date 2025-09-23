@@ -40,7 +40,7 @@ public class FriendController {
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<Object>> register(
-            @AuthenticationPrincipal(expression = "userId") String userId,
+            @AuthenticationPrincipal Long userId,
             @RequestBody UserFriendRegisterRequest registerRequest
     ){
         // 친구 저장하는 로직

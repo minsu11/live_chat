@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface FriendService {
 
-    CursorPageResponse<UserFriendResponse> getFriendsByCursor(String userId, int limit, @Nullable String cursor);
+    CursorPageResponse<UserFriendResponse> getFriendsByCursor(Long userId, int limit, @Nullable String cursor);
 
-    void saveFriend(UserFriendRegisterRequest registerRequest, String userId);
+    void saveFriend(UserFriendRegisterRequest registerRequest, Long userId);
 }
