@@ -8,4 +8,10 @@
 - [ ] ci cd
 - [ ] server 올리기
 - [ ] auth server principal refactoring
-- 
+
+
+
+# 기억 해야하는 부분
+
+- 토큰 안에 있는 데이터는 uuid
+- 인가 처리할 때 UserId 변수명으로 했지만, 실제 데이터는 User uuid
