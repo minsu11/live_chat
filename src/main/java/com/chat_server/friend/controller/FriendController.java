@@ -5,6 +5,7 @@ import com.chat_server.friend.dto.request.UserFriendRegisterRequest;
 import com.chat_server.friend.dto.response.CursorPageResponse;
 import com.chat_server.friend.dto.response.UserFriendResponse;
 import com.chat_server.friend.service.FriendService;
+import com.chat_server.user.dto.response.AuthenticatedUser;
 import jakarta.annotation.Nullable;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,13 +27,13 @@ public class FriendController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<CursorPageResponse<UserFriendResponse>>> getFriends(
-            @AuthenticationPrincipal(expression = "userId") Long userId,                         // 실제로는 인증정보에서 추출 권장
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,                         // 실제로는 인증정보에서 추출 권장
             @RequestParam(defaultValue = "50") int limit,
             @RequestParam(required = false) @Nullable String cursor
     ) {
         log.info("friend controller start");
 
-        CursorPageResponse<UserFriendResponse> cursorPageResponse =friendService.getFriendsByCursor(userId, limit, cursor);
+        CursorPageResponse<UserFriendResponse> cursorPageResponse =friendService.getFriendsByCursor(authenticatedUser.userId(), limit, cursor);
         ApiResponse<CursorPageResponse<UserFriendResponse>> response = ApiResponse.success(200,"친구 목록을 반환합니다.", cursorPageResponse);
 
         return ResponseEntity.ok(response);
@@ -40,13 +41,13 @@ public class FriendController {
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<Object>> register(
-            @AuthenticationPrincipal Long userId,
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @RequestBody UserFriendRegisterRequest registerRequest
     ){
         // 친구 저장하는 로직
         log.info("friend controller start");
-        log.info("user id: {}", userId);
-        friendService.saveFriend(registerRequest, userId);
+        log.info("user id: {}", authenticatedUser.userId());
+        friendService.saveFriend(registerRequest, authenticatedUser.userId());
 
         ApiResponse<Object> response = ApiResponse.success(201,"저장에 성공했습니다.");
         return ResponseEntity.status(201).body(response);
