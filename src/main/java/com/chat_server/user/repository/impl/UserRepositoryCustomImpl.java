@@ -56,11 +56,14 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
     @Override
     public Optional<AuthenticatedUser> authorizeUserByUserId(String userId, String roleName) {
 
+        // todo 활성이라는 데이터를 하드 코딩 하는 게 아니라 yml 파일 등 따로 변수로 관리
         Long id  =
                 from(qUser)
                         .select(
                                 qUser.id
-                        ).fetchOne();
+                        )
+                        .where(qUser.userUuid.eq(userId).and(qUser.userStatus.userStatusName.eq("활성")))
+                        .fetchOne();
 
         if (id == null) {
             return Optional.empty();
