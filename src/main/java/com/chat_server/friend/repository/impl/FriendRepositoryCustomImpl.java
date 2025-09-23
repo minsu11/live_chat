@@ -35,10 +35,10 @@ public class FriendRepositoryCustomImpl extends QuerydslRepositorySupport implem
      */
     @Override
     public Slice<UserFriendResponse> getFriendsWithProfileByCursor(
-            Long userId, int limit, @Nullable CursorKey cursor) {
+            String userId, int limit, @Nullable CursorKey cursor) {
 
         // WHERE f.user_id = :me
-        BooleanBuilder where = new BooleanBuilder().and(qFriend.user.id.eq(userId));
+        BooleanBuilder where = new BooleanBuilder().and(qFriend.user.userUuid.eq(userId));
 
         // cursor가 있으면 “그 지점 다음부터” 조건 추가
         // (LOWER(name) > :lastLowerName) OR

@@ -12,7 +12,7 @@ public interface FriendRepositoryCustom {
      * @param limit  페이지 크기
      * @param cursor 커서(마지막 항목의 정렬키) - null이면 첫 페이지
      */
-    Slice<UserFriendResponse> getFriendsWithProfileByCursor(Long userId, int limit, @Nullable CursorKey cursor);
+    Slice<UserFriendResponse> getFriendsWithProfileByCursor(String userId, int limit, @Nullable CursorKey cursor);
 
 
 

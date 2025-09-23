@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/friend")
+@RequestMapping("/api/v1/friends")
 @RequiredArgsConstructor
 public class FriendController {
 
@@ -26,11 +26,12 @@ public class FriendController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<CursorPageResponse<UserFriendResponse>>> getFriends(
-            @AuthenticationPrincipal(expression = "userId") Long userId,                         // 실제로는 인증정보에서 추출 권장
+            @AuthenticationPrincipal(expression = "userId") String userId,                         // 실제로는 인증정보에서 추출 권장
             @RequestParam(defaultValue = "50") int limit,
             @RequestParam(required = false) @Nullable String cursor
     ) {
         log.info("friend controller start");
+
         CursorPageResponse<UserFriendResponse> cursorPageResponse =friendService.getFriendsByCursor(userId, limit, cursor);
         ApiResponse<CursorPageResponse<UserFriendResponse>> response = ApiResponse.success(200,"친구 목록을 반환합니다.", cursorPageResponse);
 
@@ -39,10 +40,12 @@ public class FriendController {
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<Object>> register(
-            @AuthenticationPrincipal(expression = "userId") Long userId,
+            @AuthenticationPrincipal(expression = "userId") String userId,
             @RequestBody UserFriendRegisterRequest registerRequest
     ){
         // 친구 저장하는 로직
+        log.info("friend controller start");
+        log.info("user id: {}", userId);
         friendService.saveFriend(registerRequest, userId);
 
         ApiResponse<Object> response = ApiResponse.success(201,"저장에 성공했습니다.");
