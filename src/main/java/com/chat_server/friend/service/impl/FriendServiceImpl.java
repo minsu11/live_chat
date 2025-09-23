@@ -70,7 +70,9 @@ public class FriendServiceImpl implements FriendService {
         User user = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
 
-        User friend = userRepository.findByUserInputId(friendId)
+        // 친구의 uuid로 찾음
+        // todo 검색 방법에 대해서도 고민을 해봐야할듯
+        User friend = userRepository.findByUserUuid(friendId)
                 .orElseThrow(UserNotFoundException::new);
 
         Friend registerFriend = Friend.builder()
