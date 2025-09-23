@@ -26,7 +26,7 @@ public class FriendController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<CursorPageResponse<UserFriendResponse>>> getFriends(
-            @AuthenticationPrincipal(expression = "userId") String userId,                         // 실제로는 인증정보에서 추출 권장
+            @AuthenticationPrincipal(expression = "userId") Long userId,                         // 실제로는 인증정보에서 추출 권장
             @RequestParam(defaultValue = "50") int limit,
             @RequestParam(required = false) @Nullable String cursor
     ) {
