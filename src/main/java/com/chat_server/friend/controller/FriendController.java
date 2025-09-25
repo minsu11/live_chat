@@ -16,22 +16,21 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/friends")
+@RequestMapping("${custom.api.friend.prefix}")
 @RequiredArgsConstructor
 public class FriendController {
 
     private final FriendService friendService;
 
-
     // 친구 목록 불러오기
-
     @GetMapping
     public ResponseEntity<ApiResponse<CursorPageResponse<UserFriendResponse>>> getFriends(
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser,                         // 실제로는 인증정보에서 추출 권장
-            @RequestParam(defaultValue = "50") int limit,
+            @RequestParam(defaultValue = "2") int limit,
             @RequestParam(required = false) @Nullable String cursor
     ) {
         log.info("friend controller start");
+        log.info("cursor: {}", cursor);
 
         CursorPageResponse<UserFriendResponse> cursorPageResponse =friendService.getFriendsByCursor(authenticatedUser.userId(), limit, cursor);
         ApiResponse<CursorPageResponse<UserFriendResponse>> response = ApiResponse.success(200,"친구 목록을 반환합니다.", cursorPageResponse);

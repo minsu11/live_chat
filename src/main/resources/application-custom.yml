@@ -11,3 +11,5 @@ custom:
   api:
     user:
       prefix: "/api/v1/users"
+    friend:
+      prefix: "/api/v1/friends"

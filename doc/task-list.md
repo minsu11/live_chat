@@ -15,3 +15,4 @@
 
 - 토큰 안에 있는 데이터는 uuid
 - 인가 처리할 때 UserId 변수명으로 했지만, 실제 데이터는 User uuid
+- user id 반환하는 부분은 무조건 uuid 응답하기(Long userId 하는 경우 종종 생김)
