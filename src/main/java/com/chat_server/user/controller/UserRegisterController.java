@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @Slf4j
 @RestController
-@RequestMapping("${custom.api.user.prefix}")
+@RequestMapping("${custom.api.common.prefix}${custom.api.user.prefix}")
 @RequiredArgsConstructor
 public class UserRegisterController {
     private final UserService userService;

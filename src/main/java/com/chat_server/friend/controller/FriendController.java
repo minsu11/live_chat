@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("${custom.api.friend.prefix}")
+@RequestMapping("${custom.api.common.prefix}${custom.api.friend.prefix}")
 @RequiredArgsConstructor
 public class FriendController {
 

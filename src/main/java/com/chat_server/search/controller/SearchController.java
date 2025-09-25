@@ -18,12 +18,12 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1")
+@RequestMapping("${custom.api.common.prefix}${custom.api.search.prefix}")
 public class SearchController {
     private final SearchService searchService;
 
     // 아이디로 검색하기 떄문에 post 요청
-    @PostMapping("/search/users")
+    @PostMapping("/users")
     public ResponseEntity<ApiResponse<List<SearchUserResponse>>> searchUser(
         @RequestBody SearchUserRequest request
     ){

@@ -9,7 +9,14 @@ custom:
       NO_PERMISSION: "접근 권한이 없습니다."
       NOT_DEFINE: "정의되지 않은 오류 입니다."
   api:
+    common:
+      prefix: "/api/v1"
     user:
-      prefix: "/api/v1/users"
+      prefix: "/users"
+      profile:
+        prefix: "/user-profiles"
     friend:
-      prefix: "/api/v1/friends"
+      prefix: "/friends"
+    search:
+      prefix: "/search"
+

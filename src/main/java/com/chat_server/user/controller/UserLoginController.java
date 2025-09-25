@@ -33,7 +33,7 @@ import java.util.Objects;
  */
 @Slf4j
 @RestController
-@RequestMapping("${custom.api.user.prefix}")
+@RequestMapping("${custom.api.common.prefix}${custom.api.user.prefix}")
 
 @RequiredArgsConstructor
 public class UserLoginController {
