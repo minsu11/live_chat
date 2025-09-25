@@ -34,8 +34,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final AntPathMatcher pm = new AntPathMatcher();
     private static final String[] SKIP = {
-        "/ws/**", "/ws-chat/**", "/ws-chat/info**",
-        "/sockjs/**", "/webjars/**", "/favicon.ico"
+        "/api/ws/**", "/api/ws-chat/**", "/api/ws-chat/info**",
+        "/api/sockjs/**", "/api/webjars/**", "/api/favicon.ico", "/api/v1/users/login"
     };
 
     @Override
@@ -52,7 +52,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
         log.info("http 인가 처리");
+        log.info("api 경로: {}", request.getRequestURI());
         if(shouldNotFilter(request)){
+            log.info("스킵 api 경로");
             filterChain.doFilter(request, response);
         }
 

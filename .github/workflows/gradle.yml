@@ -2,7 +2,7 @@ name: Auth Server CI/CD
 
 on:
   push:
-    branches: [ "main" ,"dev"]  # main push 시 배포
+    branches: [ "main" ,"dev", "feature/chat_api"]  # main push 시 배포
 
 jobs:
   build-and-deploy:

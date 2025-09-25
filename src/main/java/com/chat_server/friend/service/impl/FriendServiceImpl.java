@@ -47,13 +47,14 @@ public class FriendServiceImpl implements FriendService {
         log.info("repository before");
         Slice<UserFriendResponse> slice = friendRepository.getFriendsWithProfileByCursor(userId, limit, decoded);
         log.info("repository after");
+        // next 선언
         String next = null;
         log.info("next null ");
         if (slice.hasNext() && !slice.getContent().isEmpty()) {
             log.info("slice ");
             UserFriendResponse last = slice.getContent().get(slice.getContent().size() - 1);
-
-            next = CursorCodec.encode(last.friendName().toLowerCase(Locale.ROOT), last.friendId());
+            next = CursorCodec.encode(last.name().toLowerCase(Locale.ROOT), last.id());
+            log.info("next: {}",next);
         }
 
         log.info("return ");
@@ -64,10 +65,15 @@ public class FriendServiceImpl implements FriendService {
     public void saveFriend(UserFriendRegisterRequest registerRequest, Long userId) {
 
         String friendId = registerRequest.friendId();
+        log.info("friend id: {}", friendId);
+        log.info("friend id: {}", userId);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
-        User friend = userRepository.findByUserInputId(friendId)
+
+        // 친구의 uuid로 찾음
+        // todo 검색 방법에 대해서도 고민을 해봐야할듯
+        User friend = userRepository.findByUserUuid(friendId)
                 .orElseThrow(UserNotFoundException::new);
 
         Friend registerFriend = Friend.builder()

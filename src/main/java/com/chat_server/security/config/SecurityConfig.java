@@ -46,7 +46,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
-                .cors(Customizer.withDefaults())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests
                         (
@@ -55,8 +55,8 @@ public class SecurityConfig {
                                             "/api/v1/users/login",
                                             "/api/v1/users/register",
                                             // SockJS/WS 관련 - 전부 허용 (별도 STOMP 인증에서 처리)
-                                            "/ws/**",
-                                            "/ws-chat/**",
+                                            "/api/ws/**",
+                                            "/api/ws-chat/**",
                                             "/actuator/health"
                                                 ).permitAll().anyRequest().authenticated()
 
@@ -87,9 +87,9 @@ public class SecurityConfig {
     }
 
     @Bean
-    CorsConfigurationSource corsConfigurationSource() {
+    public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration c = new CorsConfiguration();
-        c.setAllowedOrigins(List.of("http://localhost:8080")); // 프론트 포트
+        c.setAllowedOriginPatterns(List.of("http://localhost:8080","https://chatalk.store", "https://www.chatalk.store")); // 프론트 포트
         c.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
         c.setAllowedHeaders(List.of("*"));
         c.setAllowCredentials(true); // ★ 쿠키 허용

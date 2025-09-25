@@ -10,6 +10,7 @@ import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Expressions;
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -55,11 +56,14 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
     @Override
     public Optional<AuthenticatedUser> authorizeUserByUserId(String userId, String roleName) {
 
+        // todo 활성이라는 데이터를 하드 코딩 하는 게 아니라 yml 파일 등 따로 변수로 관리
         Long id  =
                 from(qUser)
                         .select(
                                 qUser.id
-                        ).fetchOne();
+                        )
+                        .where(qUser.userUuid.eq(userId).and(qUser.userStatus.userStatusName.eq("활성")))
+                        .fetchOne();
 
         if (id == null) {
             return Optional.empty();
@@ -69,9 +73,9 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
     }
 
     @Override
-    public Optional<SearchUserResponse> getSearchUserByUserId(String userId) {
+    public List<SearchUserResponse> getSearchUserByUserId(String userId) {
 
-        return Optional.ofNullable(
+        return
             from(qUser)
                 .select(Projections.constructor(
                     SearchUserResponse.class,
@@ -82,8 +86,7 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
                 .leftJoin(qUserProfile).on(qUserProfile.user.eq(qUser))
                 .where(qUser.userInputId.eq(userId)
                     .and(qUser.userStatus.userStatusName.eq("활성")))
-                .fetchFirst()
-        );
+                .fetch();
     }
 
 

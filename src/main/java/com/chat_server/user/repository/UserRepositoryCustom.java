@@ -4,6 +4,7 @@ import com.chat_server.search.dto.response.SearchUserResponse;
 import com.chat_server.user.dto.response.AuthenticatedUser;
 import com.chat_server.user.dto.response.UserAuthenticationResponse;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -20,7 +21,7 @@ import java.util.Optional;
 public interface UserRepositoryCustom {
     Optional<UserAuthenticationResponse> getUserByUserId(String userId);
     Optional<AuthenticatedUser> authorizeUserByUserId(String userId, String roleName);
-    Optional<SearchUserResponse> getSearchUserByUserId(String userId);
+    List<SearchUserResponse> getSearchUserByUserId(String userId);
 
 }
 

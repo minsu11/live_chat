@@ -1,7 +1,7 @@
 package com.chat_server.user.controller;
 
 import com.chat_server.common.dto.response.ApiResponse;
-import com.chat_server.common.propertis.AuthHeaderProperties;
+import com.chat_server.common.propertis.CustomProperties;
 import com.chat_server.user.dto.request.LoginRequest;
 import com.chat_server.user.dto.response.LoginTokenResponse;
 import com.chat_server.user.service.UserLoginService;
@@ -33,12 +33,13 @@ import java.util.Objects;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/users")
+@RequestMapping("${custom.api.user.prefix}")
+
 @RequiredArgsConstructor
 public class UserLoginController {
 
     private final UserLoginService userLoginService;
-    private final AuthHeaderProperties authHeaderProperties;
+    private final CustomProperties customProperties;
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginTokenResponse>> login(@RequestBody LoginRequest user,
@@ -47,7 +48,7 @@ public class UserLoginController {
 
         ResponseEntity<ApiResponse<LoginTokenResponse>> loginResponseEntity = userLoginService.login(user);
         ApiResponse<LoginTokenResponse> loginResponse = loginResponseEntity.getBody();
-        String tokenExpireHeaderName = authHeaderProperties.getTokenExpiration();
+        String tokenExpireHeaderName = customProperties.getAuth().getHeader().getTokenExpiration();
         log.info("login controller end - response: {}", loginResponse);
         // 만료시간 헤더 값 파싱
         String expiresIn = loginResponseEntity.getHeaders().getFirst(tokenExpireHeaderName);
