@@ -1,5 +1,5 @@
 package com.chat_server.friend.dto.response;
 
 
-public record UserFriendResponse (Long friendId,String friendName, String friendProfile){
+public record UserFriendResponse (Long id,String name, String profile){
 }
