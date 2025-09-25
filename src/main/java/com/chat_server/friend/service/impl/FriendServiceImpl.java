@@ -54,6 +54,7 @@ public class FriendServiceImpl implements FriendService {
             UserFriendResponse last = slice.getContent().get(slice.getContent().size() - 1);
 
             next = CursorCodec.encode(last.name().toLowerCase(Locale.ROOT), last.id());
+            log.info("next: {}",next);
         }
 
         log.info("return ");
