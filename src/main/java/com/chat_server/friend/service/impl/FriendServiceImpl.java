@@ -47,12 +47,12 @@ public class FriendServiceImpl implements FriendService {
         log.info("repository before");
         Slice<UserFriendResponse> slice = friendRepository.getFriendsWithProfileByCursor(userId, limit, decoded);
         log.info("repository after");
+        // next 선언
         String next = null;
         log.info("next null ");
         if (slice.hasNext() && !slice.getContent().isEmpty()) {
             log.info("slice ");
             UserFriendResponse last = slice.getContent().get(slice.getContent().size() - 1);
-
             next = CursorCodec.encode(last.name().toLowerCase(Locale.ROOT), last.id());
             log.info("next: {}",next);
         }

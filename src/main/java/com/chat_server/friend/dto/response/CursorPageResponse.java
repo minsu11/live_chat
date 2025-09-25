@@ -4,5 +4,5 @@ import jakarta.annotation.Nullable;
 
 import java.util.List;
 
-public record CursorPageResponse<T>(List<T> items, @Nullable String nextCursor, boolean hasNext) {}
+public record CursorPageResponse<T>(List<T> items, @Nullable String next, boolean hasNext) {}
 
