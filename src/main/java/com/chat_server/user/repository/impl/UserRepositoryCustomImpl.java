@@ -6,6 +6,7 @@ import com.chat_server.user.dto.response.UserAuthenticationResponse;
 import com.chat_server.user.entity.QUser;
 import com.chat_server.user.repository.UserRepositoryCustom;
 import com.chat_server.userprofile.enrtity.QUserProfile;
+import com.chat_server.userprofile.url.entity.QUserProfileUrl;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Expressions;
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
@@ -28,7 +29,7 @@ import java.util.Optional;
 public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implements UserRepositoryCustom {
     private final QUser qUser = QUser.user;
     private final QUserProfile qUserProfile= QUserProfile.userProfile;
-
+    private final QUserProfileUrl qUserProfileUrl = QUserProfileUrl.userProfileUrl;
     public UserRepositoryCustomImpl() {
         super(QUser.class);
     }
@@ -81,9 +82,10 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
                     SearchUserResponse.class,
                     qUser.userUuid,
                     qUser.userName,
-                    qUserProfile.imageUrl
+                    qUserProfileUrl.imageUrl
                 ))
                 .leftJoin(qUserProfile).on(qUserProfile.user.eq(qUser))
+                .leftJoin(qUserProfileUrl).on(qUserProfileUrl.userProfile.eq(qUserProfile))
                 .where(qUser.userInputId.eq(userId)
                     .and(qUser.userStatus.userStatusName.eq("활성")))
                 .fetch();

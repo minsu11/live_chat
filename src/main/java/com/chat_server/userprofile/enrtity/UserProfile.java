@@ -17,16 +17,10 @@ public class UserProfile {
     @Column(name = "user_profile_id")
     private Long id;
 
-    @Column(name = "image_url")
-    private String imageUrl;
+    @Column(name = "user_profile_state_message")
+    private String stateMessage;
 
-    @Column(name = "is_current")
-    private Boolean isCurrent;
-
-    @Column(name = "uploaded_at")
-    private LocalDateTime uploadedAt;
-
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 }

@@ -7,6 +7,7 @@ import com.chat_server.friend.entity.QFriend;
 import com.chat_server.friend.repository.FriendRepositoryCustom;
 import com.chat_server.user.entity.QUser;
 import com.chat_server.userprofile.enrtity.QUserProfile; // ← 패키지명/오타 확인!
+import com.chat_server.userprofile.url.entity.QUserProfileUrl;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import jakarta.annotation.Nullable;
@@ -20,9 +21,10 @@ import java.util.List;
 @Slf4j
 public class FriendRepositoryCustomImpl extends QuerydslRepositorySupport implements
     FriendRepositoryCustom {
-    private QFriend qFriend = QFriend.friend1;
-    private QUserProfile qUserProfile = QUserProfile.userProfile;
-    private QUser qUser = QUser.user;
+    private final QFriend qFriend = QFriend.friend1;
+    private final QUserProfile qUserProfile = QUserProfile.userProfile;
+    private final QUser qUser = QUser.user;
+    private final QUserProfileUrl qUserProfileUrl = QUserProfileUrl.userProfileUrl;
 
     public FriendRepositoryCustomImpl() {
         super(QFriend.class);
@@ -58,12 +60,13 @@ public class FriendRepositoryCustomImpl extends QuerydslRepositorySupport implem
         List<UserFriendResponse> rows = from(qFriend)
                 .leftJoin(qFriend.friend, qUser)
                 .leftJoin(qUserProfile).on(qUserProfile.user.eq(qUser))
+                .leftJoin(qUserProfileUrl).on(qUserProfileUrl.userProfile.eq(qUserProfile))
                 .where(where)
                 .orderBy(qUser.userName.lower().asc(), qUser.id.asc())   // Alice(1) → Alice(3) → Bob(4) → Carol(7) ...
                 .limit(limit + 1)                                // 한 개 더 가져와서 다음 페이지 존재 여부 확인
                 .select(Projections.constructor(
                         UserFriendResponse.class,
-                        qUser.id, qUser.userName, qUserProfile.imageUrl
+                        qUser.id, qUser.userName, qUserProfileUrl.imageUrl
                 ))
                 .fetch();
 

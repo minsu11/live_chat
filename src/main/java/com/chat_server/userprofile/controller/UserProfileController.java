@@ -2,6 +2,7 @@ package com.chat_server.userprofile.controller;
 
 import com.chat_server.common.dto.response.ApiResponse;
 import com.chat_server.user.dto.response.AuthenticatedUser;
+import com.chat_server.userprofile.dto.response.UserMyProfileResponse;
 import com.chat_server.userprofile.enrtity.UserProfile;
 import com.chat_server.userprofile.service.UserProfileService;
 import lombok.RequiredArgsConstructor;
@@ -21,11 +22,16 @@ public class UserProfileController {
     private final UserProfileService userProfileService;
 
     @GetMapping()
-    public ResponseEntity<ApiResponse> getMyProfile(
+    public ResponseEntity<ApiResponse<UserMyProfileResponse>> getMyProfile(
         @AuthenticationPrincipal AuthenticatedUser authenticatedUser) {
 
         log.info("내 프로필 가지고 오기");
         log.info("user id: {}", authenticatedUser.userId());
+        Long userId = authenticatedUser.userId();
+        UserMyProfileResponse userMyProfileResponse = userProfileService.getMyProfile(userId);
 
+        ApiResponse<UserMyProfileResponse> response = ApiResponse.success(200,"본인 프로필을 불러왔습니다.", userMyProfileResponse);
+
+        return ResponseEntity.ok(response);
     }
 }
