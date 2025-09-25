@@ -1,0 +1,5 @@
+auth:
+  server:
+    url: localhost:9090
+  key:
+    public-path: classpath:rsa/login_public_key.pem

@@ -4,8 +4,10 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+    open-in-view: false
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
+    # 추 후에 환경 파일로 따로 빼야함
     username: root
     password: 1234
     url: jdbc:mysql://localhost:3306/chat_server?serverTimezone=UTC&characterEncoding=UTF-8
@@ -16,13 +18,46 @@ spring:
       test-on-borrow: true
       test-on-return: true
       test-on-create: true
+  profiles:
+    active: dev,custom
+  mvc:
+    static-path-pattern: /static/**
+  web:
+    resources:
+      add-mappings: false
+  jackson:
+    time-zone: Asia/Seoul
+
 logging:
   level:
-    root: info
+    root: debug
+    com.chat_server: debug
+    org.springframework: debug
+    org.springframework.web.filter: debug
+    org.springframework.web: debug
+    org.springframework.security: debug
+    org.hibernate.SQL: info
+    # SQL 로그 보기 (선택)
+    io.netty: info
+    reactor.netty: info
+    org.apache.http: info
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
 server:
   port: 7070
-redis:
-  host: localhost
-  port: 6379
-  timeout: 3000
+  tomcat:
+    uri-encoding: UTF-8
+custom:
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 3000
+    cache-timeout: 10
+
+
+# 추후 config 서버로 별도로 뺄 예정
+auth:
+  api:
+    address: /api/v1/auth
+
 

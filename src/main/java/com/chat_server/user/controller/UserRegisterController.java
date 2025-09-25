@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/users")
+@RequestMapping("${custom.api.user.prefix}")
 @RequiredArgsConstructor
 public class UserRegisterController {
     private final UserService userService;
@@ -39,6 +39,7 @@ public class UserRegisterController {
         }
 
         userService.signUp(registerRequest);
+        log.info("회원가입 처리 완료");
         return ResponseEntity.status(201).body(ApiResponse.success(201));
     }
 }
