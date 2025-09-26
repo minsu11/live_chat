@@ -13,8 +13,7 @@ custom:
       prefix: "/api/v1"
     user:
       prefix: "/users"
-      profile:
-        prefix: "/user-profiles"
+
     friend:
       prefix: "/friends"
     search:

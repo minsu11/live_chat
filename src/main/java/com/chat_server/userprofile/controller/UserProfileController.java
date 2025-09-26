@@ -16,12 +16,12 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("${custom.api.common.prefix}${custom.api.user.profile.prefix}")
+@RequestMapping("${custom.api.common.prefix}${custom.api.user.prefix}")
 public class UserProfileController {
 
     private final UserProfileService userProfileService;
 
-    @GetMapping()
+    @GetMapping("/me/profile/summary")
     public ResponseEntity<ApiResponse<UserMyProfileResponse>> getMyProfile(
         @AuthenticationPrincipal AuthenticatedUser authenticatedUser) {
 
@@ -31,7 +31,7 @@ public class UserProfileController {
         UserMyProfileResponse userMyProfileResponse = userProfileService.getMyProfile(userId);
 
         ApiResponse<UserMyProfileResponse> response = ApiResponse.success(200,"본인 프로필을 불러왔습니다.", userMyProfileResponse);
-
+        log.info("end");
         return ResponseEntity.ok(response);
     }
 }
