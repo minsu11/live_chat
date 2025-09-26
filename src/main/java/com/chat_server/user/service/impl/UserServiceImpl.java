@@ -51,7 +51,8 @@ public class UserServiceImpl implements UserService {
         if (userRepository.existsByUserInputId(id)) {
             throw new UserAleadyExistException("이미 존재하는 회원 입니다.");
         }
-
+        
+        // todo 회원가입 시 유저 프로필 생성하게 해야함, 디폴트 데이터를 yml 파일에 넣어서 관리할 예정
         UserStatus userStatus =
                 userStatusRepository.findByUserStatusName("활성")
                         .orElseThrow(() -> new UserStatusNotFoundException("user status not found"));
