@@ -21,6 +21,11 @@ public class UserProfileController {
 
     private final UserProfileService userProfileService;
 
+    /**
+     * 홈 화면에 보여줄 프로필 데이터
+     * @param authenticatedUser
+     * @return
+     */
     @GetMapping("/me/profile/summary")
     public ResponseEntity<ApiResponse<UserMyProfileResponse>> getMyProfile(
         @AuthenticationPrincipal AuthenticatedUser authenticatedUser) {
