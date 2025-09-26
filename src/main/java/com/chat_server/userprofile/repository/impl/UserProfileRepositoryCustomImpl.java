@@ -4,17 +4,17 @@ import com.chat_server.user.entity.QUser;
 import com.chat_server.userprofile.dto.response.UserMyProfileResponse;
 import com.chat_server.userprofile.enrtity.QUserProfile;
 import com.chat_server.userprofile.enrtity.UserProfile;
-import com.chat_server.userprofile.repository.CustomUserProfileRepository;
+import com.chat_server.userprofile.repository.UserProfileRepositoryCustom;
 import com.chat_server.userprofile.url.entity.QUserProfileUrl;
 import com.querydsl.core.types.Projections;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
 
-public class CustomUserProfileRepositoryImpl extends QuerydslRepositorySupport implements CustomUserProfileRepository {
+public class UserProfileRepositoryCustomImpl extends QuerydslRepositorySupport implements UserProfileRepositoryCustom {
     private final QUserProfile qUserProfile = QUserProfile.userProfile;
     private final QUser qUser = QUser.user;
     private final QUserProfileUrl qUserProfileUrl = QUserProfileUrl.userProfileUrl;
-    public CustomUserProfileRepositoryImpl() {
+    public UserProfileRepositoryCustomImpl() {
         super(UserProfile.class);
     }
     @Override
