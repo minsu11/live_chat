@@ -1,4 +1,6 @@
--- ====== DROP (존재 시) ======
+SET FOREIGN_KEY_CHECKS=0;
+
+-- 기존 DROP/CREATE 테이블
 DROP TABLE IF EXISTS `chat_notification`;
 DROP TABLE IF EXISTS `notification_type`;
 DROP TABLE IF EXISTS `chat_message_read`;
@@ -14,6 +16,7 @@ DROP TABLE IF EXISTS `user`;
 DROP TABLE IF EXISTS `gender`;
 DROP TABLE IF EXISTS `user_status`;
 
+SET FOREIGN_KEY_CHECKS=1;
 -- ====== 기초 코드 테이블 ======
 CREATE TABLE `gender` (
                           `gender_id` INT NOT NULL AUTO_INCREMENT,
@@ -183,17 +186,30 @@ CREATE TABLE `chat_room_setting` (
                                      FOREIGN KEY (`chat_room_id`) REFERENCES `chat_room`(`chat_room_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- ====== 프로필 ======
+-- ======== 프로필 =========
+
 CREATE TABLE `user_profile` (
-                                `user_profile_id` BIGINT NOT NULL AUTO_INCREMENT,
-                                `user_id` BIGINT NOT NULL,
-                                `image_url` VARCHAR(255) NOT NULL,
-                                `is_current` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '현재 사용중 여부',
-                                `uploaded_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                PRIMARY KEY (`user_profile_id`),
-                                FOREIGN KEY (`user_id`) REFERENCES `user`(`user_id`) ON DELETE CASCADE,
-                                INDEX `idx_profile_current` (`user_id`, `is_current`)
+                                `user_profile_id`	bigint	NOT NULL,
+                                `user_profile_state_message`	varchar(60)	NULL,
+                                `user_id`	bigint	NOT NULL	COMMENT 'user의 pk',
+                                PRIMARY KEY(`user_profile_id`),
+                                FOREIGN KEY(`user_id`) REFERENCES `user`(`user_id`) ON DELETE CASCADE
+);
+
+-- ====== 프로필 URL ======
+CREATE TABLE `user_profile_url` (
+                                    `user_profile_url_id` BIGINT NOT NULL AUTO_INCREMENT,
+                                    `user_profile_id` BIGINT NOT NULL,
+                                    `image_url` VARCHAR(255) NOT NULL,
+                                    `is_current` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '현재 사용중 여부',
+                                    `uploaded_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                    PRIMARY KEY (`user_profile_url_id`),
+                                    FOREIGN KEY (`user_profile_id`) REFERENCES `user_profile`(`user_profile_id`) ON DELETE CASCADE,
+                                    INDEX `idx_profile_current` (`user_profile_id`, `is_current`)
 ) ENGINE=InnoDB;
+
+
+
 
 -- ====== 친구 ======
 CREATE TABLE `friend` (
