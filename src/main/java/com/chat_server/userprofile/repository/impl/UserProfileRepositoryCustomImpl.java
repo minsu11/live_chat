@@ -2,6 +2,7 @@ package com.chat_server.userprofile.repository.impl;
 
 import com.chat_server.user.entity.QUser;
 import com.chat_server.userprofile.dto.response.UserMyProfileResponse;
+import com.chat_server.userprofile.dto.response.UserProfileDetailResponse;
 import com.chat_server.userprofile.enrtity.QUserProfile;
 import com.chat_server.userprofile.enrtity.UserProfile;
 import com.chat_server.userprofile.repository.UserProfileRepositoryCustom;
@@ -34,5 +35,27 @@ public class UserProfileRepositoryCustomImpl extends QuerydslRepositorySupport i
             );
 
         return response;
+    }
+
+
+    // 쿼리 관점으로 from 기준을 잡으면 될듯.
+    // user profile 무조건 존재한다고 가정 하면은. user profile 가능, 그렇지만 무조건 존재하지 않는다면은 user로 잡아야 함
+    // 그 이유는 user profile이 없는 사람이 있다면 프로필을 가지고 올 수 없기 때문
+    @Override
+    public Optional<UserProfileDetailResponse> findProfileDetail(Long id) {
+        return
+                 Optional.ofNullable(
+                         from(qUserProfile)
+                                 .leftJoin(qUserProfile).on(qUserProfile.user.eq(qUser))
+                                 .leftJoin(qUserProfileUrl).on(qUserProfileUrl.userProfile.eq(qUserProfile)
+                                         .and(qUserProfileUrl.isCurrent.isTrue()))
+                                 .select(Projections.constructor(
+                                         UserProfileDetailResponse.class,
+                                         qUserProfileUrl.imageUrl,
+                                         qUserProfile.stateMessage
+                                 ))
+                                 .where(qUserProfile.user.id.eq(id))
+                                 .fetchOne()
+                 );
     }
 }
