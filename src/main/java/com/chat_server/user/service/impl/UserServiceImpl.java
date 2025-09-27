@@ -53,6 +53,7 @@ public class UserServiceImpl implements UserService {
         }
         
         // todo 회원가입 시 유저 프로필 생성하게 해야함, 디폴트 데이터를 yml 파일에 넣어서 관리할 예정
+        // todo 추 후 서비스 구조 변경
         UserStatus userStatus =
                 userStatusRepository.findByUserStatusName("활성")
                         .orElseThrow(() -> new UserStatusNotFoundException("user status not found"));

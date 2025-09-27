@@ -56,24 +56,26 @@ public class UserProfileController {
 
         Long userId = authenticatedUser.userId();
         UserProfileDetailResponse userProfileDetailResponse = userProfileService.getMyProfileDetail(userId);
-
-
+        ApiResponse<UserProfileDetailResponse> response = ApiResponse.success(200,"profile 성공적 반환",userProfileDetailResponse);
+        log.info("end");
+        return ResponseEntity.ok(response);
     }
 
 
-    /**
-     * 다른 사람의 프로필 상세 정보
-     * @param userId
-     * @return
-     */
-    @GetMapping("{userId}/profile/detail")
-    public ResponseEntity<ApiResponse<UserProfileDetailResponse>> getMyProfileDetail(
-        @RequestParam(name = "userId") String userId
-    ){
-        log.info("getMyProfileDetail");
-
-
-    }
+//    /**
+//     * 다른 사람의 프로필 상세 정보
+//     * @param userId
+//     * @return
+//     */
+//    @GetMapping("{userId}/profile/detail")
+//    public ResponseEntity<ApiResponse<UserProfileDetailResponse>> getMyProfileDetail(
+//        @RequestParam(name = "userId") String userId
+//    ){
+//        log.info("getMyProfileDetail");
+//
+//
+//        UserProfileDetailResponse userProfileDetailResponse = userProfileService.getMyProfileDetail()
+//    }
 
 
 }

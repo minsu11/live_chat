@@ -51,8 +51,9 @@ public class UserProfileRepositoryCustomImpl extends QuerydslRepositorySupport i
                                          .and(qUserProfileUrl.isCurrent.isTrue()))
                                  .select(Projections.constructor(
                                          UserProfileDetailResponse.class,
-                                         qUserProfileUrl.imageUrl,
-                                         qUserProfile.stateMessage
+                                         qUser.userName,
+                                         qUserProfile.stateMessage,
+                                         qUserProfileUrl.imageUrl
                                  ))
                                  .where(qUserProfile.user.id.eq(id))
                                  .fetchOne()

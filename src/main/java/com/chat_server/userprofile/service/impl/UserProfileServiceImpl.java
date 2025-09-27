@@ -31,7 +31,8 @@ public class UserProfileServiceImpl implements UserProfileService {
     public UserProfileDetailResponse getMyProfileDetail(Long userId) {
         log.info("getMyProfileDetail");
 
-        return null;
+        return userProfileRepository.findProfileDetail(userId)
+                .orElse(new UserProfileDetailResponse("","",""));
     }
 
 
