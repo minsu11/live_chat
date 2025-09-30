@@ -12,6 +12,8 @@ import com.chat_server.user.exception.UserAleadyExistException;
 import com.chat_server.user.exception.UserNotFoundException;
 import com.chat_server.user.repository.UserRepository;
 import com.chat_server.user.service.UserService;
+import com.chat_server.userprofile.enrtity.UserProfile;
+import com.chat_server.userprofile.repository.UserProfileRepository;
 import com.chat_server.userstatus.entity.UserStatus;
 import com.chat_server.userstatus.exception.UserStatusNotFoundException;
 import com.chat_server.userstatus.repository.UserStatusRepository;
@@ -42,6 +44,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final UserStatusRepository userStatusRepository;
     private final GenderRepository genderRepository;
+    private final UserProfileRepository userProfileRepository;
 
 
     @Override
@@ -62,7 +65,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new GenderNotFoundException("gender not found"));
         String password = passwordEncoder.encode(registerRequest.password());
 
-        User user = User.builder()
+        User user = userRepository.save(User.builder()
                 .userInputId(registerRequest.id())
                 .userInputPassword(password)
                 .userAge(registerRequest.age())
@@ -72,9 +75,17 @@ public class UserServiceImpl implements UserService {
                 .gender(gender)
                 .userCreatedAt(LocalDateTime.now())
                 .userUuid(UUID.randomUUID().toString())
+                .build());
+
+        // todo 임시로 여기에 유저 프로필 생성 추 후 코드 리팩토링 할 때 다른 쪽으로 이동할 예정
+        UserProfile userProfile = UserProfile.builder()
+                .stateMessage("")
+                .user(user)
                 .build();
 
-        userRepository.save(user);
+        userProfileRepository.save(userProfile);
+
+
     }
 
     @Override
