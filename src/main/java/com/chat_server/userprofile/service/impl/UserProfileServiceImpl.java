@@ -1,6 +1,6 @@
 package com.chat_server.userprofile.service.impl;
 
-import com.chat_server.userprofile.dto.response.UserProfileDetailResponse;
+import com.chat_server.userprofile.dto.response.UserMyProfileInfoResponse;
 import com.chat_server.userprofile.dto.response.UserMyProfileResponse;
 import com.chat_server.userprofile.repository.UserProfileRepository;
 import com.chat_server.userprofile.service.UserProfileService;
@@ -28,11 +28,11 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     @Override
     @Transactional(readOnly = true)
-    public UserProfileDetailResponse getMyProfileDetail(Long userId) {
+    public UserMyProfileInfoResponse getMyProfileDetail(Long userId) {
         log.info("getMyProfileDetail");
 
         return userProfileRepository.findProfileDetail(userId)
-                .orElse(new UserProfileDetailResponse("","",""));
+                .orElse(new UserMyProfileInfoResponse("","",""));
     }
 
 
