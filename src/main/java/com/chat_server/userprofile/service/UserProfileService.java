@@ -17,4 +17,6 @@ public interface UserProfileService {
      * @return 상세 정보 DTO
      */
     UserMyProfileDetailResponse getMyProfileDetail(Long userId);
+    UserMyProfileDetailResponse getMyProfileDetail(String userId);
+
 }

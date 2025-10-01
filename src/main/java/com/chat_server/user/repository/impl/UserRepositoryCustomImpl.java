@@ -91,5 +91,15 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
                 .fetch();
     }
 
+    @Override
+    public Optional<Long> getUserIdByUserUuid(String userUuid) {
+        return Optional.ofNullable(
+                from(qUser)
+                        .select(qUser.id)
+                        .where(qUser.userUuid.eq(userUuid))
+                        .fetchOne()
+        );
+    }
+
 
 }
