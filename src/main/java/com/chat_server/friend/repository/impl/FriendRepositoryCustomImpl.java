@@ -46,12 +46,12 @@ public class FriendRepositoryCustomImpl extends QuerydslRepositorySupport implem
         // (LOWER(name) > :lastLowerName) OR
         // (LOWER(name) = :lastLowerName AND id > :lastId)
 
-        if (cursor != null && cursor.lastLowerName() != null && cursor.lastId() != null) {
+        if (cursor != null && cursor.lastLowerName() != null && cursor.lastUuid() != null) {
             where.and(
                     qUser.userName.lower().gt(cursor.lastLowerName())
                             .or(
                                     qUser.userName.lower().eq(cursor.lastLowerName())
-                                            .and(qUser.id.gt(cursor.lastId()))
+                                            .and(qUser.userUuid.gt(cursor.lastUuid()))
                             )
             );
         }
@@ -66,7 +66,7 @@ public class FriendRepositoryCustomImpl extends QuerydslRepositorySupport implem
                 .limit(limit + 1)                                // 한 개 더 가져와서 다음 페이지 존재 여부 확인
                 .select(Projections.constructor(
                         UserFriendResponse.class,
-                        qUser.id, qUser.userName, qUserProfileUrl.imageUrl
+                        qUser.userUuid, qUser.userName, qUserProfileUrl.imageUrl
                 ))
                 .fetch();
 

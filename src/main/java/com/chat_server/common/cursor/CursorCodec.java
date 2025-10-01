@@ -10,25 +10,18 @@ public final class CursorCodec {
 
     private CursorCodec() {}
 
-    public static String encode(String lowerName, Long id) {
-        String raw = lowerName + ":" + id;
+    public static String encode(String lowerName, String lastUuid) {
+        String raw = lowerName + ":" + lastUuid;
         return Base64.getUrlEncoder().withoutPadding()
                 .encodeToString(raw.getBytes(StandardCharsets.UTF_8));
     }
 
 
     public static @Nullable CursorKey decode(@Nullable String cursor) {
-        if (cursor == null || cursor.isBlank()) return null;
-        try {
-            String raw = new String(Base64.getUrlDecoder().decode(cursor), StandardCharsets.UTF_8);
-            int idx = raw.lastIndexOf(':');
-            if (idx <= 0 || idx == raw.length() - 1) return null;
-            String lowerName = raw.substring(0, idx);
-            Long lastId = Long.parseLong(raw.substring(idx + 1));
-            return new CursorKey(lowerName, lastId);
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
+        if (cursor == null || cursor.isEmpty()) return null;
+        String decoded = new String(Base64.getUrlDecoder().decode(cursor), StandardCharsets.UTF_8);
+        String[] parts = decoded.split(":", 2);
+        return new CursorKey(parts[0], parts[1]);
     }
 
 }
