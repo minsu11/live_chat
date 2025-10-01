@@ -1,12 +1,12 @@
 package com.chat_server.userprofile.repository;
 
-import com.chat_server.userprofile.dto.response.UserMyProfileResponse;
+import com.chat_server.userprofile.dto.response.UserMyProfileSummaryResponse;
 import java.util.Optional;
 
-import com.chat_server.userprofile.dto.response.UserMyProfileInfoResponse;
+import com.chat_server.userprofile.dto.response.UserMyProfileDetailResponse;
 
 public interface UserProfileRepositoryCustom {
-    Optional<UserMyProfileResponse> findMyProfile(Long id);
-    Optional<UserMyProfileInfoResponse> findProfileDetail(Long id);
+    Optional<UserMyProfileSummaryResponse> findMyProfile(Long id);
+    Optional<UserMyProfileDetailResponse> findProfileDetail(Long id);
 
 }

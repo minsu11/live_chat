@@ -1,7 +1,7 @@
 package com.chat_server.userprofile.service.impl;
 
-import com.chat_server.userprofile.dto.response.UserMyProfileInfoResponse;
-import com.chat_server.userprofile.dto.response.UserMyProfileResponse;
+import com.chat_server.userprofile.dto.response.UserMyProfileDetailResponse;
+import com.chat_server.userprofile.dto.response.UserMyProfileSummaryResponse;
 import com.chat_server.userprofile.repository.UserProfileRepository;
 import com.chat_server.userprofile.service.UserProfileService;
 import lombok.RequiredArgsConstructor;
@@ -19,20 +19,20 @@ public class UserProfileServiceImpl implements UserProfileService {
     // todo 본인의 프로필 상세 내용을 가지고 옴. 프로필 사진을 클릭 한 뒤 나오는 데이터 들
     @Override
     @Transactional(readOnly = true)
-    public UserMyProfileResponse getMyProfileSummary(Long userId) {
+    public UserMyProfileSummaryResponse getMyProfileSummary(Long userId) {
         log.info("getMyProfile");
 
 
-        return userProfileRepository.findMyProfile(userId).orElse(new UserMyProfileResponse("",""));
+        return userProfileRepository.findMyProfile(userId).orElse(new UserMyProfileSummaryResponse("",""));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public UserMyProfileInfoResponse getMyProfileDetail(Long userId) {
+    public UserMyProfileDetailResponse getMyProfileDetail(Long userId) {
         log.info("getMyProfileDetail");
 
         return userProfileRepository.findProfileDetail(userId)
-                .orElse(new UserMyProfileInfoResponse("","",""));
+                .orElse(new UserMyProfileDetailResponse("","",""));
     }
 
 

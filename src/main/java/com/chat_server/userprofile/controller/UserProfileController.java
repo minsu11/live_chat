@@ -2,7 +2,7 @@ package com.chat_server.userprofile.controller;
 
 import com.chat_server.common.dto.response.ApiResponse;
 import com.chat_server.user.dto.response.AuthenticatedUser;
-import com.chat_server.userprofile.dto.response.UserMyProfileInfoResponse;
+import com.chat_server.userprofile.dto.response.UserMyProfileDetailResponse;
 import com.chat_server.userprofile.service.UserProfileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,15 +25,15 @@ public class UserProfileController {
      * @param authenticatedUser
      * @return
      */
-    @GetMapping("me/profile")
-    public ResponseEntity<ApiResponse<UserMyProfileInfoResponse>> getMyProfileDetail(
+    @GetMapping("me/profile/summary")
+    public ResponseEntity<ApiResponse<UserMyProfileDetailResponse>> getMyProfileDetail(
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser
     ){
         log.info("getMyProfileDetail");
 
         Long userId = authenticatedUser.userId();
-        UserMyProfileInfoResponse userProfileDetailResponse = userProfileService.getMyProfileDetail(userId);
-        ApiResponse<UserMyProfileInfoResponse> response = ApiResponse.success(200,"profile 성공적 반환",userProfileDetailResponse);
+        UserMyProfileDetailResponse userProfileDetailResponse = userProfileService.getMyProfileDetail(userId);
+        ApiResponse<UserMyProfileDetailResponse> response = ApiResponse.success(200,"profile 성공적 반환",userProfileDetailResponse);
         log.info("end");
         return ResponseEntity.ok(response);
     }

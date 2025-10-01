@@ -1,7 +1,7 @@
 package com.chat_server.userprofile.service;
 
-import com.chat_server.userprofile.dto.response.UserMyProfileInfoResponse;
-import com.chat_server.userprofile.dto.response.UserMyProfileResponse;
+import com.chat_server.userprofile.dto.response.UserMyProfileDetailResponse;
+import com.chat_server.userprofile.dto.response.UserMyProfileSummaryResponse;
 
 public interface UserProfileService {
     /**
@@ -9,12 +9,12 @@ public interface UserProfileService {
      * @param userId
      * @return
      */
-    UserMyProfileResponse getMyProfileSummary(Long userId);
+    UserMyProfileSummaryResponse getMyProfileSummary(Long userId);
 
     /**
      * 본인  프로필 상세 데이터 가지고옴
      * @param userId 유저 아이디
      * @return 상세 정보 DTO
      */
-    UserMyProfileInfoResponse getMyProfileDetail(Long userId);
+    UserMyProfileDetailResponse getMyProfileDetail(Long userId);
 }

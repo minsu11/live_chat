@@ -1,8 +1,8 @@
 package com.chat_server.userprofile.repository.impl;
 
 import com.chat_server.user.entity.QUser;
-import com.chat_server.userprofile.dto.response.UserMyProfileResponse;
-import com.chat_server.userprofile.dto.response.UserMyProfileInfoResponse;
+import com.chat_server.userprofile.dto.response.UserMyProfileSummaryResponse;
+import com.chat_server.userprofile.dto.response.UserMyProfileDetailResponse;
 import com.chat_server.userprofile.enrtity.QUserProfile;
 import com.chat_server.userprofile.enrtity.UserProfile;
 import com.chat_server.userprofile.repository.UserProfileRepositoryCustom;
@@ -19,14 +19,14 @@ public class UserProfileRepositoryCustomImpl extends QuerydslRepositorySupport i
         super(UserProfile.class);
     }
     @Override
-    public Optional<UserMyProfileResponse> findMyProfile(Long id) {
+    public Optional<UserMyProfileSummaryResponse> findMyProfile(Long id) {
 
-        Optional<UserMyProfileResponse> response =
+        Optional<UserMyProfileSummaryResponse> response =
             Optional.ofNullable(
               from(qUserProfile)
                   .leftJoin(qUserProfileUrl).on(qUserProfileUrl.userProfile.eq(qUserProfile))
                   .leftJoin(qUserProfile).on(qUserProfile.user.eq(qUser))
-                  .select(Projections.constructor(UserMyProfileResponse.class,
+                  .select(Projections.constructor(UserMyProfileSummaryResponse.class,
                         qUserProfileUrl.imageUrl,
                           qUserProfile.stateMessage
                       ))
@@ -42,7 +42,7 @@ public class UserProfileRepositoryCustomImpl extends QuerydslRepositorySupport i
     // user profile 무조건 존재한다고 가정 하면은. user profile 가능, 그렇지만 무조건 존재하지 않는다면은 user로 잡아야 함
     // 그 이유는 user profile이 없는 사람이 있다면 프로필을 가지고 올 수 없기 때문
     @Override
-    public Optional<UserMyProfileInfoResponse> findProfileDetail(Long id) {
+    public Optional<UserMyProfileDetailResponse> findProfileDetail(Long id) {
         return
                  Optional.ofNullable(
                          from(qUserProfile)
@@ -50,7 +50,7 @@ public class UserProfileRepositoryCustomImpl extends QuerydslRepositorySupport i
                                  .leftJoin(qUserProfileUrl).on(qUserProfileUrl.userProfile.eq(qUserProfile)
                                          .and(qUserProfileUrl.isCurrent.isTrue()))
                                  .select(Projections.constructor(
-                                         UserMyProfileInfoResponse.class,
+                                         UserMyProfileDetailResponse.class,
                                          qUser.userName,
                                          qUserProfile.stateMessage,
                                          qUserProfileUrl.imageUrl
