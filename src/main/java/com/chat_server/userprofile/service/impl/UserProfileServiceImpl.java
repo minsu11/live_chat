@@ -43,7 +43,7 @@ public class UserProfileServiceImpl implements UserProfileService {
         // 실제 친구가 있는지 확인
         log.info("getMyProfileDetail");
         Long id = userRepository.getUserIdByUserUuid(userId).orElseThrow(UserNotFoundException::new);
-
+        log.info("id: {}", id);
         UserMyProfileDetailResponse response = getProfileDetail(id);
         log.info("response: {}", response.toString());
 
@@ -51,6 +51,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     }
 
     private UserMyProfileDetailResponse getProfileDetail(Long userId) {
+        log.info("private method getProfileDetail");
         return userProfileRepository.findProfileDetail(userId)
                 .orElse(new UserMyProfileDetailResponse("","",""));
 
