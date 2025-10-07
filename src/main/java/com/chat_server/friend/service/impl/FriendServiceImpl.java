@@ -53,7 +53,7 @@ public class FriendServiceImpl implements FriendService {
         if (slice.hasNext() && !slice.getContent().isEmpty()) {
             log.info("slice ");
             UserFriendResponse last = slice.getContent().get(slice.getContent().size() - 1);
-            next = CursorCodec.encode(last.name().toLowerCase(Locale.ROOT), last.uuid());
+            next = CursorCodec.encode(last.nickName().toLowerCase(Locale.ROOT), last.uuid());
             log.info("next: {}",next);
         }
 

@@ -48,9 +48,9 @@ public class FriendRepositoryCustomImpl extends QuerydslRepositorySupport implem
 
         if (cursor != null && cursor.lastLowerName() != null && cursor.lastUuid() != null) {
             where.and(
-                    qUser.userName.lower().gt(cursor.lastLowerName())
+                    qUser.userNickname.lower().gt(cursor.lastLowerName())
                             .or(
-                                    qUser.userName.lower().eq(cursor.lastLowerName())
+                                    qUser.userNickname.lower().eq(cursor.lastLowerName())
                                             .and(qUser.userUuid.gt(cursor.lastUuid()))
                             )
             );
@@ -62,11 +62,11 @@ public class FriendRepositoryCustomImpl extends QuerydslRepositorySupport implem
                 .leftJoin(qUserProfile).on(qUserProfile.user.eq(qUser))
                 .leftJoin(qUserProfileUrl).on(qUserProfileUrl.userProfile.eq(qUserProfile))
                 .where(where)
-                .orderBy(qUser.userName.lower().asc(), qUser.id.asc())   // Alice(1) → Alice(3) → Bob(4) → Carol(7) ...
+                .orderBy(qUser.userNickname.lower().asc(), qUser.id.asc())   // Alice(1) → Alice(3) → Bob(4) → Carol(7) ...
                 .limit(limit + 1)                                // 한 개 더 가져와서 다음 페이지 존재 여부 확인
                 .select(Projections.constructor(
                         UserFriendResponse.class,
-                        qUser.userUuid, qUser.userName, qUserProfileUrl.imageUrl
+                        qUser.userUuid, qUser.userNickname, qUserProfileUrl.imageUrl
                 ))
                 .fetch();
 
