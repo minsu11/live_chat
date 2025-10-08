@@ -82,7 +82,7 @@ public class UserProfileController {
         return ResponseEntity.ok(response);
     }
 
-    @PatchMapping(
+    @PutMapping(
         value = "me/profile",
         consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
