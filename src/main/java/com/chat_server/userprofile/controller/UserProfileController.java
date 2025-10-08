@@ -5,6 +5,7 @@ import com.chat_server.user.dto.response.AuthenticatedUser;
 import com.chat_server.userprofile.dto.request.UserProfileUpdateRequest;
 import com.chat_server.userprofile.dto.response.UserMyProfileDetailResponse;
 import com.chat_server.userprofile.dto.response.UserMyProfileSummaryResponse;
+import com.chat_server.userprofile.service.UserProfileFacade;
 import com.chat_server.userprofile.service.UserProfileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,7 @@ public class UserProfileController {
 
     private final UserProfileService userProfileService;
 
+    private final UserProfileFacade userProfileFacade;
 
     /**
      * 로그인한 유저의 본인 프로필 모든 정보
@@ -90,11 +92,16 @@ public class UserProfileController {
         @RequestPart(value = "file", required = false) MultipartFile file
     ){
         log.info("updateMyProfile");
+        Long userId = authenticatedUser.userId();
         log.info("userId : {}", authenticatedUser.userId());
         // file service
 
+        userProfileFacade.updateMyProfile(userId, request, file);
+        log.info("user profile facade end");
 
-        return null;
+        ApiResponse<Void> response = ApiResponse.success(204, "update 완료");
+        log.info("end");
+        return ResponseEntity.ok(response);
     }
 
 }

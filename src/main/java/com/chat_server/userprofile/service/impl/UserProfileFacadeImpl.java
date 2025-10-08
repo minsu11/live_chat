@@ -6,6 +6,7 @@ import com.chat_server.user.service.UserService;
 import com.chat_server.userprofile.dto.request.UserProfileUpdateRequest;
 import com.chat_server.userprofile.service.UserProfileFacade;
 import com.chat_server.userprofile.service.UserProfileService;
+import com.chat_server.userprofile.url.service.UserProfileUrlService;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,8 @@ public class UserProfileFacadeImpl implements UserProfileFacade {
     private final FileService fileService;
     private final UserService userService;
     private final UserProfileService userProfileService;
+    private final UserProfileUrlService userProfileUrlService;
+
     @Override
     public void updateMyProfile(Long userId, UserProfileUpdateRequest request, MultipartFile file) {
         log.info("update profile service");
@@ -38,9 +41,9 @@ public class UserProfileFacadeImpl implements UserProfileFacade {
         }
 
         if(file != null && !file.isEmpty()){
-
             String newUrl = fileService.saveProfileImage(userId,file);
-
+            log.info("new profile url: {}", newUrl);
+            userProfileUrlService.updateUserProfileUrl(userId,newUrl);
         }
         log.info("update profile service complete");
     }
