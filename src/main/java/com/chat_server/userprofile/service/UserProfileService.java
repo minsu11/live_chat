@@ -1,5 +1,6 @@
 package com.chat_server.userprofile.service;
 
+import com.chat_server.userprofile.dto.request.UserProfileUpdateRequest;
 import com.chat_server.userprofile.dto.response.UserMyProfileDetailResponse;
 import com.chat_server.userprofile.dto.response.UserMyProfileSummaryResponse;
 
@@ -18,5 +19,5 @@ public interface UserProfileService {
      */
     UserMyProfileDetailResponse getMyProfileDetail(Long userId);
     UserMyProfileDetailResponse getMyProfileDetail(String userId);
-
+    void updateStateMessage(Long userId, String message);
 }

@@ -27,7 +27,7 @@ public class UserProfileRepositoryCustomImpl extends QuerydslRepositorySupport i
                   .leftJoin(qUserProfileUrl).on(qUserProfileUrl.userProfile.eq(qUserProfile))
                   .leftJoin(qUserProfile).on(qUserProfile.user.eq(qUser))
                   .select(Projections.constructor(UserMyProfileSummaryResponse.class,
-                          qUser.userName,
+                          qUser.userNickname,
                           qUserProfile.stateMessage,
                           qUserProfileUrl.imageUrl
                       ))
@@ -52,7 +52,7 @@ public class UserProfileRepositoryCustomImpl extends QuerydslRepositorySupport i
                                          .and(qUserProfileUrl.isCurrent.isTrue()))
                                  .select(Projections.constructor(
                                          UserMyProfileDetailResponse.class,
-                                         qUser.userName,
+                                         qUser.userNickname,
                                          qUserProfile.stateMessage,
                                          qUserProfileUrl.imageUrl
                                  ))

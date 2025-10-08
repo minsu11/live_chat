@@ -2,14 +2,17 @@ package com.chat_server.userprofile.controller;
 
 import com.chat_server.common.dto.response.ApiResponse;
 import com.chat_server.user.dto.response.AuthenticatedUser;
+import com.chat_server.userprofile.dto.request.UserProfileUpdateRequest;
 import com.chat_server.userprofile.dto.response.UserMyProfileDetailResponse;
 import com.chat_server.userprofile.dto.response.UserMyProfileSummaryResponse;
 import com.chat_server.userprofile.service.UserProfileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @RestController
@@ -77,5 +80,21 @@ public class UserProfileController {
         return ResponseEntity.ok(response);
     }
 
+    @PatchMapping(
+        value = "me/profile",
+        consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<ApiResponse<Void>> updateMyProfile(
+        @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+        @RequestPart("profile")UserProfileUpdateRequest request,
+        @RequestPart(value = "file", required = false) MultipartFile file
+    ){
+        log.info("updateMyProfile");
+        log.info("userId : {}", authenticatedUser.userId());
+        // file service
+
+
+        return null;
+    }
 
 }

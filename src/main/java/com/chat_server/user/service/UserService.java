@@ -20,4 +20,6 @@ public interface UserService {
 
     UserPrincipal loadUserByUserId(String userId);
 
+    void updateNickname(Long userId, String name);
+
 }
