@@ -5,6 +5,7 @@ import com.chat_server.user.dto.response.AuthenticatedUser;
 import com.chat_server.userprofile.dto.request.UserProfileUpdateRequest;
 import com.chat_server.userprofile.dto.response.UserMyProfileDetailResponse;
 import com.chat_server.userprofile.dto.response.UserMyProfileSummaryResponse;
+import com.chat_server.userprofile.dto.response.UserProfileUpdateResponse;
 import com.chat_server.userprofile.service.UserProfileFacade;
 import com.chat_server.userprofile.service.UserProfileService;
 import lombok.RequiredArgsConstructor;
@@ -86,7 +87,7 @@ public class UserProfileController {
         value = "me/profile",
         consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
-    public ResponseEntity<ApiResponse<Void>> updateMyProfile(
+    public ResponseEntity<ApiResponse<UserProfileUpdateResponse>> updateMyProfile(
         @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
         @RequestPart("profile")UserProfileUpdateRequest request,
         @RequestPart(value = "file", required = false) MultipartFile file
@@ -96,10 +97,10 @@ public class UserProfileController {
         log.info("userId : {}", authenticatedUser.userId());
         // file service
         log.info("file: {}", file);
-        userProfileFacade.updateMyProfile(userId, request, file);
+        UserProfileUpdateResponse userProfileUpdateResponse = userProfileFacade.updateMyProfile(userId, request, file);
         log.info("user profile facade end");
         // todo update 시 캐싱된 정보를 최신화 해야하기 때문에 response 반환해줘야함.
-        ApiResponse<Void> response = ApiResponse.success(204, "update 완료");
+        ApiResponse<UserProfileUpdateResponse> response = ApiResponse.success(201, "update 완료",userProfileUpdateResponse);
         log.info("end");
         return ResponseEntity.ok(response);
     }

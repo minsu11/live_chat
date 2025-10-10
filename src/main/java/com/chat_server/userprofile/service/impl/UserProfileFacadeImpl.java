@@ -4,6 +4,7 @@ package com.chat_server.userprofile.service.impl;
 import com.chat_server.file.FileService;
 import com.chat_server.user.service.UserService;
 import com.chat_server.userprofile.dto.request.UserProfileUpdateRequest;
+import com.chat_server.userprofile.dto.response.UserProfileUpdateResponse;
 import com.chat_server.userprofile.service.UserProfileFacade;
 import com.chat_server.userprofile.service.UserProfileService;
 import com.chat_server.userprofile.url.service.UserProfileUrlService;
@@ -25,11 +26,11 @@ public class UserProfileFacadeImpl implements UserProfileFacade {
     private final UserProfileUrlService userProfileUrlService;
 
     @Override
-    public void updateMyProfile(Long userId, UserProfileUpdateRequest request, MultipartFile file) {
+    public UserProfileUpdateResponse updateMyProfile(Long userId, UserProfileUpdateRequest request, MultipartFile file) {
         log.info("update profile service");
         String name = request.name();
         String message = request.message();
-
+        String newUrl = null;
         if(name != null){
             // user nickname update
             userService.updateNickname(userId,name);
@@ -41,10 +42,12 @@ public class UserProfileFacadeImpl implements UserProfileFacade {
         }
 
         if(file != null && !file.isEmpty()){
-            String newUrl = fileService.saveProfileImage(userId,file);
+            newUrl = fileService.saveProfileImage(userId,file);
             log.info("new profile url: {}", newUrl);
             userProfileUrlService.updateUserProfileUrl(userId,newUrl);
         }
         log.info("update profile service complete");
+
+        return new UserProfileUpdateResponse(name,message,newUrl);
     }
 }
