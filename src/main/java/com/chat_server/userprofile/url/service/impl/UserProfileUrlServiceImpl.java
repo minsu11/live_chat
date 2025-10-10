@@ -40,6 +40,7 @@ public class UserProfileUrlServiceImpl implements UserProfileUrlService {
             .uploadedAt(LocalDateTime.now())
             .userProfile(userProfile)
             .build();
-
+        userProfileUrlRepository.save(newUserProfileUrl);
+        log.info("url 저장 완료");
     }
 }
