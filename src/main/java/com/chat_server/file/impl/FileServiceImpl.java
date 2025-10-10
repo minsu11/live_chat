@@ -29,6 +29,7 @@ public class FileServiceImpl implements FileService {
             String filename = "u" + userId + "_" + System.currentTimeMillis() + ext;
             Path path = Paths.get(profileUrl, filename);
             file.transferTo(path);
+            log.info("파일 저장 완료");
             return "/uploads/profile/" + filename;
         }catch (IOException e){
             log.error(e.getMessage());

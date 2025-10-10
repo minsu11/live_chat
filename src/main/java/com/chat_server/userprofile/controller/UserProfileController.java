@@ -95,10 +95,10 @@ public class UserProfileController {
         Long userId = authenticatedUser.userId();
         log.info("userId : {}", authenticatedUser.userId());
         // file service
-
+        log.info("file: {}", file);
         userProfileFacade.updateMyProfile(userId, request, file);
         log.info("user profile facade end");
-
+        // todo update 시 캐싱된 정보를 최신화 해야하기 때문에 response 반환해줘야함.
         ApiResponse<Void> response = ApiResponse.success(204, "update 완료");
         log.info("end");
         return ResponseEntity.ok(response);
