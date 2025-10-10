@@ -31,7 +31,7 @@ public class UserProfileRepositoryCustomImpl extends QuerydslRepositorySupport i
                           qUserProfile.stateMessage,
                           qUserProfileUrl.imageUrl
                       ))
-                  .where(qUserProfile.user.id.eq(id))
+                  .where(qUserProfile.user.id.eq(id).and(qUserProfileUrl.isCurrent.eq(true)))
                   .fetchOne()
             );
 
