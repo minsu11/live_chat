@@ -61,4 +61,8 @@ public class User {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_status_id")
     private UserStatus userStatus;
+
+    public void updateNickname(String userNickname){
+        this.userNickname = userNickname;
+    }
 }

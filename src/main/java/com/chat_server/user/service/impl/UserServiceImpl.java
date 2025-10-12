@@ -97,4 +97,11 @@ public class UserServiceImpl implements UserService {
         return new UserPrincipal(userId, UserType.USER, response.userStatus());
 
     }
+
+    @Override
+    public void updateNickname(Long userId, String name) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(UserNotFoundException::new);
+        user.updateNickname(name);
+    }
 }

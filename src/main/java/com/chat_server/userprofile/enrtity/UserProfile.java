@@ -28,4 +28,8 @@ public class UserProfile {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
+
+    public void update(String stateMessage){
+        this.stateMessage = stateMessage;
+    }
 }

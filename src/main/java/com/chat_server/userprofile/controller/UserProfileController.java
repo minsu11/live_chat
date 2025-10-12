@@ -2,14 +2,19 @@ package com.chat_server.userprofile.controller;
 
 import com.chat_server.common.dto.response.ApiResponse;
 import com.chat_server.user.dto.response.AuthenticatedUser;
+import com.chat_server.userprofile.dto.request.UserProfileUpdateRequest;
 import com.chat_server.userprofile.dto.response.UserMyProfileDetailResponse;
 import com.chat_server.userprofile.dto.response.UserMyProfileSummaryResponse;
+import com.chat_server.userprofile.dto.response.UserProfileUpdateResponse;
+import com.chat_server.userprofile.service.UserProfileFacade;
 import com.chat_server.userprofile.service.UserProfileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @RestController
@@ -19,6 +24,7 @@ public class UserProfileController {
 
     private final UserProfileService userProfileService;
 
+    private final UserProfileFacade userProfileFacade;
 
     /**
      * 로그인한 유저의 본인 프로필 모든 정보
@@ -77,5 +83,26 @@ public class UserProfileController {
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping(
+        value = "me/profile",
+        consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<ApiResponse<UserProfileUpdateResponse>> updateMyProfile(
+        @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+        @RequestPart("profile")UserProfileUpdateRequest request,
+        @RequestPart(value = "file", required = false) MultipartFile file
+    ){
+        log.info("updateMyProfile");
+        Long userId = authenticatedUser.userId();
+        log.info("userId : {}", authenticatedUser.userId());
+        // file service
+        log.info("file: {}", file);
+        UserProfileUpdateResponse userProfileUpdateResponse = userProfileFacade.updateMyProfile(userId, request, file);
+        log.info("user profile facade end");
+        // todo update 시 캐싱된 정보를 최신화 해야하기 때문에 response 반환해줘야함.
+        ApiResponse<UserProfileUpdateResponse> response = ApiResponse.success(201, "update 완료",userProfileUpdateResponse);
+        log.info("end");
+        return ResponseEntity.ok(response);
+    }
 
 }

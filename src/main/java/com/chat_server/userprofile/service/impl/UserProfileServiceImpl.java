@@ -1,9 +1,12 @@
 package com.chat_server.userprofile.service.impl;
 
+import com.chat_server.user.entity.User;
 import com.chat_server.user.exception.UserNotFoundException;
 import com.chat_server.user.repository.UserRepository;
+import com.chat_server.userprofile.dto.request.UserProfileUpdateRequest;
 import com.chat_server.userprofile.dto.response.UserMyProfileDetailResponse;
 import com.chat_server.userprofile.dto.response.UserMyProfileSummaryResponse;
+import com.chat_server.userprofile.enrtity.UserProfile;
 import com.chat_server.userprofile.repository.UserProfileRepository;
 import com.chat_server.userprofile.service.UserProfileService;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserProfileServiceImpl implements UserProfileService {
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
+
 
     // todo 본인의 프로필 상세 내용을 가지고 옴. 프로필 사진을 클릭 한 뒤 나오는 데이터 들
     @Override
@@ -50,12 +54,21 @@ public class UserProfileServiceImpl implements UserProfileService {
         return response;
     }
 
+    @Override
+    public void updateStateMessage(Long userId, String message) {
+        log.info("updateUserProfile");
+
+        UserProfile userProfile = userProfileRepository.findByUser_Id(userId)
+            .orElseThrow(UserNotFoundException::new);
+
+        userProfile.update(message);
+    }
+
     private UserMyProfileDetailResponse getProfileDetail(Long userId) {
         log.info("private method getProfileDetail");
         return userProfileRepository.findProfileDetail(userId)
                 .orElse(new UserMyProfileDetailResponse("","",""));
 
     }
-
 
 }
