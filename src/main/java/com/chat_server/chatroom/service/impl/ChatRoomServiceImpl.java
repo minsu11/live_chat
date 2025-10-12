@@ -18,4 +18,9 @@ public class ChatRoomServiceImpl implements ChatRoomService {
         @Nullable String cursor) {
         return null;
     }
+
+    @Override
+    public void createChatRoom(String userId) {
+
+    }
 }

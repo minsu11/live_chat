@@ -18,4 +18,5 @@ custom:
       prefix: "/friends"
     search:
       prefix: "/search"
-
+    chat-room:
+      prefix: "/chat-room"
