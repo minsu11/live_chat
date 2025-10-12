@@ -18,20 +18,20 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1")
+@RequestMapping("${custom.api.common.prefix}${custom.api.search.prefix}")
 public class SearchController {
     private final SearchService searchService;
 
     // 아이디로 검색하기 떄문에 post 요청
-    @PostMapping("/search/users")
-    public ResponseEntity<ApiResponse<List<SearchUserResponse>>> searchUser(
+    @PostMapping("/users")
+    public ResponseEntity<ApiResponse<SearchUserResponse>> searchUser(
         @RequestBody SearchUserRequest request
     ){
         log.info("search controller");
         log.info("id : {}", request.userId());
-        List<SearchUserResponse> searchUserResponse = searchService.searchUserByUserId(request);
+        SearchUserResponse searchUserResponse = searchService.searchUserByUserId(request);
         log.info("search response: {}", searchUserResponse);
-        ApiResponse<List<SearchUserResponse>> response = ApiResponse.success(200, "검색에 성공했습니다.",searchUserResponse);
+        ApiResponse<SearchUserResponse> response = ApiResponse.success(200, "검색에 성공했습니다.",searchUserResponse);
         log.info("response : {}", response.getData());
         return ResponseEntity.ok(response);
     }

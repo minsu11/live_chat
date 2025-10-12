@@ -30,7 +30,7 @@ spring:
 
 logging:
   level:
-    root: debug
+    root: info
     com.chat_server: debug
     org.springframework: debug
     org.springframework.web.filter: debug

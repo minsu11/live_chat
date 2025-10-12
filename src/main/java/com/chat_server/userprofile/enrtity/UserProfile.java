@@ -2,6 +2,8 @@ package com.chat_server.userprofile.enrtity;
 
 import com.chat_server.user.entity.User;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -11,22 +13,23 @@ import java.time.LocalDateTime;
 @Table(name = "user_profile")
 @Getter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class UserProfile {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_profile_id")
     private Long id;
 
-    @Column(name = "image_url")
-    private String imageUrl;
+    @Column(name = "user_profile_state_message")
+    private String stateMessage;
 
-    @Column(name = "is_current")
-    private Boolean isCurrent;
-
-    @Column(name = "uploaded_at")
-    private LocalDateTime uploadedAt;
-
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
+
+    public void update(String stateMessage){
+        this.stateMessage = stateMessage;
+    }
 }

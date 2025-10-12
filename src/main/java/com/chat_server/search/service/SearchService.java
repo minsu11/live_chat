@@ -6,5 +6,5 @@ import com.chat_server.search.dto.response.SearchUserResponse;
 import java.util.List;
 
 public interface SearchService {
-    List<SearchUserResponse> searchUserByUserId(SearchUserRequest request);
+    SearchUserResponse searchUserByUserId(SearchUserRequest request);
 }
