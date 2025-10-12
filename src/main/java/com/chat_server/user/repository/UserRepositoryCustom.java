@@ -21,7 +21,7 @@ import java.util.Optional;
 public interface UserRepositoryCustom {
     Optional<UserAuthenticationResponse> getUserByUserId(String userId);
     Optional<AuthenticatedUser> authorizeUserByUserId(String userId, String roleName);
-    List<SearchUserResponse> getSearchUserByUserId(String userId);
+    SearchUserResponse getSearchUserByUserId(String userId);
     Optional<Long> getUserIdByUserUuid(String userUuid);
 
 }

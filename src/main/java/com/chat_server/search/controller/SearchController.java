@@ -24,14 +24,14 @@ public class SearchController {
 
     // 아이디로 검색하기 떄문에 post 요청
     @PostMapping("/users")
-    public ResponseEntity<ApiResponse<List<SearchUserResponse>>> searchUser(
+    public ResponseEntity<ApiResponse<SearchUserResponse>> searchUser(
         @RequestBody SearchUserRequest request
     ){
         log.info("search controller");
         log.info("id : {}", request.userId());
-        List<SearchUserResponse> searchUserResponse = searchService.searchUserByUserId(request);
+        SearchUserResponse searchUserResponse = searchService.searchUserByUserId(request);
         log.info("search response: {}", searchUserResponse);
-        ApiResponse<List<SearchUserResponse>> response = ApiResponse.success(200, "검색에 성공했습니다.",searchUserResponse);
+        ApiResponse<SearchUserResponse> response = ApiResponse.success(200, "검색에 성공했습니다.",searchUserResponse);
         log.info("response : {}", response.getData());
         return ResponseEntity.ok(response);
     }

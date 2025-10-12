@@ -74,7 +74,7 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
     }
 
     @Override
-    public List<SearchUserResponse> getSearchUserByUserId(String userId) {
+    public SearchUserResponse getSearchUserByUserId(String userId) {
         return
             from(qUser)
                 .select(Projections.constructor(
@@ -89,7 +89,7 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
                     .and(qUser.userStatus.userStatusName.eq("활성"))
                         .and(qUserProfileUrl.isCurrent.eq(true))
                 )
-                .fetch();
+                .fetchOne();
     }
 
     @Override

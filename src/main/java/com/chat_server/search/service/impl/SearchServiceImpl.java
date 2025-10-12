@@ -24,7 +24,7 @@ public class SearchServiceImpl implements SearchService {
     // null이 아닌 빈 리스트 반환
     @Override
     @Transactional(readOnly = true)
-    public List<SearchUserResponse> searchUserByUserId(SearchUserRequest request) {
+    public SearchUserResponse searchUserByUserId(SearchUserRequest request) {
          return userRepository.getSearchUserByUserId(request.userId());
     }
 }
