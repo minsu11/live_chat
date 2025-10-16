@@ -1,6 +1,5 @@
 package com.chat_server.chatlist.entity;
 
-import com.chat_server.chatauthor.entity.ChatAuthor;
 import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.user.entity.User;
 import jakarta.persistence.*;
