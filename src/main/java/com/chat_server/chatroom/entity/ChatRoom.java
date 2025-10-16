@@ -1,6 +1,7 @@
 package com.chat_server.chatroom.entity;
 
 import com.chat_server.chattype.entity.ChatType;
+import com.chat_server.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -58,6 +59,10 @@ public class ChatRoom {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chat_type_id")
     private ChatType chatType;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="chat_room_author_id")
+    private User chatRoomAuthor;
 
 
 }
