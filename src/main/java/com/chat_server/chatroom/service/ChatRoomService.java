@@ -8,6 +8,6 @@ public interface ChatRoomService {
     // cursor pagenation
     CursorPageResponse<UserFriendResponse> getFriendsByCursor(Long userId, int limit, @Nullable String cursor);
 
-    void createChatRoom(String userId);
+    void createChatRoom(String userId, String friendId);
 
 }
