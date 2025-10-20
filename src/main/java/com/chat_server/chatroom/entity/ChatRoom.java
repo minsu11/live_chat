@@ -50,6 +50,9 @@ public class ChatRoom {
     @Column(name = "last_message_preview", length = 120)
     private String lastMessagePreview;
 
+    @Column(name ="participants_hash")
+    private String participantsHash;
+
     @Column(name = "last_message_sender_id")
     private Long lastMessageSenderId;
 
