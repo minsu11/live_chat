@@ -1,0 +1,41 @@
+package com.chat_server.chatroom.service.impl;
+
+import com.chat_server.chatlist.service.ChatListService;
+import com.chat_server.chatroom.entity.ChatRoom;
+import com.chat_server.chatroom.service.ChatRoomFacadeService;
+import com.chat_server.chatroom.service.ChatRoomService;
+import com.chat_server.chattype.enumulation.ChatType;
+import com.chat_server.user.dto.response.UserIdResponse;
+import com.chat_server.user.service.UserService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Slf4j
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
+
+    private final ChatRoomService chatRoomService;
+
+    private final ChatListService chatListService;
+
+    private final UserService userService;
+
+    @Override
+    public void createOneToOneChatRoom(Long userId, String friendUuid) {
+        // 1대1 대화방 만들 때 채팅방 + 채팅 리스트 insert
+        // 그러나 채팅방 목록을 보여줄 땐 message가 있는 경우에만 해당되게 하기.
+        // chat setting도 만들어야할 듯, default 데이터로 만들게 할 예정
+
+        // 1. 친구의 pk 아이디 가지고 옴
+        UserIdResponse friendIdResponse = userService.getUserIdByUserUuid(friendUuid);
+
+        // room name 설정,
+
+
+    }
+
+}

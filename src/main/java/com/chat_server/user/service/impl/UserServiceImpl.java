@@ -7,6 +7,7 @@ import com.chat_server.gender.repository.GenderRepository;
 import com.chat_server.user.domain.UserType;
 import com.chat_server.user.dto.request.UserRegisterRequest;
 import com.chat_server.user.dto.response.UserAuthenticationResponse;
+import com.chat_server.user.dto.response.UserIdResponse;
 import com.chat_server.user.entity.User;
 import com.chat_server.user.exception.UserAleadyExistException;
 import com.chat_server.user.exception.UserNotFoundException;
@@ -104,4 +105,14 @@ public class UserServiceImpl implements UserService {
             .orElseThrow(UserNotFoundException::new);
         user.updateNickname(name);
     }
+
+    // uuid로 user id 찾는 메서드
+    @Override
+    public UserIdResponse getUserIdByUserUuid(String userUuid) {
+        Long userId = userRepository.getUserIdByUserUuid(userUuid)
+            .orElseThrow(UserNotFoundException::new);
+        return new UserIdResponse(userId);
+    }
+
+
 }
