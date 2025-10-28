@@ -19,10 +19,10 @@ public class ChatNotification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "chat_notification_id")
+    @Column(name = "id")
     private Long id;
 
-    @Column(name = "notification_content")
+    @Column(name = "content")
     private String content;
 
     @Column(name = "is_read")

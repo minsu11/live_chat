@@ -19,10 +19,10 @@ public class UserProfile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_profile_id")
+    @Column(name = "id")
     private Long id;
 
-    @Column(name = "user_profile_state_message")
+    @Column(name = "state_message")
     private String stateMessage;
 
     @OneToOne(fetch = FetchType.LAZY)

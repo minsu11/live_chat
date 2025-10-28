@@ -25,10 +25,10 @@ import java.time.LocalDateTime;
 public class ChatRoom {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "chat_room_id")
+    @Column(name = "id")
     private Long id;
 
-    @Column(name = "chat_room_max_person")
+    @Column(name = "max_person")
     private int maxPerson;
 
     @Column(name="chat_room_name")

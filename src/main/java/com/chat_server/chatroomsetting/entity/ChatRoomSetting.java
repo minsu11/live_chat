@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class ChatRoomSetting {
     @Id
-    @Column(name = "chat_room_setting_id")
+    @Column(name = "id")
     private Long id;
 
     @Column(name = "allow_file_upload")

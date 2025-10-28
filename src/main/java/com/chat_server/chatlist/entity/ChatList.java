@@ -2,6 +2,7 @@ package com.chat_server.chatlist.entity;
 
 import com.chat_server.chatauthor.entity.ChatAuthor;
 import com.chat_server.chatroom.entity.ChatRoom;
+import com.chat_server.friend.entity.Friend;
 import com.chat_server.user.entity.User;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -30,7 +31,7 @@ public class ChatList {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "chat_list_id")
+    @Column(name = "id")
     private Long id;
 
     @Column(name = "unread_count")
@@ -48,6 +49,9 @@ public class ChatList {
     @Column(name = "last_read_message_id")
     private Long lastReadMessageId;
 
+    @Column(name = "custom_name")
+    private String customName;
+
     @Column(name = "last_opened_at")
     private LocalDateTime lastOpenedAt;
 
@@ -62,5 +66,9 @@ public class ChatList {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="chat_author_id")
     private ChatAuthor chatAuthor;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="friend_id")
+    private Friend friend;
 }
 
