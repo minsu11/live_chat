@@ -22,13 +22,13 @@ import java.util.Date;
 public class UserStatus{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_status_id")
+    @Column(name = "id")
     private int id;
 
-    @Column(name = "user_status_name")
+    @Column(name = "name")
     private String userStatusName;
 
-    @Column(name = "user_status_created_at")
+    @Column(name = "created_at")
     private Date userStatusCreatedAt;
 }
 

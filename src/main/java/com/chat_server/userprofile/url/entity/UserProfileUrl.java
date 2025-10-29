@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 public class UserProfileUrl {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_profile_url_id")
+    @Column(name = "id")
     private Long id;
 
     @Column(name = "image_url")

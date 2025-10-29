@@ -21,10 +21,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ChatType {
     @Id
-    @Column(name = "chat_type_id")
+    @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "chat_type_name")
+    @Column(name = "name")
     private String chatTypeName;
 }

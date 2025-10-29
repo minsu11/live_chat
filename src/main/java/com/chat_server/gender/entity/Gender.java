@@ -25,12 +25,12 @@ import java.util.Date;
 public class Gender {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "gender_id")
+    @Column(name = "id")
     private Integer id;
 
-    @Column(name = "gender_name")
+    @Column(name = "name")
     private String genderName;
 
-    @Column(name = "gender_created_at")
+    @Column(name = "created_at")
     private Date createdAt;
 }
