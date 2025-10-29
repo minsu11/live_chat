@@ -31,10 +31,10 @@ public class ChatRoom {
     @Column(name = "max_person")
     private int maxPerson;
 
-    @Column(name="chat_room_name")
+    @Column(name="name")
     private String name;
 
-    @Column(name = "chat_room_description")
+    @Column(name = "description")
     private String description;
 
     @Column(name = "is_private")
@@ -52,7 +52,7 @@ public class ChatRoom {
     @Column(name = "last_message_sender_id")
     private Long lastMessageSenderId;
 
-    @Column(name = "chat_room_created_at")
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
