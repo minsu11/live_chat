@@ -1,6 +1,5 @@
 package com.chat_server.chatlist.entity;
 
-import com.chat_server.chatauthor.entity.ChatAuthor;
 import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.friend.entity.Friend;
 import com.chat_server.user.entity.User;
@@ -62,10 +61,6 @@ public class ChatList {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chat_room_id")
     private ChatRoom chatRoom;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="chat_author_id")
-    private ChatAuthor chatAuthor;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="friend_id")
