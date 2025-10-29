@@ -16,10 +16,10 @@ import java.time.LocalDateTime;
 public class NotificationType {
 
     @Id
-    @Column(name = "notification_type_id")
+    @Column(name = "id")
     private int notificationTypeId;
 
-    @Column(name = "notification_type_name")
+    @Column(name = "name")
     private String notificationTypeName;
 
     @Column(name = "description")

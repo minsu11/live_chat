@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 public class Friend {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "friend_id")
+    @Column(name = "id")
     private Long id;
 
     @Column(name = "is_blocked")
