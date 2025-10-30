@@ -108,10 +108,12 @@ public class UserServiceImpl implements UserService {
 
     // uuid로 user id 찾는 메서드
     @Override
-    public UserIdResponse getUserIdByUserUuid(String userUuid) {
-        Long userId = userRepository.getUserIdByUserUuid(userUuid)
+    public Long getUserIdByUserUuid(String userUuid) {
+        log.debug("User Service getUserIdByUserUuid start");
+
+        return userRepository.getUserIdByUserUuid(userUuid)
             .orElseThrow(UserNotFoundException::new);
-        return new UserIdResponse(userId);
+
     }
 
 

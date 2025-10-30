@@ -1,6 +1,7 @@
 package com.chat_server.chatroom.controller;
 
 
+import com.chat_server.chatroom.service.ChatRoomFacadeService;
 import com.chat_server.chatroom.service.ChatRoomService;
 import com.chat_server.common.dto.response.ApiResponse;
 import com.chat_server.user.dto.response.AuthenticatedUser;
@@ -18,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RequestMapping("${custom.api.common.prefix}${custom.api.chat-room.prefix}")
 public class ChatRoomController {
-    private final ChatRoomService chatRoomService;
+    private final ChatRoomFacadeService chatRoomFacadeService;
 
     // todo 채팅방 목록 가지고 오기
 
@@ -26,11 +27,17 @@ public class ChatRoomController {
     // todo 채팅방 생성
     @GetMapping("{userId}/register")
     public ResponseEntity<ApiResponse<Void>> createChatRoom(
-            @PathVariable String userId,
+            @PathVariable(name="userId") String friendId,
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser
     ){
 
         log.info("chat room register");
+        Long userId = authenticatedUser.userId();
+        log.info("user id {}", userId);
+        log.info("friend id {}", friendId);
+        log.info("service before");
+        chatRoomFacadeService.createOneToOneChatRoom(userId,friendId);
+
 
         return null;
     }

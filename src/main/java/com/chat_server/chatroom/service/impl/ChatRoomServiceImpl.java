@@ -29,7 +29,7 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     }
 
     @Override
-    public void createOneToOneChatRoom(ChatType chatType,String roomName, Long userId) {
+    public void createOneToOneChatRoom(ChatType chatType,Long userId, Long friendId) {
         // chat room 미리 만들기
         // 대화창 중복 관리를 위한 hash string 만들기(1:1 대화방에서만 생성)
         //

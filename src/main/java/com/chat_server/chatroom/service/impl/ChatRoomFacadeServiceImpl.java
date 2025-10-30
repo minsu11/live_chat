@@ -7,6 +7,7 @@ import com.chat_server.chatroom.service.ChatRoomService;
 import com.chat_server.chattype.enumulation.ChatType;
 import com.chat_server.user.dto.response.UserIdResponse;
 import com.chat_server.user.service.UserService;
+import com.chat_server.util.ChatRoomHashUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,11 +31,19 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
         // 그러나 채팅방 목록을 보여줄 땐 message가 있는 경우에만 해당되게 하기.
         // chat setting도 만들어야할 듯, default 데이터로 만들게 할 예정
 
+        // chat type
+
         // 1. 친구의 pk 아이디 가지고 옴
-        UserIdResponse friendIdResponse = userService.getUserIdByUserUuid(friendUuid);
+        Long friendId= userService.getUserIdByUserUuid(friendUuid);
 
-        // room name 설정,
+        // room hash string setting
 
+
+
+
+
+
+        // chat room 생성
 
     }
 

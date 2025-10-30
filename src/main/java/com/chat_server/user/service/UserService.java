@@ -23,5 +23,5 @@ public interface UserService {
 
     void updateNickname(Long userId, String name);
 
-    UserIdResponse getUserIdByUserUuid(String userUuid);
+    Long getUserIdByUserUuid(String userUuid);
 }
