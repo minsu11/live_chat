@@ -23,27 +23,24 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
 
     private final ChatListService chatListService;
 
+
+
     private final UserService userService;
 
     @Override
     public void createOneToOneChatRoom(Long userId, String friendUuid) {
-        // 1대1 대화방 만들 때 채팅방 + 채팅 리스트 insert
-        // 그러나 채팅방 목록을 보여줄 땐 message가 있는 경우에만 해당되게 하기.
-        // chat setting도 만들어야할 듯, default 데이터로 만들게 할 예정
-
-        // chat type
-
-        // 1. 친구의 pk 아이디 가지고 옴
+        log.info("1:1 chat create start");
         Long friendId= userService.getUserIdByUserUuid(friendUuid);
 
         // room hash string setting
 
-
-
-
-
-
         // chat room 생성
+        Long roomId = chatRoomService.createOneToOneChatRoom(userId, friendId);
+
+        // chat list 즉 ensure chat list 할 예정
+        chatListService.ensureMembership(roomId, userId);
+        chatListService.ensureMembership(roomId, friendId);
+        log.info("1:1 chat create end");
 
     }
 

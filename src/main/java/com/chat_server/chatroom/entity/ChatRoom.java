@@ -3,6 +3,8 @@ package com.chat_server.chatroom.entity;
 import com.chat_server.chattype.entity.ChatType;
 import com.chat_server.user.entity.User;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -23,6 +25,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "chat_room")
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ChatRoom {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -63,9 +67,8 @@ public class ChatRoom {
     @JoinColumn(name = "chat_type_id")
     private ChatType chatType;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="chat_room_author_id")
-    private User chatRoomAuthor;
+
+
 
 
 }

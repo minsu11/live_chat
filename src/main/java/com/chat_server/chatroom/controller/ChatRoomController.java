@@ -37,9 +37,10 @@ public class ChatRoomController {
         log.info("friend id {}", friendId);
         log.info("service before");
         chatRoomFacadeService.createOneToOneChatRoom(userId,friendId);
+        ApiResponse<Void> apiResponse = ApiResponse.success(201, "1 대 1 대화창 생성");
+        log.info("api response {}", apiResponse);
 
-
-        return null;
+        return ResponseEntity.ok(apiResponse);
     }
 
     // todo 채팅방 나가기(채팅방 삭제)

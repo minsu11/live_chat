@@ -9,6 +9,6 @@ public interface ChatRoomService {
     // cursor pagenation
     CursorPageResponse<UserFriendResponse> getFriendsByCursor(Long userId, int limit, @Nullable String cursor);
 
-    void createOneToOneChatRoom(ChatType chatType, Long userId, Long friendId);
+    Long createOneToOneChatRoom(Long userId, Long friendId);
 
 }

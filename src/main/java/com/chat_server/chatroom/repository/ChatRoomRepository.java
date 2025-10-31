@@ -5,5 +5,4 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 // chat room repository
 public interface ChatRoomRepository extends JpaRepository<ChatRoom,Long>, ChatRoomRepositoryCustom {
-
 }

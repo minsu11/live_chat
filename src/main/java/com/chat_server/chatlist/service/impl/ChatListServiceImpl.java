@@ -10,6 +10,7 @@ import jakarta.annotation.Nullable;
 import java.time.ZoneOffset;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,5 +48,10 @@ public class ChatListServiceImpl implements ChatListService {
 
         // 4) 공통 응답 래핑
         return new CursorPageResponse<>(slice.getContent(), next, slice.hasNext());
+    }
+
+    @Override
+    public void ensureMembership(Long roomId, Long userId) {
+        chatListRepository.upsertMembership(roomId, userId);
     }
 }
