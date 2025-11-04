@@ -47,7 +47,8 @@ public class ChatListRepositoryCustomImpl extends QuerydslRepositorySupport impl
                     .or(
                         qChatRoom.lastMessageAt.eq(cursorAt)
                             .and(qChatRoom.id.lt(cursorKey.lastRoomId()))
-                    )
+                    ).or(qChatRoom.lastMessageAt.isNull()) // 메시지 없는 방도 포함
+
             );
         }
 
