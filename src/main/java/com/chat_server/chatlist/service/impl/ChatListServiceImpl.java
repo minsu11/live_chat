@@ -35,6 +35,7 @@ public class ChatListServiceImpl implements ChatListService {
 
         // 3) next 커서 생성
         String next = null;
+        log.info("chat list : {}", slice.toString());
         if (slice.hasNext() && !slice.getContent().isEmpty()) {
             ChatRoomListResponse last = slice.getContent().get(slice.getContent().size() - 1);
 
