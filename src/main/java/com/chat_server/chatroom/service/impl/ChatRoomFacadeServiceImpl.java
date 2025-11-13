@@ -38,8 +38,8 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
         Long roomId = chatRoomService.createOneToOneChatRoom(userId, friendId);
 
         // chat list 즉 ensure chat list 할 예정
-        chatListService.ensureMembership(roomId, userId);
-        chatListService.ensureMembership(roomId, friendId);
+        chatListService.ensureMembership(roomId, userId, friendId);
+        chatListService.ensureMembership(roomId, friendId, userId);
         log.info("1:1 chat create end");
 
     }

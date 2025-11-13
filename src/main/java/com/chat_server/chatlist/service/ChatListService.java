@@ -7,5 +7,5 @@ import jakarta.annotation.Nullable;
 
 public interface ChatListService {
     CursorPageResponse<ChatRoomListResponse> getChatRoomListsByCursor(Long userId, int limit, @Nullable String cursor);
-    void ensureMembership(Long roomId, Long userId);
+    void ensureMembership(Long roomId, Long userId, Long friendId);
 }
