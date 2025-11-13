@@ -9,6 +9,8 @@ import com.chat_server.common.cursor.ChatListCursorKey;
 import com.chat_server.common.cursor.CursorKey;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.Coalesce;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.Null;
 import java.time.Instant;
@@ -35,6 +37,20 @@ public class ChatListRepositoryCustomImpl extends QuerydslRepositorySupport impl
     public Slice<ChatRoomListResponse> getChatRoomListByCursor(Long userId, int limit,
         @Nullable ChatListCursorKey cursorKey) {
 
+        QChatList clOther = new QChatList("clOther");
+
+        var isDm = qChatRoom.participantsHash.isNotNull();
+
+        var dmBaseName = new Coalesce<String>()
+                .add(qChatList.friend.user.userNickname);
+
+        var displayName = new Coalesce<String>()
+                .add(qChatList.customName)
+                .add(new CaseBuilder().when(isDm).then(dmBaseName)
+                        .otherwise(qChatRoom.name));
+
+        log.info("display name: {}", displayName);
+
         // user id 조회
         BooleanBuilder where = new BooleanBuilder().and(qChatList.user.id.eq(userId));
 
@@ -60,7 +76,7 @@ public class ChatListRepositoryCustomImpl extends QuerydslRepositorySupport impl
             .select(Projections.constructor(
                 ChatRoomListResponse.class,
                 qChatRoom.id,
-                qChatRoom.name,
+                displayName,
                 qChatRoom.lastMessageAt
             )).fetch();
 
