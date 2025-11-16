@@ -63,6 +63,10 @@ public class ChatRoom {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "order_at")
+    private LocalDateTime orderAt;
+
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chat_type_id")
     private ChatType chatType;

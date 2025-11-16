@@ -69,7 +69,7 @@ public class ChatListRepositoryCustomImpl extends QuerydslRepositorySupport impl
             // OR isNull() 제거. 정렬키와 동일한 비교식으로 통일
             where.and(
                     orderAt.lt(cursorAt)
-                            .or(orderAt.eq(cursorAt).and(qChatRoom.id.lt(cursorKey.lastRoomId())))
+                            .or(qChatRoom.orderAt.eq(cursorAt).and(qChatRoom.id.lt(cursorKey.lastRoomId())))
             );
         }
 
@@ -77,7 +77,7 @@ public class ChatListRepositoryCustomImpl extends QuerydslRepositorySupport impl
             .join(qChatList.chatRoom, qChatRoom)
                 .leftJoin(qChatList.friend, qFriend).on(isDm)
             .where(where)
-            .orderBy(orderAt.desc(), qChatRoom.id.desc())
+            .orderBy(qChatRoom.orderAt.desc(), qChatRoom.id.desc())
             .limit(limit + 1)
             .select(Projections.constructor(
                     ChatRoomListRow.class,
