@@ -44,7 +44,7 @@ public class ChatListServiceImpl implements ChatListService {
                 .toInstant()
                 .toEpochMilli();
 
-            next = ChatListCursorCodec.encode(lastAtEpochMillis, last.chatRoomId());
+            next = ChatListCursorCodec.encode(lastAtEpochMillis, last.roomId());
         }
 
         // 4) 공통 응답 래핑
