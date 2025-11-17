@@ -57,7 +57,8 @@ public class ChatListRepositoryCustomImpl extends QuerydslRepositorySupport impl
                 LocalDateTime.class,
                 "COALESCE({0}, {1})",
                 qChatRoom.lastMessageAt, qChatRoom.createdAt);
-
+        
+        // TODO 마지막 메세지 OR 최근에 온 메세지 + 채팅방 프로필 추가해야함
 
         // user id 조회
         BooleanBuilder where = new BooleanBuilder().and(qChatList.user.id.eq(userId));

@@ -4,15 +4,13 @@ package com.chat_server.chatroom.controller;
 import com.chat_server.chatroom.service.ChatRoomFacadeService;
 import com.chat_server.chatroom.service.ChatRoomService;
 import com.chat_server.common.dto.response.ApiResponse;
+import com.chat_server.common.propertis.CustomProperties;
 import com.chat_server.user.dto.response.AuthenticatedUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -20,17 +18,22 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("${custom.api.common.prefix}${custom.api.chat-room.prefix}")
 public class ChatRoomController {
     private final ChatRoomFacadeService chatRoomFacadeService;
+    // todo 채팅방 정보
+    @GetMapping()
+    public ResponseEntity<ApiResponse<Void>> getChatRoom(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+    ){
+        log.info("chat room info get start");
 
-    // todo 채팅방 목록 가지고 오기
 
+        return null;
+    }
 
-    // todo 채팅방 생성
     @GetMapping("{userId}/register")
     public ResponseEntity<ApiResponse<Void>> createChatRoom(
             @PathVariable(name="userId") String friendId,
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser
     ){
-
         log.info("chat room register");
         Long userId = authenticatedUser.userId();
         log.info("user id {}", userId);
@@ -44,6 +47,12 @@ public class ChatRoomController {
     }
 
     // todo 채팅방 나가기(채팅방 삭제)
+    @DeleteMapping("remove")
+    public ResponseEntity<ApiResponse<Void>> removeChatRoom(){
+        // soft delete 진행 예정, 해당 컨트롤러는 1대1 그룹, 오픈 채팅 나가기
+
+        return null;
+    }
 
     // todo 채팅방 설정 업데이트(해당 업데이트는 실제로 업데이트 할 예정)
 
