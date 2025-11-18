@@ -1,5 +1,6 @@
 package com.chat_server.chatroom.service.impl;
 
+import com.chat_server.chatroom.dto.response.ChatRoomSummaryResponse;
 import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.chatroom.repository.ChatRoomRepository;
 import com.chat_server.chatroom.service.ChatRoomService;
@@ -65,4 +66,12 @@ public class ChatRoomServiceImpl implements ChatRoomService {
         }
 
     }
+
+    @Override
+    public ChatRoomSummaryResponse getChatRoomSummary(Long roomId) {
+
+
+        return null;
+    }
+
 }

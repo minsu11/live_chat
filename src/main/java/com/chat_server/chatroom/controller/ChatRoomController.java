@@ -1,6 +1,7 @@
 package com.chat_server.chatroom.controller;
 
 
+import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.chatroom.service.ChatRoomFacadeService;
 import com.chat_server.chatroom.service.ChatRoomService;
 import com.chat_server.common.dto.response.ApiResponse;
@@ -12,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -19,11 +22,17 @@ import org.springframework.web.bind.annotation.*;
 public class ChatRoomController {
     private final ChatRoomFacadeService chatRoomFacadeService;
     // todo 채팅방 정보
-    @GetMapping()
+    @GetMapping("/{roomId}/summary")
     public ResponseEntity<ApiResponse<Void>> getChatRoom(
-            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+            @PathVariable Long roomId
     ){
         log.info("chat room info get start");
+        log.info("roon id : {}", roomId);
+        chatRoomFacadeService.getChatRoom(roomId);
+
+
+
 
 
         return null;

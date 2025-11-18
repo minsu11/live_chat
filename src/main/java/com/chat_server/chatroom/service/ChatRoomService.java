@@ -1,5 +1,6 @@
 package com.chat_server.chatroom.service;
 
+import com.chat_server.chatroom.dto.response.ChatRoomSummaryResponse;
 import com.chat_server.chattype.entity.ChatType;
 import com.chat_server.friend.dto.response.CursorPageResponse;
 import com.chat_server.friend.dto.response.UserFriendResponse;
@@ -11,4 +12,5 @@ public interface ChatRoomService {
 
     Long createOneToOneChatRoom(Long userId, Long friendId);
 
+    ChatRoomSummaryResponse getChatRoomSummary(Long roomId);
 }
