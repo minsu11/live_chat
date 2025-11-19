@@ -63,7 +63,7 @@ public class ChatRoom {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @Column(name = "order_at")
+    @Column(name = "order_at",insertable = false, updatable = false)
     private LocalDateTime orderAt;
 
 
