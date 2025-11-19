@@ -1,4 +1,10 @@
 package com.chat_server.chatroom.dto.response;
 
-public record ChatRoomSummaryResponse() {
+import java.time.LocalDateTime;
+
+public record ChatRoomSummaryResponse(Long roomId,
+                                      String chatType,
+                                      String title,
+                                      String profileUrl,
+                                      long memberCount) {
 }

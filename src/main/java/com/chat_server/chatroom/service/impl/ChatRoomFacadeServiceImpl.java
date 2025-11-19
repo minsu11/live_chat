@@ -35,8 +35,8 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
         log.info("Get chat room by id:{}", roomId);
         // summary 데이터가 뭐가 있나?
 
-
-        return null;
+        // summary
+        return chatRoomService.getChatRoomSummary(roomId);
     }
 
     @Override

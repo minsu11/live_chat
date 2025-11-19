@@ -2,6 +2,7 @@ package com.chat_server.chatroom.service.impl;
 
 import com.chat_server.chatroom.dto.response.ChatRoomSummaryResponse;
 import com.chat_server.chatroom.entity.ChatRoom;
+import com.chat_server.chatroom.exception.ChatRoomNotFoundException;
 import com.chat_server.chatroom.repository.ChatRoomRepository;
 import com.chat_server.chatroom.service.ChatRoomService;
 import com.chat_server.chattype.enumulation.ChatType;
@@ -19,6 +20,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -69,9 +71,10 @@ public class ChatRoomServiceImpl implements ChatRoomService {
 
     @Override
     public ChatRoomSummaryResponse getChatRoomSummary(Long roomId) {
-
-
-        return null;
+        // room id, title, preview message, date, unread count, role
+        log.info("get chat room summary");
+        return  chatRoomRepository.findChatRoomSummaryByRoomId(roomId)
+                .orElseThrow(ChatRoomNotFoundException::new);
     }
 
 }

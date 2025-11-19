@@ -1,6 +1,7 @@
 package com.chat_server.chatroom.controller;
 
 
+import com.chat_server.chatroom.dto.response.ChatRoomSummaryResponse;
 import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.chatroom.service.ChatRoomFacadeService;
 import com.chat_server.chatroom.service.ChatRoomService;
@@ -23,19 +24,16 @@ public class ChatRoomController {
     private final ChatRoomFacadeService chatRoomFacadeService;
     // todo 채팅방 정보
     @GetMapping("/{roomId}/summary")
-    public ResponseEntity<ApiResponse<Void>> getChatRoom(
+    public ResponseEntity<ApiResponse<ChatRoomSummaryResponse>> getChatRoom(
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @PathVariable Long roomId
     ){
         log.info("chat room info get start");
         log.info("roon id : {}", roomId);
-        chatRoomFacadeService.getChatRoom(roomId);
-
-
-
-
-
-        return null;
+        ChatRoomSummaryResponse chatRoomSummaryResponse = chatRoomFacadeService.getChatRoomSummary(roomId);
+        ApiResponse<ChatRoomSummaryResponse> response = ApiResponse.success(200,"채팅방 조회 성공", chatRoomSummaryResponse);
+        log.info("chat room info get end");
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("{userId}/register")
