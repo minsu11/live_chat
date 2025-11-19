@@ -19,15 +19,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class ChatListController {
     private final ChatListService chatListService;
-    // todo 채팅방 목록 불러오기
-    // 로그인 할 때 채팅창 목록 불러오기
+
+
     @GetMapping()
     public ResponseEntity<ApiResponse<CursorPageResponse<ChatRoomListResponse>>> getChatRoomList(
         @AuthenticationPrincipal(expression = "userId" )Long userId,
         @RequestParam(defaultValue = "50") int limit,
         @RequestParam(required = false) String cursor){
         log.info("chat list controller");
-
+        // todo preview message, unread  등 과 같은 데이터를 덧붙여서 추가 개발해야함
         CursorPageResponse<ChatRoomListResponse> cursorPageResponse = chatListService.getChatRoomListsByCursor(userId, limit, cursor);
 
         ApiResponse<CursorPageResponse<ChatRoomListResponse>> apiResponse = ApiResponse.success(200,cursorPageResponse);
