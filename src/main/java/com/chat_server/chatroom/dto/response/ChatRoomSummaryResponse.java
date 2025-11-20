@@ -6,5 +6,5 @@ public record ChatRoomSummaryResponse(Long roomId,
                                       String chatType,
                                       String title,
                                       String profileUrl,
-                                      Long memberCount) {
+                                      Integer memberCount) {
 }
