@@ -55,7 +55,7 @@ public class ChatRoomRepositoryCustomImpl extends QuerydslRepositorySupport impl
                 .where(qChatList.chatRoom.id.eq(roomId));
 
 
-        ChatRoomSummaryResponse response = from(qChatList)
+        ChatRoomSummaryResponse response = from(qChatRoom)
                 .join(qChatList).on(qChatList.chatRoom.id.eq(qChatRoom.id))
                 .leftJoin(qUserProfileUrl).on(qUserProfileUrl.userProfile.id.eq(qUserProfile.id))
                 .leftJoin(qUserProfile).on(qUserProfile.user.id.eq(qChatList.friend.user.id))
