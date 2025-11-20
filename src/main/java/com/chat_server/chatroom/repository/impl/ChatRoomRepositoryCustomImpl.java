@@ -39,7 +39,7 @@ public class ChatRoomRepositoryCustomImpl extends QuerydslRepositorySupport impl
     }
 
     @Override
-    public Optional<ChatRoomSummaryResponse> findChatRoomSummaryByRoomId(Long roomId) {
+    public Optional<ChatRoomSummaryResponse> findChatRoomSummaryByRoomId(Long roomId, Long userId) {
         // 결국 chat type 들어와서 분리를 해야할듯
         // todo 추 후 수정이 될 가능성도 있음
         // 1 대 1인 가정
@@ -55,7 +55,8 @@ public class ChatRoomRepositoryCustomImpl extends QuerydslRepositorySupport impl
                 .coalesce(qChatRoom.name);
 
         ChatRoomSummaryResponse response = from(qChatRoom)
-                .join(qChatList).on(qChatList.chatRoom.id.eq(qChatRoom.id))
+                .join(qChatList).on(qChatList.chatRoom.id.eq(qChatRoom.id)
+                        .and(qChatList.user.id.eq(userId)))
                 .leftJoin(qUserProfile).on(qUserProfile.user.id.eq(qChatList.friend.user.id))
                 .leftJoin(qUserProfileUrl).on(qUserProfileUrl.userProfile.id.eq(qUserProfile.id))
                 .select(Projections.constructor(

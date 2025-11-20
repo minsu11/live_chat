@@ -70,10 +70,10 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     }
 
     @Override
-    public ChatRoomSummaryResponse getChatRoomSummary(Long roomId) {
+    public ChatRoomSummaryResponse getChatRoomSummary(Long roomId, Long userId) {
         // room id, title, preview message, date, unread count, role
         log.info("get chat room summary");
-        return  chatRoomRepository.findChatRoomSummaryByRoomId(roomId)
+        return  chatRoomRepository.findChatRoomSummaryByRoomId(roomId, userId)
                 .orElseThrow(ChatRoomNotFoundException::new);
     }
 

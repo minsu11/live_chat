@@ -12,5 +12,5 @@ public interface ChatRoomService {
 
     Long createOneToOneChatRoom(Long userId, Long friendId);
 
-    ChatRoomSummaryResponse getChatRoomSummary(Long roomId);
+    ChatRoomSummaryResponse getChatRoomSummary(Long roomId, Long userId);
 }

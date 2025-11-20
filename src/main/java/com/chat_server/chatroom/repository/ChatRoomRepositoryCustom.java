@@ -8,5 +8,5 @@ import java.util.Optional;
 
 public interface ChatRoomRepositoryCustom {
     Optional<Long> findRoomIdByParticipantsHashAndChatType(String participantsHash, ChatType chatType);
-    Optional<ChatRoomSummaryResponse> findChatRoomSummaryByRoomId(Long roomId);
+    Optional<ChatRoomSummaryResponse> findChatRoomSummaryByRoomId(Long roomId, Long userId);
 }

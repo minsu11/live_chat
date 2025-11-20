@@ -29,14 +29,14 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
     private final UserService userService;
 
     @Override
-    public ChatRoomSummaryResponse getChatRoomSummary(Long roomId) {
+    public ChatRoomSummaryResponse getChatRoomSummary(Long roomId, Long userId) {
         // chat room name
         log.info("get chat room start");
         log.info("Get chat room by id:{}", roomId);
         // summary 데이터가 뭐가 있나?
 
         // summary
-        return chatRoomService.getChatRoomSummary(roomId);
+        return chatRoomService.getChatRoomSummary(roomId, userId);
     }
 
     @Override

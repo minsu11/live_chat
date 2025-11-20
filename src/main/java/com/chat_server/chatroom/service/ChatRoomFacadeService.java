@@ -5,6 +5,6 @@ import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.chattype.enumulation.ChatType;
 
 public interface ChatRoomFacadeService {
-    ChatRoomSummaryResponse getChatRoomSummary(Long roomId);
+    ChatRoomSummaryResponse getChatRoomSummary(Long roomId, Long userId);
     void createOneToOneChatRoom(Long userId, String friendUuid);
 }

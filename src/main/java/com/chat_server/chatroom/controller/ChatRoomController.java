@@ -30,7 +30,9 @@ public class ChatRoomController {
     ){
         log.info("chat room info get start");
         log.info("roon id : {}", roomId);
-        ChatRoomSummaryResponse chatRoomSummaryResponse = chatRoomFacadeService.getChatRoomSummary(roomId);
+        Long userId = authenticatedUser.userId();
+        log.info("user id : {}", userId);
+        ChatRoomSummaryResponse chatRoomSummaryResponse = chatRoomFacadeService.getChatRoomSummary(roomId, userId);
         ApiResponse<ChatRoomSummaryResponse> response = ApiResponse.success(200,"채팅방 조회 성공", chatRoomSummaryResponse);
         log.info("chat room info get end");
         return ResponseEntity.ok(response);
