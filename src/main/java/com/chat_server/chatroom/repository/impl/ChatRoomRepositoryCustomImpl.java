@@ -9,6 +9,7 @@ import com.chat_server.userprofile.enrtity.QUserProfile;
 import com.chat_server.userprofile.url.entity.QUserProfileUrl;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Coalesce;
+import com.querydsl.core.types.dsl.StringExpression;
 import com.querydsl.jpa.JPQLQuery;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
@@ -46,17 +47,13 @@ public class ChatRoomRepositoryCustomImpl extends QuerydslRepositorySupport impl
         QUserProfile qUserProfile = QUserProfile.userProfile;
 
         // title
-        Coalesce<String> titleExpr = new Coalesce<String>()
-                .add(qChatList.customName)
-                .add(qChatList.friend.user.userNickname)
-                .add(qChatRoom.name);
-
-
-
-
+        StringExpression titleExpr = qChatList.customName
+                .coalesce(qChatList.friend.user.userNickname)
+                .coalesce(qChatRoom.name);
 
         JPQLQuery<Long> memberCnt = from(qChatList).select(qChatList.id.count())
                 .where(qChatList.chatRoom.id.eq(roomId));
+
 
         ChatRoomSummaryResponse response = from(qChatList)
                 .join(qChatList).on(qChatList.chatRoom.id.eq(qChatRoom.id))
