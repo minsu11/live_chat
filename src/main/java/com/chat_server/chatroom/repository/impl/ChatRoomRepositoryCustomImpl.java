@@ -7,9 +7,12 @@ import com.chat_server.chatroom.repository.ChatRoomRepositoryCustom;
 import com.chat_server.chattype.entity.ChatType;
 import com.chat_server.userprofile.enrtity.QUserProfile;
 import com.chat_server.userprofile.url.entity.QUserProfileUrl;
+import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Coalesce;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.core.types.dsl.StringExpression;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.JPQLQuery;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
@@ -51,23 +54,23 @@ public class ChatRoomRepositoryCustomImpl extends QuerydslRepositorySupport impl
                 .coalesce(qChatList.friend.user.userNickname)
                 .coalesce(qChatRoom.name);
 
-        JPQLQuery<Long> memberCnt = from(qChatList).select(qChatList.id.count())
-                .where(qChatList.chatRoom.id.eq(roomId));
-
-
         ChatRoomSummaryResponse response = from(qChatRoom)
                 .join(qChatList).on(qChatList.chatRoom.id.eq(qChatRoom.id))
-                .leftJoin(qUserProfileUrl).on(qUserProfileUrl.userProfile.id.eq(qUserProfile.id))
                 .leftJoin(qUserProfile).on(qUserProfile.user.id.eq(qChatList.friend.user.id))
+                .leftJoin(qUserProfileUrl).on(qUserProfileUrl.userProfile.id.eq(qUserProfile.id))
                 .select(Projections.constructor(
                         ChatRoomSummaryResponse.class,
                         qChatRoom.id,
                         qChatRoom.chatType.chatTypeName,
                         titleExpr,
                         qUserProfileUrl.imageUrl,
-                        memberCnt
+                        qChatList.id.countDistinct()
                 ))
                 .where(qChatRoom.id.eq(roomId))
+                .groupBy(qChatRoom.id,
+                        qChatRoom.chatType.chatTypeName,
+                        titleExpr,
+                        qUserProfileUrl.imageUrl)
                 .fetchOne();
 
 
