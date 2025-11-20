@@ -65,7 +65,7 @@ public class ChatRoomRepositoryCustomImpl extends QuerydslRepositorySupport impl
                         qChatRoom.chatType.chatTypeName,
                         titleExpr,
                         qUserProfileUrl.imageUrl,
-                        qChatList.id.countDistinct()
+                        qChatRoom.maxPerson
                 ))
                 .where(qChatRoom.id.eq(roomId))
                 .fetchOne();
