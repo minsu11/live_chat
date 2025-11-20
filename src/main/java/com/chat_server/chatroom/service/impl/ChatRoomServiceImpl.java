@@ -59,6 +59,7 @@ public class ChatRoomServiceImpl implements ChatRoomService {
                     .chatType(ref)
                     .createdAt(LocalDateTime.now())
                     .participantsHash(key)
+                    .maxPerson(2)
                     .build() ;
             ChatRoom room = chatRoomRepository.save(newChatRoom);
             return room.getId();
