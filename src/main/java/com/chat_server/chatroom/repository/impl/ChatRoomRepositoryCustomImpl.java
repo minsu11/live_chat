@@ -59,7 +59,7 @@ public class ChatRoomRepositoryCustomImpl extends QuerydslRepositorySupport impl
                 .from(qUserProfileUrl)
                 .where(qUserProfileUrl.userProfile.id.eq(qUserProfile.id))
                 .orderBy(qUserProfileUrl.id.desc())
-                .limit(1);
+                .limit(1L);
 
         ChatRoomSummaryResponse response = from(qChatRoom)
                 .join(qChatList).on(qChatList.chatRoom.id.eq(qChatRoom.id)
