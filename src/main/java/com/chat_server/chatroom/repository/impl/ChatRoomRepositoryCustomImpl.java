@@ -68,10 +68,6 @@ public class ChatRoomRepositoryCustomImpl extends QuerydslRepositorySupport impl
                         qChatList.id.countDistinct()
                 ))
                 .where(qChatRoom.id.eq(roomId))
-                .groupBy(qChatRoom.id,
-                        qChatRoom.chatType.chatTypeName,
-                        titleExpr,
-                        qUserProfileUrl.imageUrl)
                 .fetchOne();
 
 
