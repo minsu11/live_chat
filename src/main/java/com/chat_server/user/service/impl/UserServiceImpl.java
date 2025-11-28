@@ -48,7 +48,7 @@ public class UserServiceImpl implements UserService {
 
 
     @Override
-    public void createUSer(UserRegisterRequest registerRequest) {
+    public String createUSer(UserRegisterRequest registerRequest) {
         String id = registerRequest.id();
         log.debug("service start");
         if (userRepository.existsByUserInputId(id)) {
@@ -62,7 +62,7 @@ public class UserServiceImpl implements UserService {
         Gender gender = genderRepository.findByGenderName(registerRequest.gender())
                 .orElseThrow(() -> new GenderNotFoundException("gender not found"));
         String password = passwordEncoder.encode(registerRequest.password());
-
+        String userUuid = UUID.randomUUID().toString();
         User user = User.builder()
                 .userInputId(registerRequest.id())
                 .userInputPassword(password)
@@ -72,11 +72,12 @@ public class UserServiceImpl implements UserService {
                 .userStatus(userStatus)
                 .gender(gender)
                 .userCreatedAt(LocalDateTime.now())
-                .userUuid(UUID.randomUUID().toString())
+                .userUuid(userUuid)
                 .build();
         userRepository.save(user);
         log.debug("service end");
 
+        return userUuid;
     }
 
     @Override

@@ -48,20 +48,4 @@ public class UserProfileUrlServiceImpl implements UserProfileUrlService {
         log.info("url 저장 완료");
     }
 
-    @Override
-    public void createUserProfileUrl(String userUuid) {
-        // user repository
-        log.debug("Creating user profile url");
-        User user = userRepository.findByUserUuid(userUuid)
-                .orElseThrow(UserNotFoundException::new);
-
-        UserProfile userProfile = UserProfile.builder()
-                .stateMessage("")
-                .user(user)
-                .build();
-
-        userProfileRepository.save(userProfile);
-
-        log.debug("Creating user profile url end");
-    }
 }
