@@ -6,14 +6,11 @@ import com.chat_server.chatroom.entity.QChatRoom;
 import com.chat_server.chatroom.repository.ChatRoomRepositoryCustom;
 import com.chat_server.chattype.entity.ChatType;
 import com.chat_server.userprofile.enrtity.QUserProfile;
-import com.chat_server.userprofile.url.entity.QUserProfileUrl;
+import com.chat_server.userprofileurl.entity.QUserProfileUrl;
 import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.Projections;
-import com.querydsl.core.types.dsl.Coalesce;
-import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.core.types.dsl.StringExpression;
 import com.querydsl.jpa.JPAExpressions;
-import com.querydsl.jpa.JPQLQuery;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
 
