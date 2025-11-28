@@ -1,11 +1,14 @@
-package com.chat_server.userprofile.url.service.impl;
+package com.chat_server.userprofileurl.service.impl;
 
+import com.chat_server.user.entity.User;
+import com.chat_server.user.exception.UserNotFoundException;
+import com.chat_server.user.repository.UserRepository;
 import com.chat_server.userprofile.enrtity.UserProfile;
 import com.chat_server.userprofile.exception.UserProfileNotFoundException;
 import com.chat_server.userprofile.repository.UserProfileRepository;
-import com.chat_server.userprofile.url.entity.UserProfileUrl;
-import com.chat_server.userprofile.url.repository.UserProfileUrlRepository;
-import com.chat_server.userprofile.url.service.UserProfileUrlService;
+import com.chat_server.userprofileurl.entity.UserProfileUrl;
+import com.chat_server.userprofileurl.repository.UserProfileUrlRepository;
+import com.chat_server.userprofileurl.service.UserProfileUrlService;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserProfileUrlServiceImpl implements UserProfileUrlService {
     private final UserProfileUrlRepository userProfileUrlRepository;
     private final UserProfileRepository userProfileRepository;
+    private final UserRepository userRepository;
 
     // update 시 기존 active 프로필 false 바꾸고, 새로운 profile url 추가
     @Override
@@ -42,5 +46,22 @@ public class UserProfileUrlServiceImpl implements UserProfileUrlService {
             .build();
         userProfileUrlRepository.save(newUserProfileUrl);
         log.info("url 저장 완료");
+    }
+
+    @Override
+    public void createUserProfileUrl(String userUuid) {
+        // user repository
+        log.debug("Creating user profile url");
+        User user = userRepository.findByUserUuid(userUuid)
+                .orElseThrow(UserNotFoundException::new);
+
+        UserProfile userProfile = UserProfile.builder()
+                .stateMessage("")
+                .user(user)
+                .build();
+
+        userProfileRepository.save(userProfile);
+
+        log.debug("Creating user profile url end");
     }
 }
