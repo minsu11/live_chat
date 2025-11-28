@@ -7,7 +7,7 @@ import com.chat_server.friend.entity.QFriend;
 import com.chat_server.friend.repository.FriendRepositoryCustom;
 import com.chat_server.user.entity.QUser;
 import com.chat_server.userprofile.enrtity.QUserProfile; // ← 패키지명/오타 확인!
-import com.chat_server.userprofile.url.entity.QUserProfileUrl;
+import com.chat_server.userprofileurl.entity.QUserProfileUrl;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import jakarta.annotation.Nullable;

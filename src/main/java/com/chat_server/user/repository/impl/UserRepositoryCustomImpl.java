@@ -6,7 +6,7 @@ import com.chat_server.user.dto.response.UserAuthenticationResponse;
 import com.chat_server.user.entity.QUser;
 import com.chat_server.user.repository.UserRepositoryCustom;
 import com.chat_server.userprofile.enrtity.QUserProfile;
-import com.chat_server.userprofile.url.entity.QUserProfileUrl;
+import com.chat_server.userprofileurl.entity.QUserProfileUrl;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Expressions;
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
