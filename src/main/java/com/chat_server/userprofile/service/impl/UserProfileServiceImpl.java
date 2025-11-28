@@ -28,7 +28,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     @Transactional(readOnly = true)
     public UserMyProfileSummaryResponse getMyProfileSummary(Long userId) {
         log.info("getMyProfile");
-
+        log.info("userId: " + userId);
         return userProfileRepository.findMyProfile(userId).orElseThrow(()->new UserNotFoundException("유저 프로필을 찾을 수 없음"));
     }
 
