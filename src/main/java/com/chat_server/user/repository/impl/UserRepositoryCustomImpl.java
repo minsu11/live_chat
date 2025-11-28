@@ -84,10 +84,9 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
                     qUserProfileUrl.imageUrl
                 ))
                 .leftJoin(qUserProfile).on(qUserProfile.user.eq(qUser))
-                .leftJoin(qUserProfileUrl).on(qUserProfileUrl.userProfile.eq(qUserProfile))
+                .leftJoin(qUserProfileUrl).on(qUserProfileUrl.userProfile.eq(qUserProfile).and(qUserProfileUrl.isCurrent.isTrue()))
                 .where(qUser.userInputId.eq(userId)
                     .and(qUser.userStatus.userStatusName.eq("활성"))
-                        .and(qUserProfileUrl.isCurrent.eq(true))
                 )
                 .fetchOne();
     }
