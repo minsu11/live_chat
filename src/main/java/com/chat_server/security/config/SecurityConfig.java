@@ -57,6 +57,8 @@ public class SecurityConfig {
                                             // SockJS/WS 관련 - 전부 허용 (별도 STOMP 인증에서 처리)
                                             "/api/ws/**",
                                             "/api/ws-chat/**",
+                                            "/ws/**",
+                                            "/ws-chat/**",
                                             "/actuator/health"
                                                 ).permitAll().anyRequest().authenticated()
 
