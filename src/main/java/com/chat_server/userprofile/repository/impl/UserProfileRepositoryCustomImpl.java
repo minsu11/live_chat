@@ -24,14 +24,14 @@ public class UserProfileRepositoryCustomImpl extends QuerydslRepositorySupport i
         Optional<UserMyProfileSummaryResponse> response =
             Optional.ofNullable(
               from(qUserProfile)
-                  .leftJoin(qUserProfileUrl).on(qUserProfileUrl.userProfile.eq(qUserProfile))
-                  .leftJoin(qUserProfile).on(qUserProfile.user.eq(qUser))
+                      .join(qUserProfile.user,qUser)
+                  .leftJoin(qUserProfileUrl).on(qUserProfileUrl.userProfile.eq(qUserProfile).and(qUserProfileUrl.isCurrent.isTrue()))
                   .select(Projections.constructor(UserMyProfileSummaryResponse.class,
                           qUser.userNickname,
                           qUserProfile.stateMessage,
                           qUserProfileUrl.imageUrl
                       ))
-                  .where(qUserProfile.user.id.eq(id).and(qUserProfileUrl.isCurrent.eq(true)))
+                  .where(qUserProfile.user.id.eq(id))
                   .fetchOne()
             );
 
