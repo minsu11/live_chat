@@ -17,7 +17,7 @@ import com.chat_server.user.dto.response.UserIdResponse;
  */
 public interface UserService {
 
-    void signUp(UserRegisterRequest registerRequest);
+    String createUSer(UserRegisterRequest registerRequest);
 
     UserPrincipal loadUserByUserId(String userId);
 

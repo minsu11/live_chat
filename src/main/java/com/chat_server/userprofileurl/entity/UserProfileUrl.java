@@ -1,4 +1,4 @@
-package com.chat_server.userprofile.url.entity;
+package com.chat_server.userprofileurl.entity;
 
 import com.chat_server.user.entity.User;
 import com.chat_server.userprofile.enrtity.UserProfile;

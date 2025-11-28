@@ -64,6 +64,22 @@ public class UserProfileServiceImpl implements UserProfileService {
         userProfile.update(message);
     }
 
+    @Override
+    public void createUserProfile(String userUuid) {
+        log.debug("Creating user profile url");
+        User user = userRepository.findByUserUuid(userUuid)
+                .orElseThrow(UserNotFoundException::new);
+
+        UserProfile userProfile = UserProfile.builder()
+                .stateMessage("")
+                .user(user)
+                .build();
+
+        userProfileRepository.save(userProfile);
+
+        log.debug("Creating user profile url end");
+    }
+
     private UserMyProfileDetailResponse getProfileDetail(Long userId) {
         log.info("private method getProfileDetail");
         return userProfileRepository.findProfileDetail(userId)
