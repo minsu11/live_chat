@@ -1,6 +1,6 @@
-package com.chat_server.userprofile.url.repository;
+package com.chat_server.userprofileurl.repository;
 
-import com.chat_server.userprofile.url.entity.UserProfileUrl;
+import com.chat_server.userprofileurl.entity.UserProfileUrl;
 import java.util.Optional;
 
 public interface CustomUserProfileUrlRepository {
