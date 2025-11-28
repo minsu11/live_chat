@@ -2,7 +2,7 @@ package com.chat_server.userprofileurl.repository.impl;
 
 import com.chat_server.user.entity.QUser;
 import com.chat_server.userprofile.enrtity.QUserProfile;
-import com.chat_server.userprofile.url.entity.QUserProfileUrl;
+import com.chat_server.userprofileurl.entity.QUserProfileUrl;
 import com.chat_server.userprofileurl.entity.UserProfileUrl;
 import com.chat_server.userprofileurl.repository.CustomUserProfileUrlRepository;
 import java.util.Optional;
