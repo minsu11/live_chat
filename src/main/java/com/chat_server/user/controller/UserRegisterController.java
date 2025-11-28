@@ -38,7 +38,7 @@ public class UserRegisterController {
             throw new ValidationException("request validation error");
         }
 
-        userService.signUp(registerRequest);
+        userService.createUSer(registerRequest);
         log.info("회원가입 처리 완료");
         return ResponseEntity.status(201).body(ApiResponse.success(201));
     }

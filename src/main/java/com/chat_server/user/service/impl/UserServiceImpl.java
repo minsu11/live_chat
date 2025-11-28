@@ -48,15 +48,13 @@ public class UserServiceImpl implements UserService {
 
 
     @Override
-    public void signUp(UserRegisterRequest registerRequest) {
+    public void createUSer(UserRegisterRequest registerRequest) {
         String id = registerRequest.id();
         log.debug("service start");
         if (userRepository.existsByUserInputId(id)) {
             throw new UserAleadyExistException("이미 존재하는 회원 입니다.");
         }
-        
-        // todo 회원가입 시 유저 프로필 생성하게 해야함, 디폴트 데이터를 yml 파일에 넣어서 관리할 예정
-        // todo 추 후 서비스 구조 변경
+
         UserStatus userStatus =
                 userStatusRepository.findByUserStatusName("활성")
                         .orElseThrow(() -> new UserStatusNotFoundException("user status not found"));
@@ -65,7 +63,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new GenderNotFoundException("gender not found"));
         String password = passwordEncoder.encode(registerRequest.password());
 
-        User user = userRepository.save(User.builder()
+        User user = User.builder()
                 .userInputId(registerRequest.id())
                 .userInputPassword(password)
                 .userAge(registerRequest.age())
@@ -75,16 +73,9 @@ public class UserServiceImpl implements UserService {
                 .gender(gender)
                 .userCreatedAt(LocalDateTime.now())
                 .userUuid(UUID.randomUUID().toString())
-                .build());
-
-        // todo 임시로 여기에 유저 프로필 생성 추 후 코드 리팩토링 할 때 다른 쪽으로 이동할 예정
-        UserProfile userProfile = UserProfile.builder()
-                .stateMessage("")
-                .user(user)
                 .build();
-
-        userProfileRepository.save(userProfile);
-
+        userRepository.save(user);
+        log.debug("service end");
 
     }
 
