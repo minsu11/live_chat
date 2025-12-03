@@ -84,7 +84,7 @@ public class UserProfileController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping(
+    @PutMapping(
         value = "me/profile/image",
         consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
@@ -103,7 +103,7 @@ public class UserProfileController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("me/profile")
+    @PutMapping("me/profile")
     public ResponseEntity<ApiResponse<UserProfileUpdateResponse>> updateMyProfile(
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @RequestBody UserProfileUpdateRequest request
