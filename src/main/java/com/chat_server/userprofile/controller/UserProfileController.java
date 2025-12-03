@@ -5,6 +5,7 @@ import com.chat_server.user.dto.response.AuthenticatedUser;
 import com.chat_server.userprofile.dto.request.UserProfileUpdateRequest;
 import com.chat_server.userprofile.dto.response.UserMyProfileDetailResponse;
 import com.chat_server.userprofile.dto.response.UserMyProfileSummaryResponse;
+import com.chat_server.userprofile.dto.response.UserProfileUpdateImageResponse;
 import com.chat_server.userprofile.dto.response.UserProfileUpdateResponse;
 import com.chat_server.userprofile.service.UserProfileFacade;
 import com.chat_server.userprofile.service.UserProfileService;
@@ -87,20 +88,33 @@ public class UserProfileController {
         value = "me/profile",
         consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
-    public ResponseEntity<ApiResponse<UserProfileUpdateResponse>> updateMyProfile(
+    public ResponseEntity<ApiResponse<UserProfileUpdateImageResponse>> updateMyProfileImage(
         @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
-        @RequestPart("profile")UserProfileUpdateRequest request,
-        @RequestPart(value = "file", required = false) MultipartFile file
+        @RequestPart(value = "file") MultipartFile file
     ){
         log.info("updateMyProfile");
         Long userId = authenticatedUser.userId();
         log.info("userId : {}", authenticatedUser.userId());
         // file service
         log.info("file: {}", file);
-        UserProfileUpdateResponse userProfileUpdateResponse = userProfileFacade.updateMyProfile(userId, request, file);
+        UserProfileUpdateImageResponse userProfileUpdateResponse = userProfileFacade.updateMyProfileImage(userId, file);
         log.info("user profile facade end");
         // todo update 시 캐싱된 정보를 최신화 해야하기 때문에 response 반환해줘야함.
-        ApiResponse<UserProfileUpdateResponse> response = ApiResponse.success(201, "update 완료",userProfileUpdateResponse);
+        ApiResponse<UserProfileUpdateImageResponse> response = ApiResponse.success(201, "update 완료",userProfileUpdateResponse);
+        log.info("end");
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("me/profile")
+    public ResponseEntity<ApiResponse<UserProfileUpdateResponse>> updateMyProfile(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+            @RequestBody UserProfileUpdateRequest request
+    ){
+        log.info("updateMyProfile");
+        Long userId = authenticatedUser.userId();
+        log.info("userId : {}", userId);
+        UserProfileUpdateResponse userProfileUpdateResponse = userProfileFacade.updateMyProfile(userId, request);
+        ApiResponse<UserProfileUpdateResponse> response = ApiResponse.success(200,"수정 완료",userProfileUpdateResponse);
         log.info("end");
         return ResponseEntity.ok(response);
     }
