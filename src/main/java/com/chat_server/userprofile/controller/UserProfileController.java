@@ -85,7 +85,7 @@ public class UserProfileController {
     }
 
     @PutMapping(
-        value = "me/profile",
+        value = "me/profile/image",
         consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
     public ResponseEntity<ApiResponse<UserProfileUpdateImageResponse>> updateMyProfileImage(
@@ -94,8 +94,6 @@ public class UserProfileController {
     ){
         log.info("updateMyProfile");
         Long userId = authenticatedUser.userId();
-        log.info("userId : {}", authenticatedUser.userId());
-        // file service
         log.info("file: {}", file);
         UserProfileUpdateImageResponse userProfileUpdateResponse = userProfileFacade.updateMyProfileImage(userId, file);
         log.info("user profile facade end");
@@ -105,7 +103,7 @@ public class UserProfileController {
         return ResponseEntity.ok(response);
     }
 
-    @PatchMapping("me/profile")
+    @PutMapping("me/profile")
     public ResponseEntity<ApiResponse<UserProfileUpdateResponse>> updateMyProfile(
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @RequestBody UserProfileUpdateRequest request
