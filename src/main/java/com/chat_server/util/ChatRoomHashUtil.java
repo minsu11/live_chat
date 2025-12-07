@@ -30,6 +30,8 @@ public class ChatRoomHashUtil {
             for (byte b : hashBytes) {
                 hexString.append(String.format("%02x", b));
             }
+            log.info("hash: {}", hexString);
+
             return hexString.toString();
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 algorithm not found", e);
