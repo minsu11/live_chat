@@ -1,8 +1,11 @@
 package com.chat_server.util;
+import lombok.extern.slf4j.Slf4j;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+@Slf4j
 public class ChatRoomHashUtil {
 
     /**
@@ -13,6 +16,9 @@ public class ChatRoomHashUtil {
         long first = Math.min(userId1, userId2);
         long second = Math.max(userId1, userId2);
         String raw = first + ":" + second;
+        log.info("userId1 : {}. userId2 : {}", userId1, userId2);
+        log.info(raw);
+
         return sha256(raw);
     }
 
