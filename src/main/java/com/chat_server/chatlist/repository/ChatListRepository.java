@@ -8,11 +8,11 @@ import org.springframework.data.jpa.repository.Query;
 public interface ChatListRepository extends JpaRepository<ChatList, Long>,ChatListRepositoryCustom {
     @Modifying
     @Query(value = """
-    INSERT INTO chat_list (chat_room_id, user_id, friend_id, unread_count, pinned, muted, archived)
+    INSERT INTO chat_list (chat_room_id, user_id, unread_count, pinned, muted, archived)
     VALUES (?1, ?2, ?3,0, 0, 0, 0)
     ON DUPLICATE KEY UPDATE user_id = user_id
     """, nativeQuery = true)
-    void upsertMembership(long roomId, long userId, long friendId);
+    void upsertMembership(long roomId, long userId);
 
 
 }

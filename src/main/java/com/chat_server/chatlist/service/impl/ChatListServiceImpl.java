@@ -52,7 +52,7 @@ public class ChatListServiceImpl implements ChatListService {
     }
 
     @Override
-    public void ensureMembership(Long roomId, Long userId, Long friendId) {
-        chatListRepository.upsertMembership(roomId, userId,friendId);
+    public void ensureMembership(Long roomId, Long userId) {
+        chatListRepository.upsertMembership(roomId, userId);
     }
 }
