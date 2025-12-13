@@ -63,8 +63,5 @@ public class ChatList {
     private ChatRoom chatRoom;
 
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="friend_id")
-    private Friend friend;
 }
 
