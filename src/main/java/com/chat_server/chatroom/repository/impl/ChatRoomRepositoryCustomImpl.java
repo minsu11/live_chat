@@ -48,7 +48,7 @@ public class ChatRoomRepositoryCustomImpl extends QuerydslRepositorySupport impl
 
         // title
         StringExpression titleExpr = qChatList.customName
-                .coalesce(qChatList.friend.user.userNickname)
+                .coalesce(qChatList.partnerUser.userNickname)
                 .coalesce(qChatRoom.name);
 
         Expression<String> imageUrlExpr = JPAExpressions
@@ -61,7 +61,7 @@ public class ChatRoomRepositoryCustomImpl extends QuerydslRepositorySupport impl
         ChatRoomSummaryResponse response = from(qChatRoom)
                 .join(qChatList).on(qChatList.chatRoom.id.eq(qChatRoom.id)
                         .and(qChatList.user.id.eq(userId)))
-                .leftJoin(qUserProfile).on(qUserProfile.user.id.eq(qChatList.friend.user.id))
+                .leftJoin(qUserProfile).on(qUserProfile.user.id.eq(qChatList.partnerUser.id))
                 .leftJoin(qUserProfileUrl).on(qUserProfileUrl.userProfile.id.eq(qUserProfile.id))
                 .select(Projections.constructor(
                         ChatRoomSummaryResponse.class,

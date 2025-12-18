@@ -9,6 +9,7 @@ import com.chat_server.chatroom.entity.QChatRoom;
 import com.chat_server.common.cursor.ChatListCursorKey;
 import com.chat_server.common.cursor.CursorKey;
 import com.chat_server.friend.entity.QFriend;
+import com.chat_server.user.entity.QUser;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
@@ -31,6 +32,8 @@ public class ChatListRepositoryCustomImpl extends QuerydslRepositorySupport impl
     private final QChatList qChatList = QChatList.chatList;
     private final QChatRoom qChatRoom = QChatRoom.chatRoom;
     private final QFriend qFriend = QFriend.friend1;
+    private final QUser qUser = QUser.user;
+    private final QUser qPartnerUser = new QUser("partner_user");
     public ChatListRepositoryCustomImpl() {
         super(QChatList.class);
     }
@@ -43,7 +46,7 @@ public class ChatListRepositoryCustomImpl extends QuerydslRepositorySupport impl
         var isDm = qChatRoom.participantsHash.isNotNull();
 
         var dmName = new CaseBuilder()
-                .when(qFriend.user.userNickname.isNotNull()).then(qFriend.user.userNickname)
+                .when(qPartnerUser.userNickname.isNotNull()).then(qPartnerUser.userNickname)
                 .otherwise(qChatRoom.name);
 
         var displayName = new CaseBuilder()
@@ -63,22 +66,27 @@ public class ChatListRepositoryCustomImpl extends QuerydslRepositorySupport impl
         // user id 조회
         BooleanBuilder where = new BooleanBuilder().and(qChatList.user.id.eq(userId));
 
-        if(cursorKey != null ) {
+        if (cursorKey != null) {
             var cursorAt = Instant.ofEpochMilli(cursorKey.lastAtEpochMillis())
-                    .atOffset(ZoneOffset.UTC).toLocalDateTime();
+                    .atOffset(ZoneOffset.UTC)
+                    .toLocalDateTime();
 
-            // OR isNull() 제거. 정렬키와 동일한 비교식으로 통일
             where.and(
                     orderAt.lt(cursorAt)
-                            .or(qChatRoom.orderAt.eq(cursorAt).and(qChatRoom.id.lt(cursorKey.lastRoomId())))
+                            .or(
+                                    orderAt.eq(cursorAt)
+                                            .and(qChatRoom.id.lt(cursorKey.lastRoomId()))
+                            )
             );
         }
 
+
         List<ChatRoomListRow> rows = from(qChatList)
             .join(qChatList.chatRoom, qChatRoom)
-                .leftJoin(qChatList.friend, qFriend).on(isDm)
+                .join(qChatList.user, qUser)
+                .leftJoin(qChatList.partnerUser, qPartnerUser)
             .where(where)
-            .orderBy(qChatRoom.orderAt.desc(), qChatRoom.id.desc())
+            .orderBy(orderAt.desc(), qChatRoom.id.desc())
             .limit(limit + 1)
             .select(Projections.constructor(
                     ChatRoomListRow.class,
