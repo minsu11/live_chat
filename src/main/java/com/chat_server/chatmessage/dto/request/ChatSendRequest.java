@@ -1,4 +1,6 @@
 package com.chat_server.chatmessage.dto.request;
 
-public record ChatSendRequest (String text){
+public record ChatSendRequest (Long roomId,
+                               String messageType,
+                               String text){
 }
