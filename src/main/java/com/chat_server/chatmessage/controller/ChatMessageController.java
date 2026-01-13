@@ -18,8 +18,8 @@ public class ChatMessageController {
 
     @MessageMapping("chat/message")
     public void sendMessage(
-                        @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
-                        ChatSendRequest chatSendRequest
+                        ChatSendRequest chatSendRequest,
+                        @AuthenticationPrincipal AuthenticatedUser authenticatedUser
                         ) {
         log.info("chat message controller start");
         log.info("user id: {}", authenticatedUser.userId());
