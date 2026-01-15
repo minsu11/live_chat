@@ -70,9 +70,4 @@ public class ChatRoom {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chat_type_id")
     private ChatType chatType;
-
-
-
-
-
 }

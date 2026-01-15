@@ -2,6 +2,8 @@ package com.chat_server.chatmessage.service.impl;
 
 import com.chat_server.chatmessage.dto.request.ChatSendRequest;
 import com.chat_server.chatmessage.service.ChatMessageFacadeService;
+import com.chat_server.chatroom.entity.ChatRoom;
+import com.chat_server.chatroom.service.ChatRoomQueryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -15,18 +17,52 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional
 @RequiredArgsConstructor
-    public class ChatMessageServiceImpl implements ChatMessageFacadeService {
+public class ChatMessageServiceImpl implements ChatMessageFacadeService {
+
     private final SimpMessagingTemplate messagingTemplate;
+    private final ChatRoomQueryService chatRoomQueryService;
+    // private final ChatMessageRepository chatMessageRepository;
+    // private final ChatListRepository chatListRepository;
+    // private final BlockRepository blockRepository; // 차단 정보 등
 
     @Override
     public void sendMessage(ChatSendRequest request, Long userId) {
-        // todo 방의 타입 별로 메세지 보내는 기능 따로 놓기
 
-        // room id로 해당 방이 존재하는 지와 개인 채팅인지 그룹 채팅인지 오픈 채팅인지 반환
+        // 1. 방 + 타입 조회 (예: DM / GROUP / OPEN)
+        //    - 존재 여부 확인
+        //    - roomType 같이 가져오기
+        // ChatRoom room = chatRoomRepository.findById(request.roomId())
+        //        .orElseThrow(() -> new NotFoundException(...));
 
-        // 그 후 조건문을 통해, 채팅 방 타입에 따라서 메서드 실행
+        ChatRoom room = chatRoomQueryService.getRoomOrThrow(request.roomId());
 
-        // 메세지 디비 저장한 뒤에는 브로드캐스터 통해서 server에서 클라이언트, 즉 받는 사람에게 알림을 보낼 예정
+        // 2. 전송 권한 / 차단 여부 검증
+        //    - 해당 방의 멤버인지?
+        //    - 상대가 나를 차단했는지?
+        //    - 방이 이미 종료/잠금 상태인지?
+        // validateSendPermission(room, userId, request);
 
+        // 3. 메시지 엔티티 생성 + 저장
+        //    - content, senderId, roomId, messageType, createdAt...
+        // ChatMessage message = ChatMessage.create(room, userId, request);
+        // chatMessageRepository.save(message);
+
+        // 4. 부가 상태 업데이트
+        //    - ChatRoom.lastMessageAt, lastMessagePreview
+        //    - ChatList.unreadCount 증가
+        //    - 필요하면 “읽음 정보” 초기화
+        // updateRoomAndChatListOnSend(room, message);
+
+        // 5. 브로드캐스트 (WebSocket)
+        //    - /sub/chat/rooms/{roomId} 같은 경로로 DTO 날리기
+        // ChatMessageResponse dto = ChatMessageResponse.from(message);
+        // messagingTemplate.convertAndSend("/sub/chat/rooms/" + room.getId(), dto);
+        //   → 나중에 ChatMessageBroadcaster로 분리 가능
+
+        // 6. (선택) 서버에서 클라이언트로 “나에게도 에코”를 보낼지 여부
+        //    - 클라이언트가 낙관적 UI로 먼저 그리면 굳이 안 보내도 됨
     }
+
+    // private void validateSendPermission(...) { ... }
+    // private void updateRoomAndChatListOnSend(...) { ... }
 }
