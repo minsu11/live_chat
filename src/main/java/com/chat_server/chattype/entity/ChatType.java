@@ -25,6 +25,9 @@ public class ChatType {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Column(name="code")
+    private String code;
+
     @Column(name = "name")
     private String chatTypeName;
 }
