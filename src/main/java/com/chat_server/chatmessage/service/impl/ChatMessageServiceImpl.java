@@ -40,7 +40,7 @@ public class ChatMessageServiceImpl implements ChatMessageFacadeService {
         //    - 해당 방의 멤버인지?
         //    - 상대가 나를 차단했는지?
         //    - 방이 이미 종료/잠금 상태인지?
-        // validateSendPermission(room, userId, request);
+        validateSendPermission(room, userId, request);
 
         // 3. 메시지 엔티티 생성 + 저장
         //    - content, senderId, roomId, messageType, createdAt...
@@ -63,6 +63,10 @@ public class ChatMessageServiceImpl implements ChatMessageFacadeService {
         //    - 클라이언트가 낙관적 UI로 먼저 그리면 굳이 안 보내도 됨
     }
 
-    // private void validateSendPermission(...) { ... }
+     private void validateSendPermission(ChatRoom room, Long userId, ChatSendRequest request) {
+        // 유효성 검사
+        // todo 레포지토리 통해서 validation하는 것
+
+     }
     // private void updateRoomAndChatListOnSend(...) { ... }
 }
