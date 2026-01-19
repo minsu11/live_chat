@@ -1,5 +1,6 @@
 package com.chat_server.chattype.entity;
 
+import com.chat_server.chattype.enumulation.ChatRoomKind;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -30,4 +31,8 @@ public class ChatType {
 
     @Column(name = "name")
     private String chatTypeName;
+
+    public ChatRoomKind toEnum(){
+        return ChatRoomKind.getByCode(this.code);
+    }
 }

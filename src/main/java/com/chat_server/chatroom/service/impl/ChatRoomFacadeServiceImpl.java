@@ -2,13 +2,9 @@ package com.chat_server.chatroom.service.impl;
 
 import com.chat_server.chatlist.service.ChatListService;
 import com.chat_server.chatroom.dto.response.ChatRoomSummaryResponse;
-import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.chatroom.service.ChatRoomFacadeService;
 import com.chat_server.chatroom.service.ChatRoomService;
-import com.chat_server.chattype.enumulation.ChatType;
-import com.chat_server.user.dto.response.UserIdResponse;
 import com.chat_server.user.service.UserService;
-import com.chat_server.util.ChatRoomHashUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
