@@ -7,4 +7,6 @@ import com.chat_server.chatroom.entity.ChatRoom;
  */
 public interface ChatRoomQueryService {
     ChatRoom getRoomOrThrow(Long roomId);
+    Long getMemberId(Long roomId, Long userId);
+    void validateMemberOrThrow(Long roomId, Long userId);
 }
