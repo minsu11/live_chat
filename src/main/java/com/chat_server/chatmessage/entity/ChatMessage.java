@@ -4,8 +4,10 @@ import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.user.entity.User;
 import jakarta.persistence.*;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDateTime;
 
@@ -13,6 +15,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "chat_message")
 @NoArgsConstructor
+@AllArgsConstructor
 public class ChatMessage {
 
     @Id
@@ -39,5 +42,16 @@ public class ChatMessage {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="sender_id")
     private User user;
+
+    public static ChatMessage create(ChatRoom chatRoom, User user, String message, String messageType, LocalDateTime createdAt) {
+        ChatMessage chatMessage = new ChatMessage();
+        chatMessage.chatRoom = chatRoom;
+        chatMessage.user = user;
+        chatMessage.messageType = messageType;
+        chatMessage.messageContent = message;
+        chatMessage.isDeleted = false;
+        chatMessage.createdAt = createdAt;
+       return chatMessage;
+    }
 
 }
