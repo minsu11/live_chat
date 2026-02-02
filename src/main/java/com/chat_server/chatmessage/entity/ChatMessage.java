@@ -51,7 +51,11 @@ public class ChatMessage {
         chatMessage.messageContent = message;
         chatMessage.isDeleted = false;
         chatMessage.createdAt = createdAt;
-       return chatMessage;
+        return chatMessage;
+    }
+
+    public static ChatMessage create(ChatRoom chatRoom, User user, String message, String messageType) {
+        return create(chatRoom, user, message, messageType, LocalDateTime.now());
     }
 
 }

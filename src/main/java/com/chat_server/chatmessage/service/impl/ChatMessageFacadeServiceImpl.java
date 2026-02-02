@@ -2,6 +2,7 @@ package com.chat_server.chatmessage.service.impl;
 
 import com.chat_server.chatmessage.dto.request.ChatSendRequest;
 import com.chat_server.chatmessage.service.ChatMessageFacadeService;
+import com.chat_server.chatmessage.service.ChatMessageService;
 import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.chatroom.service.ChatRoomQueryService;
 import com.chat_server.userblock.service.UserBlockService;
@@ -23,21 +24,23 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatRoomQueryService chatRoomQueryService;
     private final UserBlockService userBlockService;
-    // private final ChatMessageRepository chatMessageRepository;
+     private final ChatMessageService chatMessageService;
     // private final ChatListRepository chatListRepository;
 
 
     @Override
     public void sendMessage(ChatSendRequest request, Long userId) {
+        // todo 현재는 1 대 1 채팅방 보내기만 됨
 
+        Long roomId = request.roomId();
+        String messageType = request.messageType();
+        String message = request.text();
         // 1. 방 + 타입 조회 (예: DM / GROUP / OPEN)
         //    - 존재 여부 확인
         //    - roomType 같이 가져오기
-        // ChatRoom room = chatRoomRepository.findById(request.roomId())
-        //        .orElseThrow(() -> new NotFoundException(...));
+        ChatRoom room = chatRoomQueryService.getRoomOrThrow(roomId);
 
-        ChatRoom room = chatRoomQueryService.getRoomOrThrow(request.roomId());
-
+        // 채팅방 상대방 유저 아이디 가지고 오기.
         Long memberId = chatRoomQueryService.getMemberId(room.getId(),userId);
         // 2. 전송 권한 / 차단 여부 검증
         //    - 해당 방의 멤버인지?
@@ -46,16 +49,15 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         validateSendPermission(room, userId, memberId, request);
         log.info("content : {}", request.text());
         // 3. 메시지 엔티티 생성 + 저장
-        //    - content, senderId, roomId, messageType, createdAt...
-        // todo 메세지 저장
-        // ChatMessage message = ChatMessage.create(room, userId, request);
-        // chatMessageRepository.save(message);
+        //    - content, senderId, roomId, messageType, createdAt..
+        chatMessageService.createChatMessage(room, userId, messageType, message);
 
         // 4. 부가 상태 업데이트
         //    - ChatRoom.lastMessageAt, lastMessagePreview
         //    - ChatList.unreadCount 증가
         //    - 필요하면 “읽음 정보” 초기화
         // updateRoomAndChatListOnSend(room, message);
+
 
         // 5. 브로드캐스트 (WebSocket)
         //    - /sub/chat/rooms/{roomId} 같은 경로로 DTO 날리기

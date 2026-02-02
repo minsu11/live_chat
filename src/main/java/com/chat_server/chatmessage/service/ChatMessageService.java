@@ -4,5 +4,5 @@ import com.chat_server.chatmessage.entity.ChatMessage;
 import com.chat_server.chatroom.entity.ChatRoom;
 
 public interface ChatMessageService {
-    void createChatMessage(ChatRoom chatRoom, String messageType, String text);
+    void createChatMessage(ChatRoom chatRoom, Long userId, String messageType, String text);
 }

@@ -1,5 +1,6 @@
 package com.chat_server.chatroom.service.impl;
 
+import com.chat_server.chatmessage.entity.ChatMessage;
 import com.chat_server.chatroom.dto.response.ChatRoomSummaryResponse;
 import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.chatroom.exception.ChatRoomNotFoundException;
@@ -73,6 +74,11 @@ public class ChatRoomServiceImpl implements ChatRoomService {
         log.info("get chat room summary");
         return  chatRoomRepository.findChatRoomSummaryByRoomId(roomId, userId)
                 .orElseThrow(ChatRoomNotFoundException::new);
+    }
+
+    @Override
+    public void updateLastMessageInfo(ChatRoom chatRoom, ChatMessage chatMessage) {
+
     }
 
 }
