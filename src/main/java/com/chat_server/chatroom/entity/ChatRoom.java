@@ -70,4 +70,11 @@ public class ChatRoom {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chat_type_id")
     private ChatType chatType;
+
+    public void updateLastMessageAt(Long lastMessageSenderId,Long lastMessageId, String lastMessagePreview, LocalDateTime lastMessageAt) {
+        this.lastMessageSenderId = lastMessageSenderId;
+        this.lastMessageId = lastMessageId;
+        this.lastMessagePreview = lastMessagePreview;
+        this.lastMessageAt = lastMessageAt;
+    }
 }

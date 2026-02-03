@@ -1,10 +1,13 @@
 package com.chat_server.chatmessage.service.impl;
 
+import com.chat_server.chatlist.service.ChatListService;
 import com.chat_server.chatmessage.dto.request.ChatSendRequest;
+import com.chat_server.chatmessage.entity.ChatMessage;
 import com.chat_server.chatmessage.service.ChatMessageFacadeService;
 import com.chat_server.chatmessage.service.ChatMessageService;
 import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.chatroom.service.ChatRoomQueryService;
+import com.chat_server.chatroom.service.ChatRoomService;
 import com.chat_server.userblock.service.UserBlockService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,8 +27,9 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatRoomQueryService chatRoomQueryService;
     private final UserBlockService userBlockService;
-     private final ChatMessageService chatMessageService;
-    // private final ChatListRepository chatListRepository;
+    private final ChatMessageService chatMessageService;
+    private final ChatRoomService chatRoomService;
+    private final ChatListService chatListService;
 
 
     @Override
@@ -50,13 +54,13 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         log.info("content : {}", request.text());
         // 3. 메시지 엔티티 생성 + 저장
         //    - content, senderId, roomId, messageType, createdAt..
-        chatMessageService.createChatMessage(room, userId, messageType, message);
+        ChatMessage chatMessage = chatMessageService.createChatMessage(room, userId, messageType, message);
 
         // 4. 부가 상태 업데이트
         //    - ChatRoom.lastMessageAt, lastMessagePreview
         //    - ChatList.unreadCount 증가
         //    - 필요하면 “읽음 정보” 초기화
-        // updateRoomAndChatListOnSend(room, message);
+        updateRoomAndChatListOnSend(room, chatMessage);
 
 
         // 5. 브로드캐스트 (WebSocket)
@@ -64,6 +68,7 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         // ChatMessageResponse dto = ChatMessageResponse.from(message);
         // messagingTemplate.convertAndSend("/sub/chat/rooms/" + room.getId(), dto);
         //   → 나중에 ChatMessageBroadcaster로 분리 가능
+        // 브로드 캐스트
 
         // 6. (선택) 서버에서 클라이언트로 “나에게도 에코”를 보낼지 여부
         //    - 클라이언트가 낙관적 UI로 먼저 그리면 굳이 안 보내도 됨
@@ -80,5 +85,8 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
 
         // todo open chat 기능 개발 시 오픈채팅방 잠금 등의 유효성 검사 추가
      }
-    // private void updateRoomAndChatListOnSend(...) { ... }
+     private void updateRoomAndChatListOnSend(ChatRoom room, ChatMessage chatMessage) {
+        chatRoomService.updateLastMessageInfo(room, chatMessage);
+
+     }
 }

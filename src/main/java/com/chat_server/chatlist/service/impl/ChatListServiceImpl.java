@@ -55,4 +55,10 @@ public class ChatListServiceImpl implements ChatListService {
     public void ensureMembership(Long roomId, Long userId, Long friendId) {
         chatListRepository.upsertMembership(roomId, userId, friendId);
     }
+
+    @Override
+    public void increaseUnreadCount(Long roomId, Long receiverUserId) {
+        // unread count
+
+    }
 }

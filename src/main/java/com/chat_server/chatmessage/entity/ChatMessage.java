@@ -58,4 +58,5 @@ public class ChatMessage {
         return create(chatRoom, user, message, messageType, LocalDateTime.now());
     }
 
+
 }

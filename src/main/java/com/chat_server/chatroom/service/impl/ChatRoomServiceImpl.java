@@ -78,6 +78,12 @@ public class ChatRoomServiceImpl implements ChatRoomService {
 
     @Override
     public void updateLastMessageInfo(ChatRoom chatRoom, ChatMessage chatMessage) {
+        Long senderId = chatMessage.getUser().getId();
+        Long messageId = chatMessage.getId();
+        LocalDateTime now = chatMessage.getCreatedAt();
+        String preview = chatMessage.getMessageContent();
+        chatRoom.updateLastMessageAt(senderId, messageId, preview, now);
+
 
     }
 
