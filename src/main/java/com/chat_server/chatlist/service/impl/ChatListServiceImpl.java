@@ -57,8 +57,8 @@ public class ChatListServiceImpl implements ChatListService {
     }
 
     @Override
-    public void increaseUnreadCount(Long roomId, Long receiverUserId) {
-        // unread count
+    public void increaseUnreadCount(Long roomId, Long senderId) {
+        chatListRepository.increaseUnreadCount(roomId, senderId);
 
     }
 }

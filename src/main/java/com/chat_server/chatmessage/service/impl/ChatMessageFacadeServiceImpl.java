@@ -61,7 +61,7 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         //    - ChatList.unreadCount 증가
         //    - 필요하면 “읽음 정보” 초기화
         updateRoomAndChatListOnSend(room, chatMessage);
-
+        chatListService.increaseUnreadCount(roomId,userId);
 
         // 5. 브로드캐스트 (WebSocket)
         //    - /sub/chat/rooms/{roomId} 같은 경로로 DTO 날리기

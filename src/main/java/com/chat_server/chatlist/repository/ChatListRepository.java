@@ -14,5 +14,15 @@ public interface ChatListRepository extends JpaRepository<ChatList, Long>,ChatLi
     """, nativeQuery = true)
     void upsertMembership(long roomId, long userId, long friendId);
 
-
+    @Modifying(clearAutomatically = true)
+    @Query(value = """
+    UPDATE chat_list
+    SET unread_count = unread_count + 1
+    WHERE chat_room_id = :roomId
+      AND user_id <> :senderId
+""", nativeQuery = true)
+    void increaseUnreadCount(
+        long roomId,
+        long senderId
+    );
 }
