@@ -1,6 +1,7 @@
 package com.chat_server.chatmessageread.entity;
 
 import com.chat_server.chatmessage.entity.ChatMessage;
+import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -21,6 +22,10 @@ public class ChatMessageRead {
 
     @Column(name = "read_at")
     private LocalDateTime readAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="chat_room_id")
+    private ChatRoom chatRoom;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chat_message_id")
