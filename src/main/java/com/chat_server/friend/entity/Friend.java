@@ -27,6 +27,9 @@ public class Friend {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name="friend_nickname")
+    private String friendNickname;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
