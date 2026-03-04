@@ -2,13 +2,16 @@ package com.chat_server.chatmessage.service.impl;
 
 import com.chat_server.chatlist.service.ChatListService;
 import com.chat_server.chatmessage.dto.request.ChatSendRequest;
+import com.chat_server.chatmessage.dto.response.ChatMessageResponse;
 import com.chat_server.chatmessage.entity.ChatMessage;
 import com.chat_server.chatmessage.service.ChatMessageFacadeService;
 import com.chat_server.chatmessage.service.ChatMessageService;
+import com.chat_server.chatmessageread.service.ChatMessageReadService;
 import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.chatroom.service.ChatRoomQueryService;
 import com.chat_server.chatroom.service.ChatRoomService;
 import com.chat_server.userblock.service.UserBlockService;
+import com.chat_server.websocket.broadcaster.ChatMessageBroadCaster;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -24,12 +27,13 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
 
-    private final SimpMessagingTemplate messagingTemplate;
+    private final ChatMessageBroadCaster chatMessageBroadCaster;
     private final ChatRoomQueryService chatRoomQueryService;
     private final UserBlockService userBlockService;
     private final ChatMessageService chatMessageService;
     private final ChatRoomService chatRoomService;
     private final ChatListService chatListService;
+    private final ChatMessageReadService chatMessageReadService;
 
 
     @Override
@@ -62,6 +66,7 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         //    - 필요하면 “읽음 정보” 초기화
         updateRoomAndChatListOnSend(room, chatMessage);
         chatListService.increaseUnreadCount(roomId,userId);
+        chatMessageReadService.updateChatMessageRead(roomId, userId, chatMessage);
 
         // 5. 브로드캐스트 (WebSocket)
         //    - /sub/chat/rooms/{roomId} 같은 경로로 DTO 날리기
@@ -69,6 +74,12 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         // messagingTemplate.convertAndSend("/sub/chat/rooms/" + room.getId(), dto);
         //   → 나중에 ChatMessageBroadcaster로 분리 가능
         // 브로드 캐스트
+
+        // todo 여기서 그러면 보낸 사람, 즉 내 정보를 담아서 줘야함.
+        // 즉 여기서 만들기
+
+        ChatMessageResponse response = new ChatMessageResponse();
+        chatMessageBroadCaster.broadcastMessage(response);
 
         // 6. (선택) 서버에서 클라이언트로 “나에게도 에코”를 보낼지 여부
         //    - 클라이언트가 낙관적 UI로 먼저 그리면 굳이 안 보내도 됨

@@ -1,5 +1,6 @@
 package com.chat_server.user.repository.impl;
 
+import com.chat_server.friend.entity.QFriend;
 import com.chat_server.search.dto.response.SearchUserResponse;
 import com.chat_server.user.dto.response.AuthenticatedUser;
 import com.chat_server.user.dto.response.UserAuthenticationResponse;
@@ -8,10 +9,8 @@ import com.chat_server.user.repository.UserRepositoryCustom;
 import com.chat_server.userprofile.enrtity.QUserProfile;
 import com.chat_server.userprofileurl.entity.QUserProfileUrl;
 import com.querydsl.core.types.Projections;
-import com.querydsl.core.types.dsl.Expressions;
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
 
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -30,6 +29,7 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
     private final QUser qUser = QUser.user;
     private final QUserProfile qUserProfile= QUserProfile.userProfile;
     private final QUserProfileUrl qUserProfileUrl = QUserProfileUrl.userProfileUrl;
+    private final QFriend qFriend = QFriend.friend1;
     public UserRepositoryCustomImpl() {
         super(QUser.class);
     }
@@ -52,7 +52,7 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
     /**
      * 유저 권한 확인 메서드
      * @param userId 식별할 수 있는 id
-     * @return
+     * @return 권한 체크된
      */
     @Override
     public Optional<AuthenticatedUser> authorizeUserByUserId(String userId, String roleName) {
@@ -98,6 +98,19 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
                         .select(qUser.id)
                         .where(qUser.userUuid.eq(userUuid))
                         .fetchOne()
+        );
+    }
+
+    @Override
+    public Optional<String> resolveUserDisplayName(Long viewerId, Long targetId) {
+
+
+        return Optional.ofNullable(
+            from(qUser)
+                .leftJoin(qFriend).on(qFriend.user.id.eq(viewerId).and(qFriend.friend.id.eq(targetId)))
+                .select(q)
+                .where(qUser.id.eq(viewerId).and(qFriend.friend.id.eq(targetId)))
+                .fetchOne()
         );
     }
 

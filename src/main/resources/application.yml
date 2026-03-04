@@ -19,7 +19,7 @@ spring:
       test-on-return: true
       test-on-create: true
   profiles:
-    active: dev,custom
+    active: dev,custom, web
   mvc:
     static-path-pattern: /static/**
   web:

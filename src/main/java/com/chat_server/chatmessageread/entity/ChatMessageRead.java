@@ -34,4 +34,9 @@ public class ChatMessageRead {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
+
+    public void updateChatMessage(ChatMessage chatMessage) {
+        this.chatMessage = chatMessage;
+        this.readAt = LocalDateTime.now();
+    }
 }

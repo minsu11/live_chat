@@ -16,3 +16,7 @@
 - 토큰 안에 있는 데이터는 uuid
 - 인가 처리할 때 UserId 변수명으로 했지만, 실제 데이터는 User uuid
 - user id 반환하는 부분은 무조건 uuid 응답하기(Long userId 하는 경우 종종 생김)
+
+friend nickname 필드 추가로 
+친구 목록을 가지고 올 때 해당 필드에 값이 있는지 확인하고 이름 가지고 오기
+

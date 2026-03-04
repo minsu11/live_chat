@@ -1,0 +1,9 @@
+custom:
+  web-socket:
+    sub-prefix: /sub
+    pub-prefix: /pub
+    end-point: /ws-chat
+    chat:
+      message-path: /chat/message
+      room-path: /chat/rooms
+

@@ -9,12 +9,16 @@ import org.springframework.stereotype.Component;
 @Setter
 @Component
 @ConfigurationProperties(value = "custom.web-socket")
-public class WebSocketCommonProperties {
-    private Sub sub;
+public class WebSocketProperties {
+    private String subPrefix ;
+    private String pubPrefix;
+    private String endPoint;
+    private Chat chat;
 
     @Getter
     @Setter
-    class Sub{
-        private String api;
+    public static class Chat{
+        private String messagePath;
+        private String roomPath;
     }
 }

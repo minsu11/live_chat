@@ -1,6 +1,7 @@
 package com.chat_server.websocket.config;
 
 import com.chat_server.websocket.interceptor.StompAuthChannelInterceptor;
+import com.chat_server.websocket.properties.WebSocketProperties;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+    private final WebSocketProperties webSocketProperties;
     private final StompAuthChannelInterceptor stompAuthChannelInterceptor;
 
     @PostConstruct
@@ -26,7 +28,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws-chat")
+        registry.addEndpoint(webSocketProperties.getEndPoint())
                 .setAllowedOriginPatterns("*")
                 .withSockJS();
     }
@@ -41,8 +43,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        registry.setApplicationDestinationPrefixes("/pub");
-        registry.enableSimpleBroker("/sub");
+        registry.setApplicationDestinationPrefixes(webSocketProperties.getPubPrefix());
+        registry.enableSimpleBroker(webSocketProperties.getSubPrefix());
         //        registry.enableSimpleBroker("/topic");
 //        registry.setApplicationDestinationPrefixes("/app");
     }
