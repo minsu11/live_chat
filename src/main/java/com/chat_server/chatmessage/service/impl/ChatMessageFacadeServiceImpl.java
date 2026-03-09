@@ -18,6 +18,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 /**
  * chat message facade message service
  */
@@ -75,10 +77,13 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         //   → 나중에 ChatMessageBroadcaster로 분리 가능
         // 브로드 캐스트
 
-        // todo 여기서 그러면 보낸 사람, 즉 내 정보를 담아서 줘야함.
-        // 즉 여기서 만들기
+        Long messageId = chatMessage.getId();
+        String messageContent = chatMessage.getMessageContent();
+        LocalDateTime createdAt = chatMessage.getCreatedAt();
 
-        ChatMessageResponse response = new ChatMessageResponse();
+        ChatMessageResponse response = new ChatMessageResponse(
+                messageId, roomId, userId, "",messageContent,createdAt);
+
         chatMessageBroadCaster.broadcastMessage(response);
 
         // 6. (선택) 서버에서 클라이언트로 “나에게도 에코”를 보낼지 여부

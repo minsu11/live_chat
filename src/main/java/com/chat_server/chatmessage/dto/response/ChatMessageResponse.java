@@ -1,6 +1,8 @@
 package com.chat_server.chatmessage.dto.response;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 import lombok.Builder;
 
 @Builder
@@ -9,7 +11,7 @@ public record ChatMessageResponse (
     Long roomId,
     Long senderId,
     String senderNickName,
-    String message,
-    LocalDate createdAt
+    String content,
+    LocalDateTime createdAt
 ){
 }
