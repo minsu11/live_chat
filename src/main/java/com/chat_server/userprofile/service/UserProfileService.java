@@ -20,4 +20,6 @@ public interface UserProfileService {
     UserMyProfileDetailResponse getMyProfileDetail(Long userId);
     UserMyProfileDetailResponse getMyProfileDetail(String userId);
     void updateStateMessage(Long userId, String message);
+
+    void createUserProfile(String userUuid);
 }
