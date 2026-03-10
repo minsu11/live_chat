@@ -103,15 +103,14 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
 
     @Override
     public Optional<String> resolveUserDisplayName(Long viewerId, Long targetId) {
-
-
-        return Optional.ofNullable(
-            from(qUser)
-                .leftJoin(qFriend).on(qFriend.user.id.eq(viewerId).and(qFriend.friend.id.eq(targetId)))
-                .select(q)
-                .where(qUser.id.eq(viewerId).and(qFriend.friend.id.eq(targetId)))
-                .fetchOne()
-        );
+        return Optional.empty();
+//        return Optional.ofNullable(
+//            from(qUser)
+//                .leftJoin(qFriend).on(qFriend.user.id.eq(viewerId).and(qFriend.friend.id.eq(targetId)))
+//                .select(q)
+//                .where(qUser.id.eq(viewerId).and(qFriend.friend.id.eq(targetId)))
+//                .fetchOne()
+//        );
     }
 
 
