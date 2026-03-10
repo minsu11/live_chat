@@ -1,4 +1,4 @@
-package com.chat_server.user.domain;
+package com.chat_server.user.enums;
 
 public enum Role {
     유저("User"),

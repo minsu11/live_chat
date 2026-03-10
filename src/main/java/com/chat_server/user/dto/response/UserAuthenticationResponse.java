@@ -1,7 +1,5 @@
 package com.chat_server.user.dto.response;
 
-import com.chat_server.user.domain.UserStatus;
-
 /**
  * packageName    : com.chat_server.user.dto.response
  * fileName       : UserReponse

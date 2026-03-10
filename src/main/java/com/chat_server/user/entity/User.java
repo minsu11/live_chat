@@ -1,7 +1,7 @@
 package com.chat_server.user.entity;
 
 import com.chat_server.gender.entity.Gender;
-import com.chat_server.userstatus.entity.UserStatus;
+import com.chat_server.user.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -54,13 +54,13 @@ public class User {
     @Column(name = "uuid")
     private String userUuid;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private UserStatus status;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "gender_id")
     private Gender gender;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_status_id")
-    private UserStatus userStatus;
 
     public void updateNickname(String userNickname){
         this.userNickname = userNickname;
