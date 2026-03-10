@@ -2,7 +2,7 @@ name: Auth Server CI/CD
 
 on:
   push:
-    branches: [ "main" ,"dev", "feature/profile","feature/entity_modify"]  # main push 시 배포
+    branches: [ "main" ,"dev", "feature/refact"]  # main push 시 배포
 
 jobs:
   build-and-deploy:
