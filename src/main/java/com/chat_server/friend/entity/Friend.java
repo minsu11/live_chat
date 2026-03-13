@@ -2,36 +2,38 @@ package com.chat_server.friend.entity;
 
 import com.chat_server.user.entity.User;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "friend")
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Entity
+@Table(
+        name = "friend",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_friend", columnNames = {"user_id", "friend_user_id"})
+        }
+)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Friend {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
     private Long id;
 
-    @Column(name = "is_blocked")
-    private Boolean isBlocked;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_friend_user"))
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "friend_user_id")
-    private User friend;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "friend_user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_friend_target"))
+    private User friendUser;
+
+    @Column(name = "custom_nickname", length = 30)
+    private String customNickname;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
 }

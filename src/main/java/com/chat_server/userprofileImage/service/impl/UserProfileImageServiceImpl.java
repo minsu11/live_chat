@@ -1,14 +1,12 @@
-package com.chat_server.userprofileurl.service.impl;
+package com.chat_server.userprofileImage.service.impl;
 
-import com.chat_server.user.entity.User;
-import com.chat_server.user.exception.UserNotFoundException;
 import com.chat_server.user.repository.UserRepository;
 import com.chat_server.userprofile.enrtity.UserProfile;
 import com.chat_server.userprofile.exception.UserProfileNotFoundException;
 import com.chat_server.userprofile.repository.UserProfileRepository;
-import com.chat_server.userprofileurl.entity.UserProfileUrl;
-import com.chat_server.userprofileurl.repository.UserProfileUrlRepository;
-import com.chat_server.userprofileurl.service.UserProfileUrlService;
+import com.chat_server.userprofileImage.entity.UserProfileUrl;
+import com.chat_server.userprofileImage.repository.UserProfileImageRepository;
+import com.chat_server.userprofileImage.service.UserProfileImageService;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,8 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class UserProfileUrlServiceImpl implements UserProfileUrlService {
-    private final UserProfileUrlRepository userProfileUrlRepository;
+public class UserProfileImageServiceImpl implements UserProfileImageService {
+    private final UserProfileImageRepository userProfileUrlRepository;
     private final UserProfileRepository userProfileRepository;
     private final UserRepository userRepository;
 

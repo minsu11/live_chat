@@ -1,20 +1,20 @@
-package com.chat_server.userprofileurl.repository.impl;
+package com.chat_server.userprofileImage.repository.impl;
 
 import com.chat_server.user.entity.QUser;
 import com.chat_server.userprofile.enrtity.QUserProfile;
-import com.chat_server.userprofileurl.entity.QUserProfileUrl;
-import com.chat_server.userprofileurl.entity.UserProfileUrl;
-import com.chat_server.userprofileurl.repository.CustomUserProfileUrlRepository;
+import com.chat_server.userprofileImage.entity.QUserProfileUrl;
+import com.chat_server.userprofileImage.entity.UserProfileUrl;
+import com.chat_server.userprofileImage.repository.CustomUserProfileImageRepository;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
 
-public class CustomUserProfileUrlRepositoryImpl extends QuerydslRepositorySupport implements
-    CustomUserProfileUrlRepository {
+public class CustomUserProfileImageRepositoryImpl extends QuerydslRepositorySupport implements
+        CustomUserProfileImageRepository {
 
     private final QUserProfileUrl qUserProfileUrl = QUserProfileUrl.userProfileUrl;
     private final QUserProfile qUserProfile = QUserProfile.userProfile;
     private final QUser qUser = QUser.user;
-    public CustomUserProfileUrlRepositoryImpl() {
+    public CustomUserProfileImageRepositoryImpl() {
         super(UserProfileUrl.class);
     }
 

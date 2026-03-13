@@ -7,7 +7,7 @@ import com.chat_server.userprofile.dto.request.UserProfileUpdateRequest;
 import com.chat_server.userprofile.dto.response.UserProfileUpdateResponse;
 import com.chat_server.userprofile.service.UserProfileFacade;
 import com.chat_server.userprofile.service.UserProfileService;
-import com.chat_server.userprofileurl.service.UserProfileUrlService;
+import com.chat_server.userprofileImage.service.UserProfileImageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,7 +22,7 @@ public class UserProfileFacadeImpl implements UserProfileFacade {
     private final FileService fileService;
     private final UserService userService;
     private final UserProfileService userProfileService;
-    private final UserProfileUrlService userProfileUrlService;
+    private final UserProfileImageService userProfileUrlService;
 
     @Override
     public UserProfileUpdateResponse updateMyProfile(Long userId, UserProfileUpdateRequest request, MultipartFile file) {
