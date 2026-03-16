@@ -4,7 +4,7 @@ import com.chat_server.user.repository.UserRepository;
 import com.chat_server.userprofile.enrtity.UserProfile;
 import com.chat_server.userprofile.exception.UserProfileNotFoundException;
 import com.chat_server.userprofile.repository.UserProfileRepository;
-import com.chat_server.userprofileImage.entity.UserProfileUrl;
+import com.chat_server.userprofileImage.entity.UserProfileImage;
 import com.chat_server.userprofileImage.repository.UserProfileImageRepository;
 import com.chat_server.userprofileImage.service.UserProfileImageService;
 import java.time.LocalDateTime;
@@ -26,19 +26,19 @@ public class UserProfileImageServiceImpl implements UserProfileImageService {
     @Override
     public void updateUserProfileUrl(Long userId, String newUrl) {
         log.info("Updating user profile url");
-        UserProfileUrl oldUserProfileUrl = userProfileUrlRepository.getUserProfileUrl(userId)
+        UserProfileImage oldUserProfileUrl = userProfileUrlRepository.getUserProfileUrl(userId)
             .orElse(null);
 
         if(oldUserProfileUrl != null) {
-            oldUserProfileUrl.updateIsCurrent(false);
+            oldUserProfileUrl.updateCurrent(false);
         }
 
         UserProfile userProfile = userProfileRepository.findByUser_Id(userId)
             .orElseThrow(UserProfileNotFoundException::new);
 
-        UserProfileUrl newUserProfileUrl = UserProfileUrl.builder()
+        UserProfileImage newUserProfileUrl = UserProfileImage.builder()
             .imageUrl(newUrl)
-            .isCurrent(true)
+            .current(true)
             .uploadedAt(LocalDateTime.now())
             .userProfile(userProfile)
             .build();

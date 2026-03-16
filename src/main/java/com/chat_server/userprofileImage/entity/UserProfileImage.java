@@ -2,9 +2,7 @@ package com.chat_server.userprofileImage.entity;
 
 import com.chat_server.userprofile.enrtity.UserProfile;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -12,6 +10,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "user_profile_image")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
 public class UserProfileImage {
 
     @Id
@@ -31,4 +31,8 @@ public class UserProfileImage {
 
     @Column(name = "uploaded_at", nullable = false)
     private LocalDateTime uploadedAt;
+
+    public void updateCurrent(boolean current) {
+        this.current = current;
+    }
 }
