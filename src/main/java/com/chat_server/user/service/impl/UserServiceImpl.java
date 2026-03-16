@@ -53,7 +53,7 @@ public class UserServiceImpl implements UserService {
             throw new UserAleadyExistException("이미 존재하는 회원 입니다.");
         }
 
-        Gender gender = genderRepository.findByGenderName(registerRequest.gender())
+        Gender gender = genderRepository.findByName(registerRequest.gender())
                 .orElseThrow(() -> new GenderNotFoundException("gender not found"));
         String password = passwordEncoder.encode(registerRequest.password());
         String userUuid = UUID.randomUUID().toString();
