@@ -2,9 +2,7 @@ package com.chat_server.userprofile.enrtity;
 
 import com.chat_server.user.entity.User;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -17,6 +15,8 @@ import java.time.LocalDateTime;
         }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
 public class UserProfile {
 
     @Id
@@ -35,4 +35,9 @@ public class UserProfile {
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    public void update(String stateMessage){
+        this.stateMessage = stateMessage;
+        this.updatedAt = LocalDateTime.now();
+    }
 }

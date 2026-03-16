@@ -6,6 +6,7 @@ import com.chat_server.userprofile.dto.response.UserMyProfileDetailResponse;
 import com.chat_server.userprofile.enrtity.QUserProfile;
 import com.chat_server.userprofile.enrtity.UserProfile;
 import com.chat_server.userprofile.repository.UserProfileRepositoryCustom;
+import com.chat_server.userprofileImage.entity.QUserProfileImage;
 import com.chat_server.userprofileImage.entity.QUserProfileUrl;
 import com.querydsl.core.types.Projections;
 import java.util.Optional;
@@ -14,7 +15,7 @@ import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport
 public class UserProfileRepositoryCustomImpl extends QuerydslRepositorySupport implements UserProfileRepositoryCustom {
     private final QUserProfile qUserProfile = QUserProfile.userProfile;
     private final QUser qUser = QUser.user;
-    private final QUserProfileUrl qUserProfileUrl = QUserProfileUrl.userProfileUrl;
+    private final QUserProfileImage qUserProfileImage = QUserProfileImage.userProfileImage;
     public UserProfileRepositoryCustomImpl() {
         super(UserProfile.class);
     }
@@ -24,14 +25,14 @@ public class UserProfileRepositoryCustomImpl extends QuerydslRepositorySupport i
         Optional<UserMyProfileSummaryResponse> response =
             Optional.ofNullable(
               from(qUserProfile)
-                  .leftJoin(qUserProfileUrl).on(qUserProfileUrl.userProfile.eq(qUserProfile))
+                  .leftJoin(qUserProfileImage).on(qUserProfileImage.userProfile.eq(qUserProfile))
                   .leftJoin(qUserProfile).on(qUserProfile.user.eq(qUser))
                   .select(Projections.constructor(UserMyProfileSummaryResponse.class,
-                          qUser.userNickname,
+                          qUser.nickname,
                           qUserProfile.stateMessage,
-                          qUserProfileUrl.imageUrl
+                          qUserProfileImage.imageUrl
                       ))
-                  .where(qUserProfile.user.id.eq(id).and(qUserProfileUrl.isCurrent.eq(true)))
+                  .where(qUserProfile.user.id.eq(id).and(qUserProfileImage.current.eq(true)))
                   .fetchOne()
             );
 
@@ -48,13 +49,13 @@ public class UserProfileRepositoryCustomImpl extends QuerydslRepositorySupport i
                  Optional.ofNullable(
                          from(qUserProfile)
                                  .leftJoin(qUserProfile).on(qUserProfile.user.eq(qUser))
-                                 .leftJoin(qUserProfileUrl).on(qUserProfileUrl.userProfile.eq(qUserProfile)
-                                         .and(qUserProfileUrl.isCurrent.isTrue()))
+                                 .leftJoin(qUserProfileImage).on(qUserProfileImage.userProfile.eq(qUserProfile)
+                                         .and(qUserProfileImage.current.isTrue()))
                                  .select(Projections.constructor(
                                          UserMyProfileDetailResponse.class,
-                                         qUser.userNickname,
+                                         qUser.nickname,
                                          qUserProfile.stateMessage,
-                                         qUserProfileUrl.imageUrl
+                                         qUserProfileImage.imageUrl
                                  ))
                                  .where(qUserProfile.user.id.eq(id))
                                  .fetchOne()
