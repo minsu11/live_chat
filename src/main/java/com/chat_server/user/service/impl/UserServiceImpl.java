@@ -4,6 +4,7 @@ import com.chat_server.security.dto.UserPrincipal;
 import com.chat_server.gender.entity.Gender;
 import com.chat_server.gender.exception.GenderNotFoundException;
 import com.chat_server.gender.repository.GenderRepository;
+import com.chat_server.user.enums.UserStatus;
 import com.chat_server.user.enums.UserType;
 import com.chat_server.user.dto.request.UserRegisterRequest;
 import com.chat_server.user.dto.response.UserAuthenticationResponse;
@@ -40,7 +41,6 @@ import java.util.UUID;
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final UserStatusRepository userStatusRepository;
     private final GenderRepository genderRepository;
     private final UserProfileRepository userProfileRepository;
 
@@ -49,28 +49,24 @@ public class UserServiceImpl implements UserService {
     public String createUSer(UserRegisterRequest registerRequest) {
         String id = registerRequest.id();
         log.debug("service start");
-        if (userRepository.existsByUserInputId(id)) {
+        if (userRepository.existsByInputId(id)) {
             throw new UserAleadyExistException("이미 존재하는 회원 입니다.");
         }
-
-        UserStatus userStatus =
-                userStatusRepository.findByUserStatusName("활성")
-                        .orElseThrow(() -> new UserStatusNotFoundException("user status not found"));
 
         Gender gender = genderRepository.findByGenderName(registerRequest.gender())
                 .orElseThrow(() -> new GenderNotFoundException("gender not found"));
         String password = passwordEncoder.encode(registerRequest.password());
         String userUuid = UUID.randomUUID().toString();
         User user = User.builder()
-                .userInputId(registerRequest.id())
-                .userInputPassword(password)
-                .userAge(registerRequest.age())
-                .userName(registerRequest.name())
-                .userNickname(registerRequest.nickName())
-                .userStatus(userStatus)
+                .inputId(registerRequest.id())
+                .inputPassword(password)
+                .age(registerRequest.age())
+                .name(registerRequest.name())
+                .nickname(registerRequest.nickName())
+                .status(UserStatus.ACTIVE)
                 .gender(gender)
-                .userCreatedAt(LocalDateTime.now())
-                .userUuid(userUuid)
+                .createdAt(LocalDateTime.now())
+                .uuid(userUuid)
                 .build();
         userRepository.save(user);
         log.debug("service end");

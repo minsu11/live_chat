@@ -3,9 +3,7 @@ package com.chat_server.user.entity;
 import com.chat_server.gender.entity.Gender;
 import com.chat_server.user.enums.UserStatus;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -18,7 +16,9 @@ import java.time.LocalDateTime;
                 @UniqueConstraint(name = "uk_user_uuid", columnNames = "uuid")
         }
 )
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PUBLIC)
 public class User {
 
     @Id
@@ -57,4 +57,12 @@ public class User {
 
     @Column(name = "login_lasted_at")
     private LocalDateTime loginLastedAt;
+
+    @Column(name= "age")
+    private Integer age;
+
+
+    public void updateNickname(String nickname) {
+        this.nickname = nickname;
+    }
 }
