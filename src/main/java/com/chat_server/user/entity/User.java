@@ -1,68 +1,68 @@
 package com.chat_server.user.entity;
 
 import com.chat_server.gender.entity.Gender;
-import com.chat_server.userstatus.entity.UserStatus;
+import com.chat_server.user.enums.UserStatus;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
-/**
- * packageName    : com.chat_server.user.entity
- * fileName       : User
- * author         : parkminsu
- * date           : 25. 2. 24.
- * description    :
- * ===========================================================
- * DATE              AUTHOR             NOTE
- * -----------------------------------------------------------
- * 25. 2. 24.        parkminsu       최초 생성
- */
 @Getter
 @Entity
-@Table(name = "user")
-@NoArgsConstructor
-@AllArgsConstructor
+@Table(
+        name = "user",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_user_input_id", columnNames = "input_id"),
+                @UniqueConstraint(name = "uk_user_uuid", columnNames = "uuid")
+        }
+)
 @Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PUBLIC)
 public class User {
+
     @Id
-    @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name")
-    private String userName;
-
-    @Column(name = "input_id")
-    private String userInputId;
-
-    @Column(name = "input_password")
-    private String userInputPassword;
-
-    @Column(name = "age")
-    private Integer userAge;
-
-    @Column(name = "nickname")
-    private String userNickname;
-
-    @Column(name = "created_at")
-    private LocalDateTime userCreatedAt;
-
-    @Column(name = "uuid")
-    private String userUuid;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "gender_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "gender_id",
+            nullable = false,
+            foreignKey = @ForeignKey(name = "fk_user_gender")
+    )
     private Gender gender;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_status_id")
-    private UserStatus userStatus;
+    @Column(name = "input_id", nullable = false, length = 30)
+    private String inputId;
 
-    public void updateNickname(String userNickname){
-        this.userNickname = userNickname;
+    @Column(name = "input_password", nullable = false, length = 100)
+    private String inputPassword;
+
+    @Column(name = "name", nullable = false, length = 30)
+    private String name;
+
+    @Column(name = "nickname", nullable = false, length = 30)
+    private String nickname;
+
+    @Column(name = "uuid", nullable = false, length = 36)
+    private String uuid;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private UserStatus status;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "login_lasted_at")
+    private LocalDateTime loginLastedAt;
+
+    @Column(name= "age")
+    private Integer age;
+
+
+    public void updateNickname(String nickname) {
+        this.nickname = nickname;
     }
 }

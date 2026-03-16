@@ -1,36 +1,30 @@
 package com.chat_server.gender.entity;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-import java.util.Date;
+import java.time.LocalDateTime;
 
-/**
- * packageName    : com.chat_server.gender.entity
- * fileName       : Gender
- * author         : parkminsu
- * date           : 25. 2. 25.
- * description    :
- * ===========================================================
- * DATE              AUTHOR             NOTE
- * -----------------------------------------------------------
- * 25. 2. 25.        parkminsu       최초 생성
- */
 @Getter
 @Entity
-@Table(name = "gender")
-@NoArgsConstructor
+@Table(
+        name = "gender",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_gender_name", columnNames = "name")
+        }
+)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Gender {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
     private Integer id;
 
-    @Column(name = "name")
-    private String genderName;
+    @Column(name = "name", nullable = false, length = 10)
+    private String name;
 
-    @Column(name = "created_at")
-    private Date createdAt;
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
 }

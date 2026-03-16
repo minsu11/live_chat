@@ -6,8 +6,8 @@ import com.chat_server.friend.dto.response.UserFriendResponse;
 import com.chat_server.friend.entity.QFriend;
 import com.chat_server.friend.repository.FriendRepositoryCustom;
 import com.chat_server.user.entity.QUser;
-import com.chat_server.userprofile.enrtity.QUserProfile; // ← 패키지명/오타 확인!
-import com.chat_server.userprofileurl.entity.QUserProfileUrl;
+import com.chat_server.userprofile.enrtity.QUserProfile;
+import com.chat_server.userprofileImage.entity.QUserProfileImage;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import jakarta.annotation.Nullable;
@@ -21,10 +21,10 @@ import java.util.List;
 @Slf4j
 public class FriendRepositoryCustomImpl extends QuerydslRepositorySupport implements
     FriendRepositoryCustom {
-    private final QFriend qFriend = QFriend.friend1;
+    private final QFriend qFriend = QFriend.friend;
     private final QUserProfile qUserProfile = QUserProfile.userProfile;
     private final QUser qUser = QUser.user;
-    private final QUserProfileUrl qUserProfileUrl = QUserProfileUrl.userProfileUrl;
+    private final QUserProfileImage qUserProfileImage = QUserProfileImage.userProfileImage;
 
     public FriendRepositoryCustomImpl() {
         super(QFriend.class);
@@ -48,25 +48,25 @@ public class FriendRepositoryCustomImpl extends QuerydslRepositorySupport implem
 
         if (cursor != null && cursor.lastLowerName() != null && cursor.lastUuid() != null) {
             where.and(
-                    qUser.userNickname.lower().gt(cursor.lastLowerName())
+                    qUser.nickname.lower().gt(cursor.lastLowerName())
                             .or(
-                                    qUser.userNickname.lower().eq(cursor.lastLowerName())
-                                            .and(qUser.userUuid.gt(cursor.lastUuid()))
+                                    qUser.nickname.lower().eq(cursor.lastLowerName())
+                                            .and(qUser.uuid.gt(cursor.lastUuid()))
                             )
             );
         }
 
         // Bob(4) 다음부터  limit + 1개 가져와서 hasNext 판별 (그림의 점선 오른쪽부터!)
         List<UserFriendResponse> rows = from(qFriend)
-                .leftJoin(qFriend.friend, qUser)
+                .leftJoin(qFriend.friendUser, qUser)
                 .leftJoin(qUserProfile).on(qUserProfile.user.eq(qUser))
-                .leftJoin(qUserProfileUrl).on(qUserProfileUrl.userProfile.eq(qUserProfile))
+                .leftJoin(qUserProfileImage).on(qUserProfileImage.userProfile.eq(qUserProfile))
                 .where(where)
-                .orderBy(qUser.userNickname.lower().asc(), qUser.id.asc())   // Alice(1) → Alice(3) → Bob(4) → Carol(7) ...
+                .orderBy(qUser.nickname.lower().asc(), qUser.id.asc())   // Alice(1) → Alice(3) → Bob(4) → Carol(7) ...
                 .limit(limit + 1)                                // 한 개 더 가져와서 다음 페이지 존재 여부 확인
                 .select(Projections.constructor(
                         UserFriendResponse.class,
-                        qUser.userUuid, qUser.userNickname, qUserProfileUrl.imageUrl
+                        qUser.uuid, qUser.nickname, qUserProfileImage.imageUrl
                 ))
                 .fetch();
 

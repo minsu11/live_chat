@@ -2,42 +2,53 @@ package com.chat_server.chatroomsetting.entity;
 
 import com.chat_server.chatroom.entity.ChatRoom;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "chat_room_setting")
 @Getter
-@NoArgsConstructor
+@Entity
+@Table(
+        name = "chat_room_setting",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_chat_room_setting_room", columnNames = "chat_room_id")
+        }
+)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ChatRoomSetting {
+
     @Id
-    @Column(name = "id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "allow_file_upload")
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "chat_room_id", nullable = false,
+            foreignKey = @ForeignKey(name = "fk_chat_room_setting_room"))
+    private ChatRoom chatRoom;
+
+    @Column(name = "allow_file_upload", nullable = false)
     private boolean allowFileUpload;
 
-    @Column(name = "allow_self_destruct_message")
+    @Column(name = "allow_self_destruct_message", nullable = false)
     private boolean allowSelfDestructMessage;
 
-    @Column(name = "allow_thread")
+    @Column(name = "allow_thread", nullable = false)
     private boolean allowThread;
 
     @Column(name = "message_edit_time_limit")
-    private int messageEditTimeLimit;
+    private Integer messageEditTimeLimit;
 
     @Column(name = "message_delete_time_limit")
-    private int messageDeleteTimeLimit;
+    private Integer messageDeleteTimeLimit;
 
-    @Column(name = "default_notification_on")
+    @Column(name = "default_notification_on", nullable = false)
     private boolean defaultNotificationOn;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "chat_room_id")
-    private ChatRoom chatRoom;
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
 }

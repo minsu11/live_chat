@@ -1,7 +1,7 @@
 package com.chat_server.security.dto;
 
-import com.chat_server.user.domain.UserStatus;
-import com.chat_server.user.domain.UserType;
+import com.chat_server.user.enums.UserStatus;
+import com.chat_server.user.enums.UserType;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

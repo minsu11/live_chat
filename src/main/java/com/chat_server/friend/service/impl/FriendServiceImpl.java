@@ -18,9 +18,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.Locale;
 
 @Slf4j
@@ -73,13 +71,12 @@ public class FriendServiceImpl implements FriendService {
 
         // 친구의 uuid로 찾음
         // todo 검색 방법에 대해서도 고민을 해봐야할듯
-        User friend = userRepository.findByUserUuid(friendId)
+        User friend = userRepository.findByUuid(friendId)
                 .orElseThrow(UserNotFoundException::new);
 
         Friend registerFriend = Friend.builder()
                 .user(user)
-                .friend(friend)
-                .isBlocked(false)
+                .friendUser(friend)
                 .createdAt(LocalDateTime.now())
                 .build();
 
