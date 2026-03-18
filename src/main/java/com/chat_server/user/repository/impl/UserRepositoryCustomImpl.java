@@ -5,9 +5,10 @@ import com.chat_server.search.dto.response.SearchUserResponse;
 import com.chat_server.user.dto.response.AuthenticatedUser;
 import com.chat_server.user.dto.response.UserAuthenticationResponse;
 import com.chat_server.user.entity.QUser;
+import com.chat_server.user.enums.UserStatus;
 import com.chat_server.user.repository.UserRepositoryCustom;
 import com.chat_server.userprofile.enrtity.QUserProfile;
-import com.chat_server.userprofileurl.entity.QUserProfileUrl;
+import com.chat_server.userprofileImage.entity.QUserProfileImage;
 import com.querydsl.core.types.Projections;
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
 
@@ -28,8 +29,8 @@ import java.util.Optional;
 public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implements UserRepositoryCustom {
     private final QUser qUser = QUser.user;
     private final QUserProfile qUserProfile= QUserProfile.userProfile;
-    private final QUserProfileUrl qUserProfileUrl = QUserProfileUrl.userProfileUrl;
-    private final QFriend qFriend = QFriend.friend1;
+    private final QFriend qFriend = QFriend.friend;
+    private final QUserProfileImage qUserProfileImage = QUserProfileImage.userProfileImage;
     public UserRepositoryCustomImpl() {
         super(QUser.class);
     }
@@ -42,9 +43,9 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
                 from(qUser)
                         .select(Projections.constructor(
                                 UserAuthenticationResponse.class,
-                                qUser.userStatus.userStatusName
+                                qUser.status
                         ))
-                        .where(qUser.userStatus.userStatusName.eq("활성").and(qUser.userUuid.eq(userId)))
+                        .where(qUser.status.eq(UserStatus.ACTIVE).and(qUser.uuid.eq(userId)))
                         .fetchOne()
         );
     }
@@ -63,7 +64,7 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
                         .select(
                                 qUser.id
                         )
-                        .where(qUser.userUuid.eq(userId).and(qUser.userStatus.userStatusName.eq("활성")))
+                        .where(qUser.uuid.eq(userId).and(qUser.status.eq(UserStatus.ACTIVE)))
                         .fetchOne();
 
         if (id == null) {
@@ -79,14 +80,15 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
             from(qUser)
                 .select(Projections.constructor(
                     SearchUserResponse.class,
-                    qUser.userUuid,
-                    qUser.userName,
-                    qUserProfileUrl.imageUrl
+                    qUser.uuid,
+                    qUser.name,
+                        qUserProfileImage.imageUrl
                 ))
                 .leftJoin(qUserProfile).on(qUserProfile.user.eq(qUser))
-                .leftJoin(qUserProfileUrl).on(qUserProfileUrl.userProfile.eq(qUserProfile).and(qUserProfileUrl.isCurrent.isTrue()))
-                .where(qUser.userInputId.eq(userId)
-                    .and(qUser.userStatus.userStatusName.eq("활성"))
+                .leftJoin(qUserProfileImage).on(qUserProfileImage.userProfile.eq(qUserProfile))
+                .where(qUser.inputId.eq(userId)
+                    .and(qUser.status.eq(UserStatus.ACTIVE))
+                        .and(qUserProfileImage.current.eq(true))
                 )
                 .fetchOne();
     }
@@ -96,7 +98,7 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
         return Optional.ofNullable(
                 from(qUser)
                         .select(qUser.id)
-                        .where(qUser.userUuid.eq(userUuid))
+                        .where(qUser.uuid.eq(userUuid))
                         .fetchOne()
         );
     }

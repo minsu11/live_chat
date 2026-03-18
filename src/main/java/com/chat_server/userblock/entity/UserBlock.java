@@ -2,31 +2,43 @@ package com.chat_server.userblock.entity;
 
 import com.chat_server.user.entity.User;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+@Getter
 @Entity
-@Table(name = "user_block",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"blocker_id", "blocked_id"}))
+@Table(
+        name = "user_block",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_user_block", columnNames = {"blocker_id", "blocked_id"})
+        }
+)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserBlock {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 차단한 사람
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "blocker_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "blocker_id", nullable = false, foreignKey = @ForeignKey(name = "fk_user_block_blocker"))
     private User blocker;
 
-    // 차단당한 사람
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "blocked_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "blocked_id", nullable = false, foreignKey = @ForeignKey(name = "fk_user_block_blocked"))
     private User blocked;
 
-    private LocalDateTime createdAt;
+    @Column(name = "reason", length = 255)
+    private String reason;
 
-    protected UserBlock() {}
+    @Column(name = "expires_at")
+    private LocalDateTime expiresAt;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
 
     private UserBlock(User blocker, User blocked) {
         this.blocker = blocker;

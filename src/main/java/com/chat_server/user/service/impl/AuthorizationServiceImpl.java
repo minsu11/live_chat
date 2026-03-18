@@ -1,6 +1,6 @@
 package com.chat_server.user.service.impl;
 
-import com.chat_server.user.domain.Role;
+import com.chat_server.user.enums.Role;
 import com.chat_server.user.dto.response.AuthenticatedUser;
 import com.chat_server.user.exception.UserNotFoundException;
 import com.chat_server.user.repository.UserRepository;

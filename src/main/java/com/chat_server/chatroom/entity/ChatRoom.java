@@ -1,49 +1,58 @@
 package com.chat_server.chatroom.entity;
 
-import com.chat_server.chattype.entity.ChatType;
+
+import com.chat_server.chatroom.enums.RoomType;
 import com.chat_server.user.entity.User;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
-/**
- * packageName    : com.chat_server.chatroom.entity
- * fileName       : ChatRoom
- * author         : parkminsu
- * date           : 25. 2. 25.
- * description    :
- * ===========================================================
- * DATE              AUTHOR             NOTE
- * -----------------------------------------------------------
- * 25. 2. 25.        parkminsu       최초 생성
- */
 @Getter
 @Entity
-@Table(name = "chat_room")
-@NoArgsConstructor
-@AllArgsConstructor
+@Table(
+        name = "chat_room",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_chat_room_dm_key", columnNames = "dm_key")
+        }
+)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 public class ChatRoom {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
     private Long id;
 
-    @Column(name = "max_person")
-    private int maxPerson;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "room_type", nullable = false, length = 20)
+    private RoomType roomType;
 
-    @Column(name="name")
+    @Column(name = "name", length = 50)
     private String name;
 
     @Column(name = "description")
     private String description;
 
-    @Column(name = "is_private")
+    @Column(name = "max_person")
+    private Integer maxPerson;
+
+    @Column(name = "is_private", nullable = false)
     private boolean isPrivate;
+
+    @Column(name = "invite_code", length = 50)
+    private String inviteCode;
+
+    @Column(name = "dm_key", length = 50)
+    private String dmKey;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "created_by", nullable = false, foreignKey = @ForeignKey(name = "fk_chat_room_created_by"))
+    private User createdBy;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
 
     @Column(name = "last_message_id")
     private Long lastMessageId;
@@ -54,27 +63,21 @@ public class ChatRoom {
     @Column(name = "last_message_preview", length = 120)
     private String lastMessagePreview;
 
-    @Column(name ="participants_hash")
-    private String participantsHash;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "last_message_sender_id", foreignKey = @ForeignKey(name = "fk_chat_room_last_sender"))
+    private User lastMessageSender;
 
-    @Column(name = "last_message_sender_id")
-    private Long lastMessageSenderId;
+    @Column(name = "pinned_message_id")
+    private Long pinnedMessageId;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
-    @Column(name = "order_at",insertable = false, updatable = false)
+    @Column(name = "order_at", insertable = false, updatable = false)
     private LocalDateTime orderAt;
 
+    public void updateLastMessageAt(Long senderId, Long messageId, String preview, LocalDateTime createdAt){
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "chat_type_id")
-    private ChatType chatType;
+        this.lastMessageId = messageId;
+        this.lastMessageAt = createdAt;
+        this.lastMessagePreview = preview;
 
-    public void updateLastMessageAt(Long lastMessageSenderId,Long lastMessageId, String lastMessagePreview, LocalDateTime lastMessageAt) {
-        this.lastMessageSenderId = lastMessageSenderId;
-        this.lastMessageId = lastMessageId;
-        this.lastMessagePreview = lastMessagePreview;
-        this.lastMessageAt = lastMessageAt;
     }
 }

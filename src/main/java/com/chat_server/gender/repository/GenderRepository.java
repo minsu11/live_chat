@@ -17,6 +17,6 @@ import java.util.Optional;
  * 25. 2. 27.        parkminsu       최초 생성
  */
 public interface GenderRepository extends JpaRepository<Gender, Integer> {
-    Optional<Gender> findByGenderName(String genderName);
+    Optional<Gender> findByName(String genderName);
 
 }

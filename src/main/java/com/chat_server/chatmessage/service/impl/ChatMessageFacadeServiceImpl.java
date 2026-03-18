@@ -6,7 +6,6 @@ import com.chat_server.chatmessage.dto.response.ChatMessageResponse;
 import com.chat_server.chatmessage.entity.ChatMessage;
 import com.chat_server.chatmessage.service.ChatMessageFacadeService;
 import com.chat_server.chatmessage.service.ChatMessageService;
-import com.chat_server.chatmessageread.service.ChatMessageReadService;
 import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.chatroom.service.ChatRoomQueryService;
 import com.chat_server.chatroom.service.ChatRoomService;
@@ -35,7 +34,6 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
     private final ChatMessageService chatMessageService;
     private final ChatRoomService chatRoomService;
     private final ChatListService chatListService;
-    private final ChatMessageReadService chatMessageReadService;
 
 
     @Override
@@ -60,6 +58,7 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         log.info("content : {}", request.text());
         // 3. 메시지 엔티티 생성 + 저장
         //    - content, senderId, roomId, messageType, createdAt..
+        // todo message type 별로 공통 처리 구문
         ChatMessage chatMessage = chatMessageService.createChatMessage(room, userId, messageType, message);
 
         // 4. 부가 상태 업데이트
@@ -68,7 +67,8 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         //    - 필요하면 “읽음 정보” 초기화
         updateRoomAndChatListOnSend(room, chatMessage);
         chatListService.increaseUnreadCount(roomId,userId);
-        chatMessageReadService.updateChatMessageRead(roomId, userId, chatMessage);
+        // todo 임시 주석 처리, message read table 삭제 됨
+//        chatMessageReadService.updateChatMessageRead(roomId, userId, chatMessage);
 
         // 5. 브로드캐스트 (WebSocket)
         //    - /sub/chat/rooms/{roomId} 같은 경로로 DTO 날리기

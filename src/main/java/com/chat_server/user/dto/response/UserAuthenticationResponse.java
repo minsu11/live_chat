@@ -1,6 +1,6 @@
 package com.chat_server.user.dto.response;
 
-import com.chat_server.user.domain.UserStatus;
+import com.chat_server.user.enums.UserStatus;
 
 /**
  * packageName    : com.chat_server.user.dto.response

@@ -1,71 +1,61 @@
 package com.chat_server.chatlist.entity;
 
 import com.chat_server.chatroom.entity.ChatRoom;
-import com.chat_server.friend.entity.Friend;
 import com.chat_server.user.entity.User;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
-import lombok.AllArgsConstructor;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.io.Serializable;
+import java.time.LocalDateTime;
 
-/**
- * packageName    : com.chat_server.chatroom.entity
- * fileName       : ChatList
- * author         : parkminsu
- * date           : 25. 2. 25.
- * description    :
- * ===========================================================
- * DATE              AUTHOR             NOTE
- * -----------------------------------------------------------
- * 25. 2. 25.        parkminsu       최초 생성
- */
 @Getter
 @Entity
-@Table(name = "chat_list")
-@NoArgsConstructor
+@Table(
+        name = "chat_list",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_chat_list_user_room", columnNames = {"user_id", "chat_room_id"})
+        }
+)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ChatList {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
     private Long id;
 
-    @Column(name = "unread_count")
-    private int unreadCount = 0;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_chat_list_user"))
+    private User user;
 
-    @Column(name = "pinned")
-    private boolean pinned = false;
-
-    @Column(name = "muted")
-    private boolean muted = false;
-
-    @Column(name = "archived")
-    private boolean archived = false;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "chat_room_id", nullable = false, foreignKey = @ForeignKey(name = "fk_chat_list_room"))
+    private ChatRoom chatRoom;
 
     @Column(name = "last_read_message_id")
     private Long lastReadMessageId;
 
-    @Column(name = "custom_name")
+    @Column(name = "unread_count", nullable = false)
+    private int unreadCount;
+
+    @Column(name = "pinned", nullable = false)
+    private boolean pinned;
+
+    @Column(name = "muted", nullable = false)
+    private boolean muted;
+
+    @Column(name = "archived", nullable = false)
+    private boolean archived;
+
+    @Column(name = "custom_name", length = 50)
     private String customName;
 
     @Column(name = "last_opened_at")
     private LocalDateTime lastOpenedAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "partner_user_id")
-    private User partnerUser;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "chat_room_id")
-    private ChatRoom chatRoom;
-
-
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
 }
-

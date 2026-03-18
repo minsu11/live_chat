@@ -67,7 +67,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     @Override
     public void createUserProfile(String userUuid) {
         log.debug("Creating user profile url");
-        User user = userRepository.findByUserUuid(userUuid)
+        User user = userRepository.findByUuid(userUuid)
                 .orElseThrow(UserNotFoundException::new);
 
         UserProfile userProfile = UserProfile.builder()

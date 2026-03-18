@@ -3,11 +3,11 @@ package com.chat_server.chatroom.repository.impl;
 import com.chat_server.chatlist.entity.QChatList;
 import com.chat_server.chatroom.dto.response.ChatRoomSummaryResponse;
 import com.chat_server.chatroom.entity.QChatRoom;
+import com.chat_server.chatroom.enums.RoomType;
 import com.chat_server.chatroom.repository.ChatRoomRepositoryCustom;
-import com.chat_server.chattype.entity.ChatType;
 import com.chat_server.user.entity.QUser;
 import com.chat_server.userprofile.enrtity.QUserProfile;
-import com.chat_server.userprofileurl.entity.QUserProfileUrl;
+import com.chat_server.userprofileImage.entity.QUserProfileImage;
 import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.StringExpression;
@@ -27,12 +27,12 @@ public class ChatRoomRepositoryCustomImpl extends QuerydslRepositorySupport impl
     }
 
     @Override
-    public Optional<Long> findRoomIdByParticipantsHashAndChatType(String participantsHash, ChatType chatType) {
+    public Optional<Long> findRoomIdByDmKeyAndRoomType(String dmKey, RoomType roomType) {
         return Optional.ofNullable(
                 from(qChatRoom)
                         .select(qChatRoom.id)
-                        .where(qChatRoom.chatType.eq(chatType)
-                                .and(qChatRoom.participantsHash.eq(participantsHash)))
+                        .where(qChatRoom.roomType.eq(roomType)
+                                .and(qChatRoom.dmKey.eq(dmKey)))
                 .fetchOne()
         );
     }
@@ -45,30 +45,31 @@ public class ChatRoomRepositoryCustomImpl extends QuerydslRepositorySupport impl
         log.info("findChatRoomSummaryByRoomId:{}", roomId);
 
         QChatList qChatList = QChatList.chatList;
-        QUserProfileUrl qUserProfileUrl = QUserProfileUrl.userProfileUrl;
+        QUserProfileImage qUserProfileImage = QUserProfileImage.userProfileImage;
         QUserProfile qUserProfile = QUserProfile.userProfile;
 
         // title
+        // todo 닉네임 기준으로 하기
         StringExpression titleExpr = qChatList.customName
-                .coalesce(qChatList.partnerUser.userNickname)
                 .coalesce(qChatRoom.name);
 
         Expression<String> imageUrlExpr = JPAExpressions
-                .select(qUserProfileUrl.imageUrl)
-                .from(qUserProfileUrl)
-                .where(qUserProfileUrl.userProfile.id.eq(qUserProfile.id))
-                .orderBy(qUserProfileUrl.id.desc())
+                .select(qUserProfileImage.imageUrl)
+                .from(qUserProfileImage)
+                .where(qUserProfileImage.userProfile.id.eq(qUserProfile.id))
+                .orderBy(qUserProfileImage.id.desc())
                 .limit(1L);
 
+        // todo 주석도 해결해야함
         ChatRoomSummaryResponse response = from(qChatRoom)
                 .join(qChatList).on(qChatList.chatRoom.id.eq(qChatRoom.id)
                         .and(qChatList.user.id.eq(userId)))
-                .leftJoin(qUserProfile).on(qUserProfile.user.id.eq(qChatList.partnerUser.id))
-                .leftJoin(qUserProfileUrl).on(qUserProfileUrl.userProfile.id.eq(qUserProfile.id))
+//                .leftJoin(qUserProfile).on(qUserProfile.user.id.eq(qChatList.partnerUser.id))
+                .leftJoin(qUserProfileImage).on(qUserProfileImage.userProfile.id.eq(qUserProfile.id))
                 .select(Projections.constructor(
                         ChatRoomSummaryResponse.class,
                         qChatRoom.id,
-                        qChatRoom.chatType.chatTypeName,
+                        qChatRoom.roomType,
                         titleExpr,
                         imageUrlExpr,
                         qChatRoom.maxPerson
@@ -87,12 +88,12 @@ public class ChatRoomRepositoryCustomImpl extends QuerydslRepositorySupport impl
     public Optional<Long> findMemberIdByRoomId(Long roomId, Long userId) {
         return Optional.ofNullable(
             from(qChatList)
-                .select(qChatList.partnerUser.id)
+                .select(qChatList.id)
                 .join(qChatList.chatRoom,qChatRoom)
                 .where(
                     qChatRoom.id.eq(roomId)
                             .and(qChatList.user.id.eq(userId))
-                        .and(qChatList.partnerUser.isNotNull())
+                        .and(qChatList.isNotNull())
                 )
                 .fetchOne()
         );
