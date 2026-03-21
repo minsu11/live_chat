@@ -1,8 +1,8 @@
 custom:
   web-socket:
-    sub-prefix: /sub
-    pub-prefix: /pub
-    end-point: /ws-chat
+    sub-prefix: /api/sub
+    pub-prefix: /api/pub
+    end-point: /api/ws-chat
     chat:
       message-path: /chat/message
       room-path: /chat/rooms
