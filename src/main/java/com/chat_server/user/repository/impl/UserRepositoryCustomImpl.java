@@ -84,11 +84,10 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
                     qUser.name,
                         qUserProfileImage.imageUrl
                 ))
-                .leftJoin(qUserProfile).on(qUserProfile.user.eq(qUser))
-                .leftJoin(qUserProfileImage).on(qUserProfileImage.userProfile.eq(qUserProfile))
+                .innerJoin(qUserProfile.user, qUser)
+                .leftJoin(qUserProfileImage).on(qUserProfileImage.userProfile.eq(qUserProfile).and(qUserProfileImage.current.isTrue()))
                 .where(qUser.inputId.eq(userId)
                     .and(qUser.status.eq(UserStatus.ACTIVE))
-                        .and(qUserProfileImage.current.eq(true))
                 )
                 .fetchOne();
     }
