@@ -1,27 +1,25 @@
 package com.chat_server.redis.propertie;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- *packageName    : com.chat_server.common.redis.config
- * fileName       : RedisConfig
- * author         : parkminsu
- * date           : 25. 3. 12.
- * description    :
- * ===========================================================
- * DATE              AUTHOR             NOTE
- * -----------------------------------------------------------
- * 25. 3. 12.        parkminsu       최초 생성
- *
+ * Redis 애플리케이션 커스텀 설정
+ * 접속 정보(host, port, password)는 spring.data.redis 를 사용한다.
  */
 @Getter
-@AllArgsConstructor
+@Setter
 @ConfigurationProperties(prefix = "custom.redis")
-public class RedisProperties {
-    private String host;
-    private int port;
-    private int timeout;
-    private int cacheTimeout;
+public class RedisCustomProperties {
+
+    /**
+     * Redis command timeout (milliseconds)
+     */
+    private long timeout = 3000L;
+
+    /**
+     * Cache TTL (minutes)
+     */
+    private long cacheTimeout = 10L;
 }
