@@ -84,7 +84,7 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
                     qUser.name,
                         qUserProfileImage.imageUrl
                 ))
-                .innerJoin(qUserProfile.user, qUser)
+                .innerJoin(qUserProfile).on(qUserProfile.user.eq(qUser))
                 .leftJoin(qUserProfileImage).on(qUserProfileImage.userProfile.eq(qUserProfile).and(qUserProfileImage.current.isTrue()))
                 .where(qUser.inputId.eq(userId)
                     .and(qUser.status.eq(UserStatus.ACTIVE))
