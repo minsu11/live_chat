@@ -102,5 +102,11 @@ public class UserServiceImpl implements UserService {
 
     }
 
+    @Override
+    public User getUserByUserId(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(UserNotFoundException::new);
+    }
+
 
 }

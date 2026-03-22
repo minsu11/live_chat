@@ -22,7 +22,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException {
         ErrorCode errorCode = (ErrorCode) request.getAttribute("exception");
-        String message = customProperties.getError().getMessages(errorCode);
+        String message = customProperties.getError().getMessage(errorCode);
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json;charset=UTF-8");
         response.getWriter().write("{\"error\": \"" + errorCode + "\", \"message\": \"" + message + "\"}");

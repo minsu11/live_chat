@@ -1,6 +1,7 @@
 package com.chat_server.chatroom.controller;
 
 
+import com.chat_server.chatroom.dto.response.ChatRoomResult;
 import com.chat_server.chatroom.dto.response.ChatRoomSummaryResponse;
 import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.chatroom.service.ChatRoomFacadeService;
@@ -39,7 +40,7 @@ public class ChatRoomController {
     }
 
     @GetMapping("{userId}/register")
-    public ResponseEntity<ApiResponse<Void>> createChatRoom(
+    public ResponseEntity<ApiResponse<ChatRoomResult>> createChatRoom(
             @PathVariable(name="userId") String friendId,
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser
     ){
@@ -48,8 +49,8 @@ public class ChatRoomController {
         log.info("user id {}", userId);
         log.info("friend id {}", friendId);
         log.info("service before");
-        chatRoomFacadeService.createOneToOneChatRoom(userId,friendId);
-        ApiResponse<Void> apiResponse = ApiResponse.success(201, "1 대 1 대화창 생성");
+        ChatRoomResult chatRoomResult = chatRoomFacadeService.getOrCreateOneToOneChatRoom(userId,friendId);
+        ApiResponse<ChatRoomResult> apiResponse = ApiResponse.success(201, "1 대 1 대화창 생성", chatRoomResult);
         log.info("api response {}", apiResponse);
 
         return ResponseEntity.ok(apiResponse);

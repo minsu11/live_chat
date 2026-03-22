@@ -1,6 +1,7 @@
 package com.chat_server.chatroom.service.impl;
 
 import com.chat_server.chatmessage.entity.ChatMessage;
+import com.chat_server.chatroom.dto.response.ChatRoomResult;
 import com.chat_server.chatroom.dto.response.ChatRoomSummaryResponse;
 import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.chatroom.enums.RoomType;
@@ -41,14 +42,14 @@ public class ChatRoomServiceImpl implements ChatRoomService {
 
     @Override
     @Transactional
-    public Long createOneToOneChatRoom(Long userId, Long friendId) {
+    public ChatRoomResult getOrCreateOneToOneChatRoom(Long userId, Long friendId) {
         String dmKey = ChatRoomHashUtil.createUserPairHash(userId, friendId);
 
         Long existRoomId = chatRoomRepository.findRoomIdByDmKeyAndRoomType(dmKey, RoomType.DM)
                 .orElse(null);
 
         if (existRoomId != null) {
-            return existRoomId;
+            return new ChatRoomResult(existRoomId, false);
         }
 
         User creator = userRepository.findById(userId)
@@ -63,11 +64,13 @@ public class ChatRoomServiceImpl implements ChatRoomService {
                     .build();
 
             ChatRoom savedRoom = chatRoomRepository.save(newChatRoom);
-            return savedRoom.getId();
+            return new ChatRoomResult(savedRoom.getId(), true);
 
         } catch (DataIntegrityViolationException e) {
-            return chatRoomRepository.findRoomIdByDmKeyAndRoomType(dmKey, RoomType.DM)
+            Long roomId = chatRoomRepository.findRoomIdByDmKeyAndRoomType(dmKey, RoomType.DM)
                     .orElseThrow(() -> e);
+
+            return new ChatRoomResult(roomId, false);
         }
     }
 

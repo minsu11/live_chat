@@ -4,9 +4,7 @@ import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.chatroommember.enums.RoomMemberRole;
 import com.chat_server.user.entity.User;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -18,7 +16,9 @@ import java.time.LocalDateTime;
                 @UniqueConstraint(name = "uk_chat_room_member", columnNames = {"chat_room_id", "user_id"})
         }
 )
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class ChatRoomMember {
 
     @Id
