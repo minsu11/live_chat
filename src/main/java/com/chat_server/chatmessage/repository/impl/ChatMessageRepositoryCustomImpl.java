@@ -62,7 +62,7 @@ public class ChatMessageRepositoryCustomImpl extends QuerydslRepositorySupport i
         }
 
         List<ChatMessageItemResponse> rows = from(qChatMessage)
-                .join(qChatMessage.sender).fetchJoin()
+                .join(qChatMessage.sender)
                 .where(where)
                 .orderBy(qChatMessage.createdAt.desc(), qChatMessage.id.desc())
                 .limit(limit + 1)
