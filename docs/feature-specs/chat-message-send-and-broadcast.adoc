@@ -73,6 +73,8 @@ include::../../src/main/java/com/chat_server/chatmessage/controller/ChatMessageC
 
 * `@MessageMapping("chat/message")`: 전송 요청 진입
 * `@MessageMapping("chat/broadcast")`: 릴레이 요청 진입
+** 인증 사용자의 `senderId`와 payload `senderId` 일치 여부 검증
+** `roomId`에 대한 멤버십 검증 후에만 릴레이 수행
 
 === 5.2 퍼사드 오케스트레이션
 
@@ -193,6 +195,16 @@ include::../../src/main/java/com/chat_server/friend/repository/FriendRepository.
 * 목적: 룸 구독 경로로 이벤트 재발행
 * 입력: 응답 DTO
 
+=== 6.10 `ChatMessageController.receiveBroadcast`
+
+* 목적: 외부 브로드캐스트 요청 릴레이 전 보안 검증 수행
+* 입력: `ChatMessageResponse`, `Authentication`
+* 검증:
+** 인증 사용자 ID와 payload senderId 일치 여부
+** 요청 사용자 room 멤버십 여부
+* 성공 시: 룸 destination으로 릴레이
+* 실패 시: `IllegalArgumentException` 또는 멤버십 검증 예외
+
 === 6.8 `ChatListRepository` 쿼리 메서드
 
 * `upsertMembership`: 멤버십 보장
@@ -288,12 +300,15 @@ include::../../src/main/resources/application-web.yml[lines=1..20]
 * subscribe prefix: `/api/sub`
 * chat message path: `/chat/message`
 * chat room path: `/chat/rooms`
+* user-target destination: `/user/api/sub/chat/rooms/{roomId}`
 
 == 10. 운영 체크리스트
 
 . 프론트 CONNECT 시 Authorization 헤더 포함
 . `/api/pub/chat/message` publish 사용
-. 사용자 큐/룸 구독 경로 정확히 일치
+. `/api/pub/chat/broadcast` 호출 시 payload senderId를 인증 사용자와 동일하게 전송
+. 사용자 큐 구독: `/user/api/sub/chat/rooms/{roomId}`
+. 룸 구독: `/api/sub/chat/rooms/{roomId}`
 . roomId 기준 다중 구독 정리(enter/leave)
 . 중복 수신 대비 messageId dedupe
 

@@ -20,6 +20,9 @@ public class ChatMessageBroadCasterImpl implements ChatMessageBroadCaster {
     /**
      * 수신자 사용자 전용 큐로 채팅 메시지를 전송한다.
      *
+     * <p>destination 정책:
+     * {@code /user + subPrefix + roomPath + /{roomId}}
+     *
      * @param receiverUserId 수신자 사용자 ID
      * @param response 전송할 메시지 응답 DTO
      */
@@ -27,7 +30,8 @@ public class ChatMessageBroadCasterImpl implements ChatMessageBroadCaster {
         // 사용자별 display nickname/mine 값을 반영하기 위해 사용자 전용 큐로 전송한다.
         log.info("broadcastMessage 호출");
         log.debug("broadcastMessage params - receiverUserId: {}, response: {}", receiverUserId, response);
-        String userDestination = "/queue" + webSocketProperties.getChat().getRoomPath()
+        String userDestination = webSocketProperties.getSubPrefix()
+                + webSocketProperties.getChat().getRoomPath()
                 + "/" + response.roomId();
         messagingTemplate.convertAndSendToUser(String.valueOf(receiverUserId), userDestination, response);
         log.debug("broadcastMessage 완료 - userDestination: {}", userDestination);
