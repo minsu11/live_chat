@@ -1,11 +1,11 @@
 package com.chat_server.chatroom.entity;
 
+
 import com.chat_server.chatroom.enums.RoomType;
 import com.chat_server.user.entity.User;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
@@ -18,6 +18,8 @@ import java.time.LocalDateTime;
         }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
 public class ChatRoom {
 
     @Id
@@ -31,7 +33,6 @@ public class ChatRoom {
     @Column(name = "name", length = 50)
     private String name;
 
-    @Lob
     @Column(name = "description")
     private String description;
 
@@ -44,13 +45,14 @@ public class ChatRoom {
     @Column(name = "invite_code", length = 50)
     private String inviteCode;
 
-    @Column(name = "dm_key", length = 50)
+    @Column(name = "dm_key", length = 100)
     private String dmKey;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "created_by", nullable = false, foreignKey = @ForeignKey(name = "fk_chat_room_created_by"))
     private User createdBy;
 
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -72,4 +74,12 @@ public class ChatRoom {
 
     @Column(name = "order_at", insertable = false, updatable = false)
     private LocalDateTime orderAt;
+
+    public void updateLastMessageAt(Long senderId, Long messageId, String preview, LocalDateTime createdAt){
+
+        this.lastMessageId = messageId;
+        this.lastMessageAt = createdAt;
+        this.lastMessagePreview = preview;
+
+    }
 }

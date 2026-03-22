@@ -37,7 +37,6 @@ public class ChatNotification {
     @Column(name = "notification_type", nullable = false, length = 30)
     private NotificationType notificationType;
 
-    @Lob
     @Column(name = "content", nullable = false)
     private String content;
 

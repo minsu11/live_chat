@@ -4,6 +4,7 @@ import com.chat_server.gender.entity.Gender;
 import com.chat_server.user.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
@@ -52,13 +53,14 @@ public class User {
     @Column(name = "status", nullable = false, length = 20)
     private UserStatus status;
 
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "login_lasted_at")
     private LocalDateTime loginLastedAt;
 
-    @Column(name= "age")
+    @Column(name= "age", nullable = false)
     private Integer age;
 
 

@@ -39,4 +39,15 @@ public class UserBlock {
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+
+    private UserBlock(User blocker, User blocked) {
+        this.blocker = blocker;
+        this.blocked = blocked;
+        this.createdAt = LocalDateTime.now();
+    }
+
+    public static UserBlock of(User blocker, User blocked) {
+        return new UserBlock(blocker, blocked);
+    }
 }
+

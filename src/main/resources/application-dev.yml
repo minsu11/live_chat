@@ -1,5 +1,35 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/chat_server?serverTimezone=UTC&characterEncoding=UTF-8
+    username: root
+    password: 1234
+    dbcp2:
+      max-idle: 5
+      min-idle: 5
+      max-total: 5
+      test-on-borrow: true
+      test-on-return: true
+      test-on-create: true
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+
+
 auth:
   server:
-    url: localhost:9090
+    url: http://localhost:9090
   key:
     public-path: classpath:rsa/login_public_key.pem
+
+logging:
+  level:
+    com.chat_server: debug
+    org.springframework.security: debug
+    org.hibernate.SQL: debug
+    io.netty: info
+    reactor.netty: info
+    org.apache.http: info

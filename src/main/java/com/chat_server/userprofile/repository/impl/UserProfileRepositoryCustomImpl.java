@@ -7,7 +7,6 @@ import com.chat_server.userprofile.enrtity.QUserProfile;
 import com.chat_server.userprofile.enrtity.UserProfile;
 import com.chat_server.userprofile.repository.UserProfileRepositoryCustom;
 import com.chat_server.userprofileImage.entity.QUserProfileImage;
-import com.chat_server.userprofileImage.entity.QUserProfileUrl;
 import com.querydsl.core.types.Projections;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
@@ -19,24 +18,26 @@ public class UserProfileRepositoryCustomImpl extends QuerydslRepositorySupport i
     public UserProfileRepositoryCustomImpl() {
         super(UserProfile.class);
     }
+
+
     @Override
     public Optional<UserMyProfileSummaryResponse> findMyProfile(Long id) {
-
-        Optional<UserMyProfileSummaryResponse> response =
-            Optional.ofNullable(
-              from(qUserProfile)
-                  .leftJoin(qUserProfileImage).on(qUserProfileImage.userProfile.eq(qUserProfile))
-                  .leftJoin(qUserProfile).on(qUserProfile.user.eq(qUser))
-                  .select(Projections.constructor(UserMyProfileSummaryResponse.class,
-                          qUser.nickname,
-                          qUserProfile.stateMessage,
-                          qUserProfileImage.imageUrl
-                      ))
-                  .where(qUserProfile.user.id.eq(id).and(qUserProfileImage.current.eq(true)))
-                  .fetchOne()
-            );
-
-        return response;
+        return Optional.ofNullable(
+                from(qUserProfile)
+                        .join(qUserProfile.user, qUser)
+                        .leftJoin(qUserProfileImage).on(
+                                qUserProfileImage.userProfile.eq(qUserProfile)
+                                        .and(qUserProfileImage.current.isTrue())
+                        )
+                        .select(Projections.constructor(
+                                UserMyProfileSummaryResponse.class,
+                                qUser.nickname,
+                                qUserProfile.stateMessage,
+                                qUserProfileImage.imageUrl
+                        ))
+                        .where(qUser.id.eq(id))
+                        .fetchOne()
+        );
     }
 
 

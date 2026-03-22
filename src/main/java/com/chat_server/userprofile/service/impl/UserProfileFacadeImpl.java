@@ -4,6 +4,7 @@ package com.chat_server.userprofile.service.impl;
 import com.chat_server.file.FileService;
 import com.chat_server.user.service.UserService;
 import com.chat_server.userprofile.dto.request.UserProfileUpdateRequest;
+import com.chat_server.userprofile.dto.response.UserProfileUpdateImageResponse;
 import com.chat_server.userprofile.dto.response.UserProfileUpdateResponse;
 import com.chat_server.userprofile.service.UserProfileFacade;
 import com.chat_server.userprofile.service.UserProfileService;
@@ -25,7 +26,7 @@ public class UserProfileFacadeImpl implements UserProfileFacade {
     private final UserProfileImageService userProfileUrlService;
 
     @Override
-    public UserProfileUpdateResponse updateMyProfile(Long userId, UserProfileUpdateRequest request, MultipartFile file) {
+    public UserProfileUpdateResponse updateMyProfile(Long userId, UserProfileUpdateRequest request) {
         log.info("update profile service");
         String name = request.name();
         String message = request.message();
@@ -40,13 +41,17 @@ public class UserProfileFacadeImpl implements UserProfileFacade {
             userProfileService.updateStateMessage(userId,message);
         }
 
-        if(file != null && !file.isEmpty()){
-            newUrl = fileService.saveProfileImage(userId,file);
-            log.info("new profile url: {}", newUrl);
-            userProfileUrlService.updateUserProfileUrl(userId,newUrl);
-        }
         log.info("update profile service complete");
 
-        return new UserProfileUpdateResponse(name,message,newUrl);
+        return new UserProfileUpdateResponse(name,message);
+    }
+
+    @Override
+    public UserProfileUpdateImageResponse updateMyProfileImage(Long userId, MultipartFile file) {
+
+        String newUrl = fileService.saveProfileImage(userId,file);
+        log.info("new profile url: {}", newUrl);
+        userProfileUrlService.updateUserProfileUrl(userId,newUrl);
+        return new UserProfileUpdateImageResponse(newUrl);
     }
 }

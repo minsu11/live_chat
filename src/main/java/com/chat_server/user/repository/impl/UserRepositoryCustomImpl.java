@@ -1,5 +1,6 @@
 package com.chat_server.user.repository.impl;
 
+import com.chat_server.friend.entity.QFriend;
 import com.chat_server.search.dto.response.SearchUserResponse;
 import com.chat_server.user.dto.response.AuthenticatedUser;
 import com.chat_server.user.dto.response.UserAuthenticationResponse;
@@ -8,7 +9,6 @@ import com.chat_server.user.enums.UserStatus;
 import com.chat_server.user.repository.UserRepositoryCustom;
 import com.chat_server.userprofile.enrtity.QUserProfile;
 import com.chat_server.userprofileImage.entity.QUserProfileImage;
-import com.chat_server.userprofileImage.entity.QUserProfileUrl;
 import com.querydsl.core.types.Projections;
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
 
@@ -29,6 +29,7 @@ import java.util.Optional;
 public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implements UserRepositoryCustom {
     private final QUser qUser = QUser.user;
     private final QUserProfile qUserProfile= QUserProfile.userProfile;
+    private final QFriend qFriend = QFriend.friend;
     private final QUserProfileImage qUserProfileImage = QUserProfileImage.userProfileImage;
     public UserRepositoryCustomImpl() {
         super(QUser.class);
@@ -52,7 +53,7 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
     /**
      * 유저 권한 확인 메서드
      * @param userId 식별할 수 있는 id
-     * @return
+     * @return 권한 체크된
      */
     @Override
     public Optional<AuthenticatedUser> authorizeUserByUserId(String userId, String roleName) {
@@ -83,11 +84,10 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
                     qUser.name,
                         qUserProfileImage.imageUrl
                 ))
-                .leftJoin(qUserProfile).on(qUserProfile.user.eq(qUser))
-                .leftJoin(qUserProfileImage).on(qUserProfileImage.userProfile.eq(qUserProfile))
+                .innerJoin(qUserProfile).on(qUserProfile.user.eq(qUser))
+                .leftJoin(qUserProfileImage).on(qUserProfileImage.userProfile.eq(qUserProfile).and(qUserProfileImage.current.isTrue()))
                 .where(qUser.inputId.eq(userId)
                     .and(qUser.status.eq(UserStatus.ACTIVE))
-                        .and(qUserProfileImage.current.eq(true))
                 )
                 .fetchOne();
     }
@@ -100,6 +100,18 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
                         .where(qUser.uuid.eq(userUuid))
                         .fetchOne()
         );
+    }
+
+    @Override
+    public Optional<String> resolveUserDisplayName(Long viewerId, Long targetId) {
+        return Optional.empty();
+//        return Optional.ofNullable(
+//            from(qUser)
+//                .leftJoin(qFriend).on(qFriend.user.id.eq(viewerId).and(qFriend.friend.id.eq(targetId)))
+//                .select(q)
+//                .where(qUser.id.eq(viewerId).and(qFriend.friend.id.eq(targetId)))
+//                .fetchOne()
+//        );
     }
 
 

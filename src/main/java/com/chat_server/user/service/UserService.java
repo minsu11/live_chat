@@ -2,6 +2,10 @@ package com.chat_server.user.service;
 
 import com.chat_server.security.dto.UserPrincipal;
 import com.chat_server.user.dto.request.UserRegisterRequest;
+import com.chat_server.user.dto.response.UserIdResponse;
+import com.chat_server.user.entity.User;
+
+import java.util.Optional;
 
 /**
  * packageName    : com.chat_server.user.service
@@ -22,4 +26,8 @@ public interface UserService {
 
     void updateNickname(Long userId, String name);
 
+
+    Long getUserIdByUserUuid(String userUuid);
+
+    User getUserByUserId(Long userId);
 }

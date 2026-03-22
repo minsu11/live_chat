@@ -3,6 +3,8 @@ package com.chat_server.userprofile.enrtity;
 import com.chat_server.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
@@ -30,14 +32,16 @@ public class UserProfile {
     @Column(name = "state_message", length = 60)
     private String stateMessage;
 
-    @Column(name = "created_at", nullable = false)
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+
+    @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     public void update(String stateMessage){
         this.stateMessage = stateMessage;
-        this.updatedAt = LocalDateTime.now();
     }
 }

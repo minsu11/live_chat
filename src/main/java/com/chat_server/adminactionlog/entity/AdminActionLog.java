@@ -35,7 +35,6 @@ public class AdminActionLog {
     @Column(name = "target_id")
     private Long targetId;
 
-    @Lob
     @Column(name = "description")
     private String description;
 

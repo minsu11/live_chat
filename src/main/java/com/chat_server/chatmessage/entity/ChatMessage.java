@@ -5,6 +5,7 @@ import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -37,7 +38,6 @@ public class ChatMessage {
     @Column(name = "message_type", nullable = false, length = 20)
     private MessageType messageType;
 
-    @Lob
     @Column(name = "message_content")
     private String messageContent;
 
@@ -62,4 +62,30 @@ public class ChatMessage {
 
     @Column(name = "client_message_id", length = 100)
     private String clientMessageId;
+
+    public static ChatMessage create(ChatRoom chatRoom, User user, String message, MessageType messageType, LocalDateTime createdAt) {
+        ChatMessage chatMessage = new ChatMessage();
+        chatMessage.chatRoom = chatRoom;
+        chatMessage.sender = user;
+        chatMessage.messageType = messageType;
+        chatMessage.messageContent = message;
+        chatMessage.deleted = false;
+        chatMessage.createdAt = createdAt;
+        return chatMessage;
+    }
+
+    public static ChatMessage create(ChatRoom chatRoom, User user, String message, String messageType) {
+        MessageType type = null;
+        if(messageType.equalsIgnoreCase("text")) {
+            type = MessageType.TEXT;
+        }else if(messageType.equalsIgnoreCase("image")) {
+            type = MessageType.IMAGE;
+        }else if(messageType.equalsIgnoreCase("system")) {}
+        else{
+            type = MessageType.FILE;
+        }
+        return create(chatRoom, user, message, type, LocalDateTime.now());
+    }
+
+
 }

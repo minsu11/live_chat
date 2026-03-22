@@ -1,11 +1,16 @@
-auth:
-  server:
-    url: auth-server:9090
-  key:
-    public-path: classpath:rsa/login_public_key.pem
 spring:
   data:
     redis:
-      port: 6379
-      host: localhost
-      password: chocorosa@12
+      database: 0
+
+auth:
+  server:
+    url: ${AUTH_SERVER_URL:auth-server:9090}
+  key:
+    public-path: ${AUTH_KEY_PUBLIC_PATH:classpath:rsa/login_public_key.pem}
+
+logging:
+  level:
+    com.chat_server: info
+    org.springframework.security: info
+    org.hibernate.SQL: info

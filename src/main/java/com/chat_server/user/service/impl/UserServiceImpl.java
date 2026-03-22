@@ -8,6 +8,7 @@ import com.chat_server.user.enums.UserStatus;
 import com.chat_server.user.enums.UserType;
 import com.chat_server.user.dto.request.UserRegisterRequest;
 import com.chat_server.user.dto.response.UserAuthenticationResponse;
+import com.chat_server.user.dto.response.UserIdResponse;
 import com.chat_server.user.entity.User;
 import com.chat_server.user.exception.UserAleadyExistException;
 import com.chat_server.user.exception.UserNotFoundException;
@@ -90,4 +91,22 @@ public class UserServiceImpl implements UserService {
             .orElseThrow(UserNotFoundException::new);
         user.updateNickname(name);
     }
+
+    // uuid로 user id 찾는 메서드
+    @Override
+    public Long getUserIdByUserUuid(String userUuid) {
+        log.debug("User Service getUserIdByUserUuid start");
+
+        return userRepository.getUserIdByUserUuid(userUuid)
+            .orElseThrow(UserNotFoundException::new);
+
+    }
+
+    @Override
+    public User getUserByUserId(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(UserNotFoundException::new);
+    }
+
+
 }
