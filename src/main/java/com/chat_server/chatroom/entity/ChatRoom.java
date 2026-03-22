@@ -45,7 +45,7 @@ public class ChatRoom {
     @Column(name = "invite_code", length = 50)
     private String inviteCode;
 
-    @Column(name = "dm_key", length = 50)
+    @Column(name = "dm_key", length = 100)
     private String dmKey;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
