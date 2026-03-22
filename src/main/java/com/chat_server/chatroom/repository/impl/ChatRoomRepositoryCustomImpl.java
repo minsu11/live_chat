@@ -88,12 +88,11 @@ public class ChatRoomRepositoryCustomImpl extends QuerydslRepositorySupport impl
     public Optional<Long> findMemberIdByRoomId(Long roomId, Long userId) {
         return Optional.ofNullable(
             from(qChatList)
-                .select(qChatList.id)
-                .join(qChatList.chatRoom,qChatRoom)
+                .select(qChatList.user.id)
+                .join(qChatList.chatRoom, qChatRoom)
                 .where(
                     qChatRoom.id.eq(roomId)
-                            .and(qChatList.user.id.eq(userId))
-                        .and(qChatList.isNotNull())
+                            .and(qChatList.user.id.ne(userId))
                 )
                 .fetchOne()
         );
@@ -103,6 +102,7 @@ public class ChatRoomRepositoryCustomImpl extends QuerydslRepositorySupport impl
     @Override
     public boolean existsByUserId(Long roomId,Long userId) {
         Long result = from(qChatList)
+            .join(qChatList.chatRoom, qChatRoom)
             .select(qChatList.user.id)
             .where(qChatRoom.id.eq(roomId)
                 .and(qChatList.user.id.eq(userId))

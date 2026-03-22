@@ -1,21 +1,17 @@
 package com.chat_server.chatroom.controller;
 
 
+import com.chat_server.chatroom.dto.response.ChatRoomEnterResponse;
 import com.chat_server.chatroom.dto.response.ChatRoomResult;
 import com.chat_server.chatroom.dto.response.ChatRoomSummaryResponse;
-import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.chatroom.service.ChatRoomFacadeService;
-import com.chat_server.chatroom.service.ChatRoomService;
 import com.chat_server.common.dto.response.ApiResponse;
-import com.chat_server.common.propertis.CustomProperties;
 import com.chat_server.user.dto.response.AuthenticatedUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @Slf4j
 @RestController
@@ -24,6 +20,20 @@ import java.util.List;
 public class ChatRoomController {
     private final ChatRoomFacadeService chatRoomFacadeService;
     // todo 채팅방 정보
+    @GetMapping("/{roomId}/enter")
+    public ResponseEntity<ApiResponse<ChatRoomEnterResponse>> enterChatRoom(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+            @PathVariable Long roomId,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "50") int limit
+    ) {
+        Long userId = authenticatedUser.userId();
+        ChatRoomEnterResponse chatRoomEnterResponse = chatRoomFacadeService.enterChatRoom(roomId, userId, cursor, limit);
+        ApiResponse<ChatRoomEnterResponse> response = ApiResponse.success(200, "채팅방 진입 정보 조회 성공", chatRoomEnterResponse);
+
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/{roomId}/summary")
     public ResponseEntity<ApiResponse<ChatRoomSummaryResponse>> getChatRoom(
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser,

@@ -1,15 +1,11 @@
-package com.chat_server.chatmessage.service;
+package com.chat_server.chatmessage.repository;
 
 import com.chat_server.chatmessage.dto.response.ChatMessageItemResponse;
-import com.chat_server.chatmessage.entity.ChatMessage;
-import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.common.cursor.ChatMessageCursorKey;
 import org.springframework.data.domain.Slice;
 import org.springframework.lang.Nullable;
 
-public interface ChatMessageService {
-    ChatMessage createChatMessage(ChatRoom chatRoom, Long userId, String messageType, String text);
-
+public interface ChatMessageRepositoryCustom {
     Slice<ChatMessageItemResponse> getEnterMessagesByCursor(Long roomId, int limit,
                                                             @Nullable ChatMessageCursorKey cursorKey);
 }
