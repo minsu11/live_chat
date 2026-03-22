@@ -35,6 +35,18 @@ public class CustomProperties {
     public static class Error {
         private Map<String, String> messages;
 
+        /**
+         * ErrorCode enum 기반으로 사용자 노출 메시지를 조회한다.
+         *
+         * <p>기능:
+         * <ul>
+         *   <li>ErrorCode가 null이면 NOT_DEFINE 메시지로 fallback 한다.</li>
+         *   <li>ErrorCode가 존재하면 enum name을 문자열 키로 변환해 조회한다.</li>
+         * </ul>
+         *
+         * @param errorCode 메시지를 조회할 에러 코드(enum)
+         * @return 에러 코드에 대응하는 메시지(없으면 NOT_DEFINE 또는 기본 문구)
+         */
         public String getMessage(ErrorCode errorCode) {
             if (errorCode == null) {
                 return getMessage("NOT_DEFINE");
@@ -42,6 +54,19 @@ public class CustomProperties {
             return getMessage(errorCode.name());
         }
 
+        /**
+         * 문자열 코드 기반으로 사용자 노출 메시지를 조회한다.
+         *
+         * <p>기능:
+         * <ul>
+         *   <li>messages 설정이 비어 있으면 하드코딩 기본 문구를 반환한다.</li>
+         *   <li>errorCode가 null/blank이면 NOT_DEFINE 메시지를 반환한다.</li>
+         *   <li>해당 키가 없으면 NOT_DEFINE 메시지로 fallback 한다.</li>
+         * </ul>
+         *
+         * @param errorCode yml messages 맵의 키 값(예: USER_NOT_FOUND)
+         * @return 키에 매핑된 메시지 또는 fallback 메시지
+         */
         public String getMessage(String errorCode) {
             if (messages == null || messages.isEmpty()) {
                 return "알 수 없는 에러 입니다.";

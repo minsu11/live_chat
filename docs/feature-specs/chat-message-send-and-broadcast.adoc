@@ -1,0 +1,303 @@
+= Chat Message Send & Broadcast Technical Specification
+:toc:
+:toclevels: 4
+:sectnums:
+:source-highlighter: highlight.js
+
+== 1. 문서 목적
+
+이 문서는 채팅 시스템의 *메시지 전송(send)* 및 *브로드캐스트(broadcast)* 기능을 기술 명세 관점에서 설명한다.
+
+* 포함 범위
+** 메시지 전송 STOMP 진입점
+** 퍼사드 오케스트레이션(검증/저장/메타 업데이트/브로드캐스트)
+** 수신자 사용자 전용 큐 전송
+** 룸 브로드캐스트 릴레이
+** 멤버 조회/미읽음 카운트 증가
+** 표시 닉네임(display nickname) 결정
+
+* 제외 범위
+** GlobalExceptionHandler 및 도메인 예외 상세 정책
+
+== 2. 기능 책임(What)
+
+=== 3.1 채팅 메시지 기능의 책임
+
+. 발신 요청을 수신한다.
+. 발신자의 자격/상태를 검증한다.
+. 메시지를 영속화한다.
+. 채팅방/채팅목록 메타를 갱신한다.
+. 수신자별 payload(닉네임, mine)를 계산한다.
+. 사용자 전용 큐로 실시간 전달한다.
+
+== 3. 입력/출력 데이터 계약
+
+=== 4.1 입력 DTO: `ChatSendRequest`
+
+[source,java]
+----
+include::../../src/main/java/com/chat_server/chatmessage/dto/request/ChatSendRequest.java[lines=1..20]
+----
+
+필드 의미:
+
+* `roomId`: 메시지를 보낼 채팅방 식별자
+* `messageType`: 메시지 타입(TEXT/IMAGE/FILE 등)
+* `text`: 본문
+
+=== 4.2 출력 DTO: `ChatMessageResponse` / `ChatMessageSenderResponse`
+
+[source,java]
+----
+include::../../src/main/java/com/chat_server/chatmessage/dto/response/ChatMessageResponse.java[lines=1..40]
+----
+
+[source,java]
+----
+include::../../src/main/java/com/chat_server/chatmessage/dto/response/ChatMessageSenderResponse.java[lines=1..40]
+----
+
+특이사항:
+
+* `sender.senderNickname`은 수신자 관점으로 계산된 표시 닉네임
+* `sender.mine`은 "현재 수신자 기준 본인 메시지 여부"
+
+== 4. 런타임 시퀀스(How)
+
+=== 5.1 STOMP 진입점
+
+[source,java]
+----
+include::../../src/main/java/com/chat_server/chatmessage/controller/ChatMessageController.java[lines=22..56]
+----
+
+* `@MessageMapping("chat/message")`: 전송 요청 진입
+* `@MessageMapping("chat/broadcast")`: 릴레이 요청 진입
+
+=== 5.2 퍼사드 오케스트레이션
+
+[source,java]
+----
+include::../../src/main/java/com/chat_server/chatmessage/service/impl/ChatMessageFacadeServiceImpl.java[lines=25..160]
+----
+
+핵심 단계:
+
+. room/member 식별
+. `validateSendPermission`으로 권한/차단 검증
+. `chatMessageService.createChatMessage`로 저장
+. `chatRoomService.updateLastMessageInfo`로 방 메타 갱신
+. `chatListService.increaseUnreadCount`로 미읽음 증가
+. `chatListService.getRoomMemberUserIds`로 대상 조회
+. `createResponseForReceiver`로 수신자별 payload 작성
+. `chatMessageBroadCaster.broadcastMessage` 전송
+
+=== 5.3 브로드캐스트 계층
+
+[source,java]
+----
+include::../../src/main/java/com/chat_server/websocket/broadcaster/ChatMessageBroadCaster.java[lines=1..40]
+----
+
+[source,java]
+----
+include::../../src/main/java/com/chat_server/websocket/broadcaster/impl/ChatMessageBroadCasterImpl.java[lines=11..70]
+----
+
+설명:
+
+* `broadcastMessage`: `convertAndSendToUser` 기반 사용자 전용 destination 전송
+* `relayRoomBroadcast`: 룸 구독 destination으로 릴레이
+
+=== 5.4 채팅목록 계층
+
+[source,java]
+----
+include::../../src/main/java/com/chat_server/chatlist/service/ChatListService.java[lines=1..60]
+----
+
+[source,java]
+----
+include::../../src/main/java/com/chat_server/chatlist/service/impl/ChatListServiceImpl.java[lines=24..120]
+----
+
+[source,java]
+----
+include::../../src/main/java/com/chat_server/chatlist/repository/ChatListRepository.java[lines=11..70]
+----
+
+역할:
+
+* `ensureMembership`: room-user 멤버십 upsert
+* `increaseUnreadCount`: 발신자 제외 unread +1
+* `findUserIdsByRoomId`: 방 멤버 userId 목록 조회
+
+=== 5.5 표시 닉네임 계산
+
+[source,java]
+----
+include::../../src/main/java/com/chat_server/user/service/impl/UserDisplayNameServiceImpl.java[lines=20..70]
+----
+
+[source,java]
+----
+include::../../src/main/java/com/chat_server/friend/repository/FriendRepository.java[lines=1..40]
+----
+
+우선순위:
+
+. 수신자가 발신자에게 지정한 friend custom nickname
+. 발신자의 기본 nickname
+
+== 5. 메서드별 상세 명세
+
+=== 6.1 `ChatMessageController.sendMessage`
+
+* 목적: STOMP 수신 후 애플리케이션 서비스 호출
+* 입력: `ChatSendRequest`, `Authentication`
+* 성공 시: 퍼사드 완료 후 반환(void)
+* 실패 시: principal 캐스팅/도메인 검증 예외 전파
+
+=== 6.2 `ChatMessageFacadeServiceImpl.sendMessage`
+
+* 목적: 전송 유스케이스 전체 오케스트레이션
+* 입력: 요청 DTO, 발신자 ID
+* 성공 시: 저장 + 메타 업데이트 + 수신자별 전송
+* 실패 시: 권한/차단/미존재 등 검증 실패 예외 발생
+
+=== 6.3 `validateSendPermission`
+
+* 목적: 발신자 권한 검증 및 차단 관계 확인
+* 성공 시: 후속 저장 단계 진입 허용
+* 실패 시: 검증 예외 발생
+
+=== 6.4 `updateRoomAndChatListOnSend`
+
+* 목적: 채팅방의 마지막 메시지 정보 동기화
+* 성공 시: 최신 메시지 메타 반영
+
+=== 6.5 `createResponseForReceiver`
+
+* 목적: 수신자별 payload 구성
+* 핵심: `displayNickname`, `mine` 계산
+* 성공 시: `ChatMessageResponse` 반환
+
+=== 6.6 `ChatMessageBroadCasterImpl.broadcastMessage`
+
+* 목적: 특정 사용자 큐로 이벤트 전달
+* 입력: 수신자 ID, 응답 DTO
+* 성공 기준: 메시지 템플릿 호출이 예외 없이 종료
+
+=== 6.7 `ChatMessageBroadCasterImpl.relayRoomBroadcast`
+
+* 목적: 룸 구독 경로로 이벤트 재발행
+* 입력: 응답 DTO
+
+=== 6.8 `ChatListRepository` 쿼리 메서드
+
+* `upsertMembership`: 멤버십 보장
+* `increaseUnreadCount`: 발신자 제외 증가
+* `findUserIdsByRoomId`: 대상 사용자 목록 조회
+
+=== 6.9 `UserDisplayNameServiceImpl.resolveDisplayName`
+
+* 목적: 수신자 관점 표시명 결정
+* 입력: senderId, receiverId
+* 성공 시: Optional<String> 표시명 반환
+
+== 6. 유효성 검증 및 성공 조건
+
+=== 7.1 유효성 검증 포인트
+
+* 멤버십 검증: room-user 연관 유효성 확인
+* 차단 검증: 차단 관계면 전송 차단
+* 전송 요청 기본 값: roomId/type/text는 상위 계층에서 유효 값 가정
+
+=== 7.2 성공 판단
+
+성공은 아래 단계를 모두 완료했을 때로 본다.
+
+. 메시지 영속화 성공
+. 채팅방 마지막 메시지 메타 갱신 성공
+. 미읽음 카운트 증가 성공
+. 수신자별 브로드캐스트 호출 완료
+
+== 7. 트랜잭션 경계 설명
+
+[source,java]
+----
+include::../../src/main/java/com/chat_server/chatmessage/service/impl/ChatMessageFacadeServiceImpl.java[lines=25..35]
+----
+
+현재 구현은 퍼사드 클래스 레벨 `@Transactional` 경계 내에서 저장/갱신/브로드캐스트 호출이 이뤄진다.
+
+장점:
+
+* 실패 시 저장 로직 롤백 정책을 단일 경계에서 관리하기 쉽다.
+
+주의점:
+
+* 실시간 전송(I/O)과 DB 트랜잭션 결합으로 트랜잭션 체류 시간이 길어질 수 있다.
+* 클라이언트 전달 보장은 별개이며, 메시징과 DB의 완전 원자성은 별도 패턴(Outbox 등) 필요.
+
+== 8. 쿼리 선택 배경: QueryDSL 대신 JPQL/Native 사용
+
+=== 9.1 왜 QueryDSL이 아닌가
+
+이 기능에서 필요한 쿼리는 아래와 같이 단순/명확하다.
+
+* 멤버십 upsert (DB native 문법 활용)
+* unread count 일괄 증가(update)
+* 채팅방 멤버 user_id 단순 projection
+* 친구 custom nickname 단순 조건 조회
+
+즉, 동적 조건 조합이 복잡하지 않아 QueryDSL의 이점이 상대적으로 작고,
+반대로 upsert 같은 DB 의존 구문은 native query가 더 직관적이다.
+
+=== 9.2 쿼리별 설명
+
+`upsertMembership`:
+
+* SQL: `INSERT ... ON DUPLICATE KEY UPDATE`
+* 목적: 중복 없는 멤버십 보장
+
+`increaseUnreadCount`:
+
+* SQL: `UPDATE chat_list SET unread_count = unread_count + 1 WHERE chat_room_id = :roomId AND user_id <> :senderId`
+* 목적: 발신자 제외 미읽음 증가
+
+`findUserIdsByRoomId`:
+
+* SQL: roomId 기준 멤버 user_id 조회
+* 목적: 브로드캐스트 대상 계산
+
+`findCustomNickname`:
+
+* JPQL: friend 관계에서 customNickname 조회
+* 목적: 수신자 관점 표시 닉네임 우선순위 지원
+
+== 9. WebSocket 경로 규약
+
+[source,yaml]
+----
+include::../../src/main/resources/application-web.yml[lines=1..20]
+----
+
+* endpoint: `/api/ws-chat`
+* publish prefix: `/api/pub`
+* subscribe prefix: `/api/sub`
+* chat message path: `/chat/message`
+* chat room path: `/chat/rooms`
+
+== 10. 운영 체크리스트
+
+. 프론트 CONNECT 시 Authorization 헤더 포함
+. `/api/pub/chat/message` publish 사용
+. 사용자 큐/룸 구독 경로 정확히 일치
+. roomId 기준 다중 구독 정리(enter/leave)
+. 중복 수신 대비 messageId dedupe
+
+== 11. 확장 고려사항
+
+* 브로드캐스트 신뢰성 강화 필요 시 Outbox + 비동기 퍼블리셔 도입
+* 브로커 확장 시 simple broker -> 외부 브로커 relay 전환 검토

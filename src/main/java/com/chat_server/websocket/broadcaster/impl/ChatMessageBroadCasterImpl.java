@@ -17,11 +17,36 @@ public class ChatMessageBroadCasterImpl implements ChatMessageBroadCaster {
 
 
     @Override
-    public void broadcastMessage( ChatMessageResponse response) {
-        String payload = webSocketProperties.getSubPrefix()
-            + webSocketProperties.getChat().getRoomPath()
-            +"/" + response.roomId();
-        // Api 공통 응답이 있는데 그걸 사용해야하나?
-        messagingTemplate.convertAndSend(payload, response);
+    /**
+     * 수신자 사용자 전용 큐로 채팅 메시지를 전송한다.
+     *
+     * @param receiverUserId 수신자 사용자 ID
+     * @param response 전송할 메시지 응답 DTO
+     */
+    public void broadcastMessage(Long receiverUserId, ChatMessageResponse response) {
+        // 사용자별 display nickname/mine 값을 반영하기 위해 사용자 전용 큐로 전송한다.
+        log.info("broadcastMessage 호출");
+        log.debug("broadcastMessage params - receiverUserId: {}, response: {}", receiverUserId, response);
+        String userDestination = "/queue" + webSocketProperties.getChat().getRoomPath()
+                + "/" + response.roomId();
+        messagingTemplate.convertAndSendToUser(String.valueOf(receiverUserId), userDestination, response);
+        log.debug("broadcastMessage 완료 - userDestination: {}", userDestination);
+    }
+
+    @Override
+    /**
+     * 룸 구독 경로로 브로드캐스트를 릴레이한다.
+     *
+     * @param response 릴레이할 메시지 응답 DTO
+     */
+    public void relayRoomBroadcast(ChatMessageResponse response) {
+        // 프론트/외부에서 전달된 브로드캐스트 요청을 채팅방 구독 경로로 릴레이한다.
+        log.info("relayRoomBroadcast 호출");
+        log.debug("relayRoomBroadcast params - response: {}", response);
+        String roomDestination = webSocketProperties.getSubPrefix()
+                + webSocketProperties.getChat().getRoomPath()
+                + "/" + response.roomId();
+        messagingTemplate.convertAndSend(roomDestination, response);
+        log.debug("relayRoomBroadcast 완료 - roomDestination: {}", roomDestination);
     }
 }
