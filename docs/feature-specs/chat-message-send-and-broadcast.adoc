@@ -4,6 +4,8 @@
 :sectnums:
 :source-highlighter: highlight.js
 
+NOTE: 본 문서는 팀 내 커뮤니케이션 기준에 맞춰 한국어 설명을 우선으로 유지한다.
+
 == 1. 문서 목적
 
 이 문서는 채팅 시스템의 *메시지 전송(send)* 및 *브로드캐스트(broadcast)* 기능을 기술 명세 관점에서 설명한다.
