@@ -24,7 +24,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
@@ -61,7 +63,8 @@ class ChatRoomFacadeServiceImplTest {
     }
 
     @Test
-    void enterChatRoom_커서페이지_정렬과_nextCursor를_반환한다() {
+    @DisplayName("hasNext=true면 nextCursor를 생성하고 메시지를 시간순으로 정렬한다")
+    void shouldReturnSortedMessagesAndNextCursorWhenHasNext() {
         Long roomId = 10L;
         Long userId = 99L;
         int limit = 50;
@@ -109,7 +112,8 @@ class ChatRoomFacadeServiceImplTest {
     }
 
     @Test
-    void enterChatRoom_다음페이지없으면_nextCursor는_null() {
+    @DisplayName("hasNext=false면 nextCursor는 null이다")
+    void shouldReturnNullNextCursorWhenHasNextIsFalse() {
         Long roomId = 1L;
         Long userId = 2L;
 
@@ -133,5 +137,133 @@ class ChatRoomFacadeServiceImplTest {
         ChatRoomEnterResponse response = target.enterChatRoom(roomId, userId, null, 50);
 
         assertThat(response.nextCursor()).isNull();
+    }
+
+    @Test
+    @DisplayName("limit가 0 이하일 때는 1로 보정해서 조회한다")
+    void shouldClampLimitToOneWhenLimitIsNonPositive() {
+        Long roomId = 2L;
+        Long userId = 3L;
+
+        ChatRoom room = ChatRoom.builder()
+                .id(roomId)
+                .roomType(RoomType.GROUP)
+                .name("room")
+                .createdBy(User.builder().id(1L).build())
+                .build();
+
+        when(chatRoomQueryService.getRoomOrThrow(roomId)).thenReturn(room);
+        when(chatMessageService.getEnterMessagesByCursor(eq(roomId), eq(1), Mockito.isNull()))
+                .thenReturn(new SliceImpl<>(List.of(), PageRequest.of(0, 1), false));
+
+        target.enterChatRoom(roomId, userId, null, 0);
+
+        verify(chatMessageService).getEnterMessagesByCursor(eq(roomId), eq(1), Mockito.isNull());
+    }
+
+    @Test
+    @DisplayName("limit가 100보다 크면 100으로 보정해서 조회한다")
+    void shouldClampLimitToHundredWhenLimitIsTooLarge() {
+        Long roomId = 3L;
+        Long userId = 4L;
+
+        ChatRoom room = ChatRoom.builder()
+                .id(roomId)
+                .roomType(RoomType.GROUP)
+                .name("room")
+                .createdBy(User.builder().id(1L).build())
+                .build();
+
+        when(chatRoomQueryService.getRoomOrThrow(roomId)).thenReturn(room);
+        when(chatMessageService.getEnterMessagesByCursor(eq(roomId), eq(100), Mockito.isNull()))
+                .thenReturn(new SliceImpl<>(List.of(), PageRequest.of(0, 100), false));
+
+        target.enterChatRoom(roomId, userId, null, 999);
+
+        verify(chatMessageService).getEnterMessagesByCursor(eq(roomId), eq(100), Mockito.isNull());
+    }
+
+    @Test
+    @DisplayName("깨진 커서는 null 커서처럼 처리되어 첫 페이지를 조회한다")
+    void shouldTreatBrokenCursorAsFirstPage() {
+        Long roomId = 4L;
+        Long userId = 5L;
+
+        ChatRoom room = ChatRoom.builder()
+                .id(roomId)
+                .roomType(RoomType.GROUP)
+                .name("room")
+                .createdBy(User.builder().id(1L).build())
+                .build();
+
+        when(chatRoomQueryService.getRoomOrThrow(roomId)).thenReturn(room);
+        when(chatMessageService.getEnterMessagesByCursor(eq(roomId), eq(50), Mockito.isNull()))
+                .thenReturn(new SliceImpl<>(List.of(), PageRequest.of(0, 50), false));
+
+        target.enterChatRoom(roomId, userId, "broken-cursor", 50);
+
+        verify(chatMessageService).getEnterMessagesByCursor(eq(roomId), eq(50), Mockito.isNull());
+    }
+
+    @Test
+    @DisplayName("동일 createdAt인 메시지는 messageId 오름차순으로 정렬된다")
+    void shouldSortByMessageIdWhenCreatedAtIsSame() {
+        Long roomId = 5L;
+        Long userId = 6L;
+
+        ChatRoom room = ChatRoom.builder()
+                .id(roomId)
+                .roomType(RoomType.GROUP)
+                .name("room")
+                .createdBy(User.builder().id(1L).build())
+                .build();
+
+        LocalDateTime same = LocalDateTime.of(2026, 3, 20, 10, 0, 0);
+        ChatMessageItemResponse id20 = new ChatMessageItemResponse(20L, 1L, "u1", "TEXT", "m2", same);
+        ChatMessageItemResponse id10 = new ChatMessageItemResponse(10L, 2L, "u2", "TEXT", "m1", same);
+
+        Slice<ChatMessageItemResponse> slice = new SliceImpl<>(
+                List.of(id20, id10),
+                PageRequest.of(0, 50),
+                false
+        );
+
+        when(chatRoomQueryService.getRoomOrThrow(roomId)).thenReturn(room);
+        when(chatMessageService.getEnterMessagesByCursor(eq(roomId), eq(50), Mockito.isNull()))
+                .thenReturn(slice);
+
+        ChatRoomEnterResponse response = target.enterChatRoom(roomId, userId, null, 50);
+
+        assertThat(response.messages()).extracting(ChatMessageItemResponse::messageId)
+                .containsExactly(10L, 20L);
+    }
+
+    @Test
+    @DisplayName("입력 커서는 디코딩되어 서비스에 전달된다")
+    void shouldPassDecodedCursorToService() {
+        Long roomId = 6L;
+        Long userId = 7L;
+
+        ChatRoom room = ChatRoom.builder()
+                .id(roomId)
+                .roomType(RoomType.GROUP)
+                .name("room")
+                .createdBy(User.builder().id(1L).build())
+                .build();
+
+        LocalDateTime now = LocalDateTime.of(2026, 3, 20, 10, 10, 0);
+        long millis = now.atOffset(ZoneOffset.UTC).toInstant().toEpochMilli();
+        String cursor = ChatMessageCursorCodec.encode(millis, 111L);
+
+        when(chatRoomQueryService.getRoomOrThrow(roomId)).thenReturn(room);
+        when(chatMessageService.getEnterMessagesByCursor(eq(roomId), eq(50), any(ChatMessageCursorKey.class)))
+                .thenReturn(new SliceImpl<>(List.of(), PageRequest.of(0, 50), false));
+
+        target.enterChatRoom(roomId, userId, cursor, 50);
+
+        ArgumentCaptor<ChatMessageCursorKey> captor = ArgumentCaptor.forClass(ChatMessageCursorKey.class);
+        verify(chatMessageService).getEnterMessagesByCursor(eq(roomId), eq(50), captor.capture());
+        assertThat(captor.getValue().lastMessageId()).isEqualTo(111L);
+        assertThat(captor.getValue().lastMessageAtEpochMillis()).isEqualTo(millis);
     }
 }

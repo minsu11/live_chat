@@ -6,6 +6,15 @@ import org.springframework.data.domain.Slice;
 import org.springframework.lang.Nullable;
 
 public interface ChatMessageRepositoryCustom {
+
+    /**
+     * 채팅방 진입용 메시지를 커서 기반으로 조회한다.
+     *
+     * @param roomId 채팅방 ID
+     * @param limit 페이지 크기
+     * @param cursorKey 커서 키(없으면 첫 페이지)
+     * @return 메시지 Slice
+     */
     Slice<ChatMessageItemResponse> getEnterMessagesByCursor(Long roomId, int limit,
                                                             @Nullable ChatMessageCursorKey cursorKey);
 }

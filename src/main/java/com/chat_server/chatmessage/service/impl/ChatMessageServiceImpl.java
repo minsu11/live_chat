@@ -24,6 +24,14 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
 
+    /**
+     * 커서 조건에 맞는 채팅방 메시지 Slice를 조회한다.
+     *
+     * @param roomId 채팅방 ID
+     * @param limit 페이지 크기
+     * @param cursorKey 커서 키(없으면 첫 페이지)
+     * @return 커서 기반 메시지 Slice
+     */
     @Override
     @Transactional(readOnly = true)
     public Slice<ChatMessageItemResponse> getEnterMessagesByCursor(Long roomId, int limit,
@@ -31,6 +39,20 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         return chatMessageRepository.getEnterMessagesByCursor(roomId, limit, cursorKey);
     }
 
+    /**
+     * 채팅 메시지를 생성하여 저장한다.
+     *
+     * @param chatRoom 채팅방
+     * @param userId 발신자 ID
+     * @param messageType 메시지 타입
+     * @param text 메시지 내용
+     * @return 저장된 메시지 엔티티
+     *
+     * <p>예외 상황:
+     * <ul>
+     *   <li>userId에 해당하는 유저가 없으면 UserNotFoundException</li>
+     * </ul>
+     */
     @Override
     public ChatMessage createChatMessage(ChatRoom chatRoom, Long userId, String messageType, String text) {
         log.info("chat message create chat message start");
