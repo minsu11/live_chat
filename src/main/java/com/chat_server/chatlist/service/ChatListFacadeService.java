@@ -1,0 +1,13 @@
+package com.chat_server.chatlist.service;
+
+import com.chat_server.chatlist.dto.response.ChatRoomListResponse;
+import com.chat_server.friend.dto.response.CursorPageResponse;
+import jakarta.annotation.Nullable;
+
+public interface ChatListFacadeService {
+    CursorPageResponse<ChatRoomListResponse> getChatRoomListsByCursor(Long userId, int limit, @Nullable String cursor);
+    void ensureMembership(Long roomId, Long userId);
+    void increaseUnreadCount(Long roomId, Long senderId);
+
+
+}
