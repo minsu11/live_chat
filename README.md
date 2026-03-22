@@ -1,58 +1,77 @@
-# chat server
- 
-# 개발 상태
+# Chat Server
 
-- front(Vue) 연동 하는 작업에서 에러 발생이 잦아 완성하진 못함.
-- 하루에 기능 하나 이상씩 구현 할 예정
-- 채팅 서버로써 최소한 작업을 마친 뒤 서버 배포 예정
+Spring Boot 기반 1:1 채팅 서버 개인 프로젝트입니다.  
+현재는 **1:1 채팅 메시지 송수신 기능**을 중심으로 구현하고 있으며, 기능 구현과 함께 **ERD와 서비스 구조를 계속 정리하고 있는 프로젝트**입니다.
 
-# 부가 서버
+## 프로젝트 개요
 
-- front 서버 링크: https://github.com/minsu11/live_chat_front
-- auth 서버 링크: https://github.com/minsu11/live_chat_auth
+채팅 기능은 단순히 메시지를 주고받는 것에서 끝나지 않고,  
+채팅방 구조, 사용자 관계, 메시지 표시 방식, 서비스 계층 분리까지 함께 고민해야 한다고 생각했습니다.
 
+이 프로젝트에서는 실제 기능을 구현하는 과정에서  
+데이터 구조와 서비스 구조를 여러 번 다시 돌아보며 정리해 보았습니다.
 
-# 기능
+## 개발 기간
 
-1. 로그인
-- jwt token 기반 로그인
-- access token cookie 저장
-- refresh token redis 저장
-- RSA 알고리즘 채택
-- 추 후 msa 환경으로 변환한다고 가정 했을 때
-다중 서비스에서 비밀키 공유 하지 않고 공개키로 검증 가능, 
-- 또한 HMAC은 여러 서비스에서 시크릿 키 공유해야하하는데, 유출 리스크가 있다고 판단햇음
+- 진행 중
 
+## 기술 스택
 
-2. 인가
-- Spring security 활용한 인가 처리
-- 로직
-  - front 서버에서 api 서버로 요청
-  - api 서버에서는 인가 처리 뒤, 만료되거나 변조된 토큰에 대해서 에러를 던짐
-  - front 서버가 에러를 받으면, auth 서버에 재발급 api 요청
-  - 재발급이 완료가 되면, api 서버에 요청 했던 로직 재요청
-  - Vue interceptor 사용해서 front에서도 공통 처리를 함
+- Java
+- Spring Boot
+- Spring Security
+- MySQL
+- Redis
+- Docker
 
-3. 친구 검색
+## 현재 구현 범위
 
-- 유저의 아이디 검색해서 친구 추가
-- 현재는 단순히 where 절을 사용해서 유저를 찾음
-- 유저 아이디는 민감한 정보라고 판단해서, GET 요청해서 파라미터로 보내는 방식이 아닌
-POST 요청해서 유저아이디를 Body 데이터에 넣어둠
-- prefix 검색하면 관련 아이디 유저 목록 반환
-- 검색 결과가 없을 시 빈 리스트 반환
+### 인증 / 인가
+- JWT 기반 로그인
+- Access Token 쿠키 저장
+- Refresh Token Redis 저장
+- Spring Security 기반 인가 처리
 
-4. 친구 목록
-- 친구 추가 기능완료
-- 친구 추가 된 친구 목록(Cursor Pagenation)
+### 친구 기능
+- 사용자 검색 기반 친구 추가
+- 친구 목록 조회
 
-4. 실시감 메시지 처리
-- 현재 개발 중
+### 채팅 기능
+- 1:1 채팅 메시지 송수신
 
-# 처리해야하는 부분
+## 프로젝트에서 고민한 점
 
-- config server 만들어서 yml 파일 한군데 관리
-- ddl문과 같은 문서 별도로 분리
-- 민감한 정보들 암호화, 암호화가 안된다면 config 서버 사용해서 임시 방편 암호화
-- common module 바꿔서 다른 서버들과 공통 처리 및 공통 메세지 처리 시키기
+### 1. ERD 구조 재정리
+처음에는 chatRoom과 chatList 중심으로 단순하게 생각했지만,  
+사용자 관계와 메시지 표시 방식까지 고려하다 보니 각 역할을 더 분리할 필요가 있다고 느꼈습니다.
 
+### 2. 닉네임 표시 방식
+단순히 채팅방 이름만 저장해서 보여 주는 방식보다,  
+사용자가 지정한 닉네임이나 관계에 따라 표시 방식이 달라질 수 있다고 생각했습니다.  
+그래서 메시지와 채팅방에서 어떤 정보를 기준으로 사용자에게 보여 줄지 계속 고민하고 있습니다.
+
+### 3. 서비스 계층 구조 정리
+처음에는 Controller에서 바로 Application Service를 호출하는 구조로 시작했습니다.  
+하지만 기능이 늘어나면서 어떤 로직은 한 서비스에 몰리고, 어떤 로직은 별도로 분리되는 식으로 흐름이 섞이기 시작했습니다.  
+그래서 유스케이스 단위의 처리 과정을 한 곳에서 정리하기 위해  
+`Controller -> Facade Service -> Application Service -> Repository` 구조로 정리하는 방향을 고민하고 적용했습니다.
+
+## 아키텍처/구성
+
+이 프로젝트는 채팅 서버를 중심으로 개발 중이며,  
+프론트 서버와 인증 서버를 분리하는 방향도 함께 고려하고 있습니다.
+
+- Front Server: https://github.com/minsu11/live_chat_front
+- Auth Server: https://github.com/minsu11/live_chat_auth
+
+## 디렉토리
+
+```bash
+live_chat/
+├── .github/workflows
+├── doc
+├── http
+├── src
+├── Dockerfile
+├── build.gradle
+└── README.md
