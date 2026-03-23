@@ -6,16 +6,20 @@ import com.chat_server.chatmessage.service.ChatMessageService;
 import com.chat_server.chatroom.dto.response.ChatRoomEnterResponse;
 import com.chat_server.chatroom.dto.response.ChatRoomResult;
 import com.chat_server.chatroom.dto.response.ChatRoomSummaryResponse;
+import com.chat_server.chatroom.entity.ChatRoom;
+import com.chat_server.chatroom.enums.RoomType;
 import com.chat_server.chatroom.service.ChatRoomFacadeService;
 import com.chat_server.chatroom.service.ChatRoomQueryService;
 import com.chat_server.chatroom.service.ChatRoomService;
 import com.chat_server.chatroommember.service.ChatRoomMemberService;
 import com.chat_server.common.cursor.ChatMessageCursorCodec;
 import com.chat_server.common.cursor.ChatMessageCursorKey;
+import com.chat_server.user.service.UserDisplayNameService;
 import com.chat_server.user.service.UserService;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,6 +37,7 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
     private final ChatMessageService chatMessageService;
     private final ChatRoomQueryService chatRoomQueryService;
     private final UserService userService;
+    private final UserDisplayNameService userDisplayNameService;
 
     /**
      * 채팅방 summary 정보를 조회한다.
@@ -91,7 +96,7 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
             nextCursor = ChatMessageCursorCodec.encode(lastAtEpochMillis, last.messageId());
         }
 
-        String title = room.getName() != null ? room.getName() : "";
+        String title = resolveEnterTitle(roomId, userId, room);
 
         return new ChatRoomEnterResponse(
                 room.getId(),
@@ -102,6 +107,60 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
         );
     }
 
+
+    /**
+     * 채팅방 진입 응답에서 사용할 title을 room type 정책에 맞춰 결정한다.
+     *
+     * <p>규칙:
+     * <ul>
+     *   <li>DM: 요청 사용자 기준 상대 표시 이름(친구 별칭 > 상대 기본 닉네임 > room title)</li>
+     *   <li>GROUP: 요청 사용자가 설정한 채팅방 커스텀 이름 > room title</li>
+     *   <li>OPEN: room title</li>
+     * </ul>
+     *
+     * @param roomId 채팅방 ID
+     * @param userId 요청 사용자 ID
+     * @param room 채팅방 엔티티
+     * @return room type 정책이 반영된 표시 제목
+     */
+    private String resolveEnterTitle(Long roomId, Long userId, ChatRoom room) {
+        String roomTitle = room.getName() != null ? room.getName() : "";
+
+        return switch (room.getRoomType()) {
+            case DM -> resolveDmTitle(roomId, userId, roomTitle);
+            case GROUP -> resolveGroupTitle(roomId, userId, roomTitle);
+            case OPEN -> roomTitle;
+        };
+    }
+
+    /**
+     * DM 방 title을 계산한다.
+     *
+     * @param roomId 채팅방 ID
+     * @param userId 요청 사용자 ID
+     * @param roomTitle 채팅방 기본 제목
+     * @return DM 표시 제목
+     */
+    private String resolveDmTitle(Long roomId, Long userId, String roomTitle) {
+        Long partnerId = chatRoomQueryService.getMemberId(roomId, userId);
+
+        return userDisplayNameService.resolveDisplayName(partnerId, userId)
+                .orElse(roomTitle);
+    }
+
+    /**
+     * GROUP 방 title을 계산한다.
+     *
+     * @param roomId 채팅방 ID
+     * @param userId 요청 사용자 ID
+     * @param roomTitle 채팅방 기본 제목
+     * @return GROUP 표시 제목
+     */
+    private String resolveGroupTitle(Long roomId, Long userId, String roomTitle) {
+        Optional<String> customRoomName = chatListService.getCustomRoomName(roomId, userId);
+        // TODO room title이 없으면 캐싱 컬럼을 통해서 본인 제외한 채팅방 멤버 이름으로 room title 하기
+        return customRoomName.orElse(roomTitle);
+    }
     /**
      * 1:1 채팅방을 조회/생성하고 멤버십을 보장한다.
      *
