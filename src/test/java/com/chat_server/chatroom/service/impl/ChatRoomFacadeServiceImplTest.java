@@ -19,10 +19,12 @@ import com.chat_server.chatroommember.service.ChatRoomMemberService;
 import com.chat_server.common.cursor.ChatMessageCursorCodec;
 import com.chat_server.common.cursor.ChatMessageCursorKey;
 import com.chat_server.user.entity.User;
+import com.chat_server.user.service.UserDisplayNameService;
 import com.chat_server.user.service.UserService;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -40,6 +42,7 @@ class ChatRoomFacadeServiceImplTest {
     private ChatMessageService chatMessageService;
     private ChatRoomQueryService chatRoomQueryService;
     private UserService userService;
+    private UserDisplayNameService userDisplayNameService;
 
     private ChatRoomFacadeServiceImpl target;
 
@@ -51,6 +54,7 @@ class ChatRoomFacadeServiceImplTest {
         chatMessageService = mock(ChatMessageService.class);
         chatRoomQueryService = mock(ChatRoomQueryService.class);
         userService = mock(UserService.class);
+        userDisplayNameService = mock(UserDisplayNameService.class);
 
         target = new ChatRoomFacadeServiceImpl(
                 chatRoomService,
@@ -58,8 +62,11 @@ class ChatRoomFacadeServiceImplTest {
                 chatRoomMemberService,
                 chatMessageService,
                 chatRoomQueryService,
-                userService
+                userService,
+                userDisplayNameService
         );
+
+        when(chatListService.getCustomRoomName(Mockito.anyLong(), Mockito.anyLong())).thenReturn(Optional.empty());
     }
 
     @Test
@@ -89,6 +96,8 @@ class ChatRoomFacadeServiceImplTest {
         );
 
         when(chatRoomQueryService.getRoomOrThrow(roomId)).thenReturn(room);
+        when(chatRoomQueryService.getMemberId(roomId, userId)).thenReturn(77L);
+        when(userDisplayNameService.resolveDisplayName(77L, userId)).thenReturn(java.util.Optional.of("상대 별칭"));
         when(chatMessageService.getEnterMessagesByCursor(eq(roomId), eq(limit), any(ChatMessageCursorKey.class)))
                 .thenReturn(slice);
 
@@ -102,7 +111,7 @@ class ChatRoomFacadeServiceImplTest {
 
         assertThat(response.roomId()).isEqualTo(roomId);
         assertThat(response.roomType()).isEqualTo("DM");
-        assertThat(response.title()).isEqualTo("테스트방");
+        assertThat(response.title()).isEqualTo("상대 별칭");
         assertThat(response.messages()).extracting(ChatMessageItemResponse::messageId)
                 .containsExactly(10L, 20L);
 
@@ -266,4 +275,102 @@ class ChatRoomFacadeServiceImplTest {
         assertThat(captor.getValue().lastMessageId()).isEqualTo(111L);
         assertThat(captor.getValue().lastMessageAtEpochMillis()).isEqualTo(millis);
     }
+
+    @Test
+    @DisplayName("DM 방은 표시 이름이 없으면 방 제목으로 fallback 한다")
+    void shouldFallbackToRoomTitleWhenDmDisplayNameIsMissing() {
+        Long roomId = 7L;
+        Long userId = 8L;
+
+        ChatRoom room = ChatRoom.builder()
+                .id(roomId)
+                .roomType(RoomType.DM)
+                .name("")
+                .createdBy(User.builder().id(1L).build())
+                .build();
+
+        when(chatRoomQueryService.getRoomOrThrow(roomId)).thenReturn(room);
+        when(chatRoomQueryService.getMemberId(roomId, userId)).thenReturn(88L);
+        when(userDisplayNameService.resolveDisplayName(88L, userId)).thenReturn(java.util.Optional.empty());
+        when(chatMessageService.getEnterMessagesByCursor(eq(roomId), eq(50), Mockito.isNull()))
+                .thenReturn(new SliceImpl<>(List.of(), PageRequest.of(0, 50), false));
+
+        ChatRoomEnterResponse response = target.enterChatRoom(roomId, userId, null, 50);
+
+        assertThat(response.title()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("DM 이 아닌 방은 기존 room.name을 title로 사용한다")
+    void shouldUseRoomNameWhenRoomTypeIsNotDm() {
+        Long roomId = 8L;
+        Long userId = 9L;
+
+        ChatRoom room = ChatRoom.builder()
+                .id(roomId)
+                .roomType(RoomType.GROUP)
+                .name("그룹방")
+                .createdBy(User.builder().id(1L).build())
+                .build();
+
+        when(chatRoomQueryService.getRoomOrThrow(roomId)).thenReturn(room);
+        when(chatMessageService.getEnterMessagesByCursor(eq(roomId), eq(50), Mockito.isNull()))
+                .thenReturn(new SliceImpl<>(List.of(), PageRequest.of(0, 50), false));
+
+        ChatRoomEnterResponse response = target.enterChatRoom(roomId, userId, null, 50);
+
+        assertThat(response.title()).isEqualTo("그룹방");
+        verify(chatListService).getCustomRoomName(roomId, userId);
+        verify(chatRoomQueryService, Mockito.never()).getMemberId(any(), any());
+        verify(userDisplayNameService, Mockito.never()).resolveDisplayName(any(), any());
+    }
+
+    @Test
+    @DisplayName("GROUP 방은 chat list custom name이 있으면 해당 값을 title로 사용한다")
+    void shouldUseCustomNameWhenGroupHasCustomName() {
+        Long roomId = 11L;
+        Long userId = 12L;
+
+        ChatRoom room = ChatRoom.builder()
+                .id(roomId)
+                .roomType(RoomType.GROUP)
+                .name("원래 그룹방 이름")
+                .createdBy(User.builder().id(1L).build())
+                .build();
+
+        when(chatRoomQueryService.getRoomOrThrow(roomId)).thenReturn(room);
+        when(chatListService.getCustomRoomName(roomId, userId)).thenReturn(Optional.of("내가 바꾼 그룹방 이름"));
+        when(chatMessageService.getEnterMessagesByCursor(eq(roomId), eq(50), Mockito.isNull()))
+                .thenReturn(new SliceImpl<>(List.of(), PageRequest.of(0, 50), false));
+
+        ChatRoomEnterResponse response = target.enterChatRoom(roomId, userId, null, 50);
+
+        assertThat(response.title()).isEqualTo("내가 바꾼 그룹방 이름");
+    }
+
+    @Test
+    @DisplayName("OPEN 방은 room title을 그대로 사용한다")
+    void shouldUseRoomTitleWhenOpenRoom() {
+        Long roomId = 13L;
+        Long userId = 14L;
+
+        ChatRoom room = ChatRoom.builder()
+                .id(roomId)
+                .roomType(RoomType.OPEN)
+                .name("오픈 채팅방")
+                .createdBy(User.builder().id(1L).build())
+                .build();
+
+        when(chatRoomQueryService.getRoomOrThrow(roomId)).thenReturn(room);
+        when(chatMessageService.getEnterMessagesByCursor(eq(roomId), eq(50), Mockito.isNull()))
+                .thenReturn(new SliceImpl<>(List.of(), PageRequest.of(0, 50), false));
+
+        ChatRoomEnterResponse response = target.enterChatRoom(roomId, userId, null, 50);
+
+        assertThat(response.title()).isEqualTo("오픈 채팅방");
+        verify(chatListService, Mockito.never()).getCustomRoomName(roomId, userId);
+        verify(chatRoomQueryService, Mockito.never()).getMemberId(any(), any());
+        verify(userDisplayNameService, Mockito.never()).resolveDisplayName(any(), any());
+    }
+
 }

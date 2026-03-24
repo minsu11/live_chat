@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ChatListRepository extends JpaRepository<ChatList, Long>,ChatListRepositoryCustom {
     /**
@@ -59,4 +60,24 @@ public interface ChatListRepository extends JpaRepository<ChatList, Long>,ChatLi
         WHERE chat_room_id = :roomId
         """, nativeQuery = true)
     List<Long> findUserIdsByRoomId(@Param("roomId") long roomId);
+
+    /**
+     * 사용자가 특정 채팅방에 설정한 커스텀 방 이름을 조회한다.
+     *
+     * @param roomId 채팅방 ID
+     * @param userId 사용자 ID
+     * @return 커스텀 방 이름(Optional)
+     */
+    @Query("""
+        select cl.customName
+        from ChatList cl
+        where cl.chatRoom.id = :roomId
+          and cl.user.id = :userId
+          and cl.customName is not null
+          and cl.customName <> ''
+        """)
+    Optional<String> findCustomNameByUserIdAndRoomId(
+            @Param("roomId") Long roomId,
+            @Param("userId") Long userId
+    );
 }
