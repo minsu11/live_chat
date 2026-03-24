@@ -33,3 +33,9 @@ logging:
     io.netty: info
     reactor.netty: info
     org.apache.http: info
+    org.springframework.messaging: TRACE
+    org.springframework.web.socket.messaging: TRACE
+    org.springframework.messaging.simp.annotation.support.SimpAnnotationMethodMessageHandler: TRACE
+    org.springframework.messaging.handler.annotation.support: TRACE
+    org.springframework.messaging.converter: TRACE
+    org.springframework.messaging.support.ExecutorSubscribableChannel: TRACE

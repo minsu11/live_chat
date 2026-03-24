@@ -36,10 +36,6 @@ public class RedisConfig {
 
     private final DefaultClientResources clientResources = DefaultClientResources.create();
 
-    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
 
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {

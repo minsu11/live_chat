@@ -11,6 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
+import org.springframework.messaging.handler.annotation.Payload;
+
+import java.security.Principal;
 
 @Slf4j
 @Controller
@@ -28,13 +31,14 @@ public class ChatMessageController {
      * @param authentication 현재 STOMP 세션 인증 정보(내부 principal에 userId 포함)
      * @throws ClassCastException principal 타입이 {@link AuthenticatedUser}가 아닐 경우
      */
-    @MessageMapping("chat/message")
+    @MessageMapping("/chat/message")
     public void sendMessage(
                         ChatSendRequest chatSendRequest,
                         Authentication authentication
                         ) {
         log.info("sendMessage 호출");
         log.debug("sendMessage params - chatSendRequest: {}", chatSendRequest);
+        log.debug("authentication: {}", authentication);
         AuthenticatedUser authenticatedUser = (AuthenticatedUser) authentication.getPrincipal();
         Long userId= authenticatedUser.userId();
         log.debug("sendMessage auth principal userId: {}", userId);
@@ -49,7 +53,7 @@ public class ChatMessageController {
      * @param authentication 현재 STOMP 세션 인증 정보(내부 principal에 userId 포함)
      * @throws IllegalArgumentException payload senderId와 인증 사용자 ID가 일치하지 않을 경우
      */
-    @MessageMapping("chat/broadcast")
+    @MessageMapping("/chat/broadcast")
     public void receiveBroadcast(ChatMessageResponse response, Authentication authentication) {
         log.info("receiveBroadcast 호출");
         log.debug("receiveBroadcast params - response: {}, authentication: {}", response, authentication);

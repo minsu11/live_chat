@@ -33,6 +33,8 @@ public class ChatMessageBroadCasterImpl implements ChatMessageBroadCaster {
         String userDestination = webSocketProperties.getSubPrefix()
                 + webSocketProperties.getChat().getRoomPath()
                 + "/" + response.roomId();
+        log.debug("userDestination: {}", userDestination);
+
         messagingTemplate.convertAndSendToUser(String.valueOf(receiverUserId), userDestination, response);
         log.debug("broadcastMessage 완료 - userDestination: {}", userDestination);
     }
@@ -50,6 +52,7 @@ public class ChatMessageBroadCasterImpl implements ChatMessageBroadCaster {
         String roomDestination = webSocketProperties.getSubPrefix()
                 + webSocketProperties.getChat().getRoomPath()
                 + "/" + response.roomId();
+
         messagingTemplate.convertAndSend(roomDestination, response);
         log.debug("relayRoomBroadcast 완료 - roomDestination: {}", roomDestination);
     }

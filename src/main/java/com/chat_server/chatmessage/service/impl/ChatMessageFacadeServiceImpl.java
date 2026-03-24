@@ -59,7 +59,7 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         log.debug("sendMessage params - request: {}, userId: {}", request, userId);
         Long roomId = request.roomId();
         String messageType = request.messageType();
-        String message = request.text();
+        String message = request.messageContent();
 
         ChatRoom room = chatRoomQueryService.getRoomOrThrow(roomId);
         Long memberId = chatRoomQueryService.getMemberId(room.getId(), userId);
@@ -138,7 +138,7 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
                 .resolveDisplayName(senderId, receiverUserId)
                 .orElse(chatMessage.getSender().getNickname());
         boolean mine = senderId.equals(receiverUserId);
-
+        log.debug("senderId : {}", senderId);
         ChatMessageSenderResponse sender = new ChatMessageSenderResponse(
                 senderId,
                 chatMessage.getSender().getUuid(),
