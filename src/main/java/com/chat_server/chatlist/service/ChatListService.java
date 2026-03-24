@@ -6,6 +6,7 @@ import com.chat_server.friend.dto.response.UserFriendResponse;
 import jakarta.annotation.Nullable;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ChatListService {
     /**
@@ -41,4 +42,13 @@ public interface ChatListService {
      * @return 멤버 사용자 ID 리스트
      */
     List<Long> getRoomMemberUserIds(Long roomId);
+
+    /**
+     * 사용자가 설정한 채팅방 커스텀 이름을 조회한다.
+     *
+     * @param roomId 채팅방 ID
+     * @param userId 사용자 ID
+     * @return 커스텀 이름(Optional)
+     */
+    Optional<String> getCustomRoomName(Long roomId, Long userId);
 }

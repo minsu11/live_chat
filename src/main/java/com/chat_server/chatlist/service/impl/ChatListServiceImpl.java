@@ -9,6 +9,7 @@ import com.chat_server.friend.dto.response.CursorPageResponse;
 import jakarta.annotation.Nullable;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -108,5 +109,11 @@ public class ChatListServiceImpl implements ChatListService {
         List<Long> userIds = chatListRepository.findUserIdsByRoomId(roomId);
         log.debug("getRoomMemberUserIds return - userIds: {}", userIds);
         return userIds;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<String> getCustomRoomName(Long roomId, Long userId) {
+        return chatListRepository.findCustomNameByUserIdAndRoomId(roomId, userId);
     }
 }
