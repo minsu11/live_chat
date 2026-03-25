@@ -2,6 +2,7 @@ package com.chat_server.chatmessage.service.impl;
 
 import com.chat_server.chatlist.service.ChatListService;
 import com.chat_server.chatmessage.dto.request.ChatSendRequest;
+import com.chat_server.chatmessage.dto.response.ChatMessageItemResponse;
 import com.chat_server.chatmessage.dto.response.ChatMessageResponse;
 import com.chat_server.chatmessage.dto.response.ChatMessageSenderResponse;
 import com.chat_server.chatmessage.entity.ChatMessage;
@@ -10,9 +11,13 @@ import com.chat_server.chatmessage.service.ChatMessageService;
 import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.chatroom.service.ChatRoomQueryService;
 import com.chat_server.chatroom.service.ChatRoomService;
+import com.chat_server.common.mapper.ChatMessageResponseMapper;
 import com.chat_server.user.service.UserDisplayNameService;
 import com.chat_server.userblock.service.UserBlockService;
+import com.chat_server.userprofileImage.service.UserProfileImageService;
 import com.chat_server.websocket.broadcaster.ChatMessageBroadCaster;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 @RequiredArgsConstructor
 public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
-
+    private final ChatMessageResponseMapper chatMessageResponseMapper;
     private final ChatMessageBroadCaster chatMessageBroadCaster;
     private final ChatRoomQueryService chatRoomQueryService;
     private final UserBlockService userBlockService;
@@ -35,6 +40,7 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
     private final ChatRoomService chatRoomService;
     private final ChatListService chatListService;
     private final UserDisplayNameService userDisplayNameService;
+    private final UserProfileImageService userProfileImageService;
 
     @Override
     /**
@@ -63,7 +69,7 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
 
         ChatRoom room = chatRoomQueryService.getRoomOrThrow(roomId);
         Long memberId = chatRoomQueryService.getMemberId(room.getId(), userId);
-
+        String memberProfileUrl = userProfileImageService.getUserProfileUrl(userId);
         validateSendPermission(room, userId, memberId, request);
         ChatMessage chatMessage = chatMessageService.createChatMessage(room, userId, messageType, message);
 
@@ -74,7 +80,7 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         List<Long> roomMemberUserIds = chatListService.getRoomMemberUserIds(roomId);
         log.debug("sendMessage roomMemberUserIds: {}", roomMemberUserIds);
         for (Long receiverUserId : roomMemberUserIds) {
-            ChatMessageResponse response = createResponseForReceiver(chatMessage, roomId, userId, receiverUserId);
+            ChatMessageResponse response = createResponseForReceiver(chatMessage, roomId, userId, receiverUserId, memberProfileUrl);
             chatMessageBroadCaster.broadcastMessage(receiverUserId, response);
             log.debug("sendMessage broadcast 완료 - receiverUserId: {}, response: {}", receiverUserId, response);
         }
@@ -115,19 +121,29 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
     }
 
     /**
-     * 수신자 기준 display nickname 우선순위(친구 커스텀 닉네임 -> 사용자 기본 닉네임)를 반영한다.
+     * 저장된 메시지를 특정 수신자(receiverUserId) 관점의 실시간 브로드캐스트 응답 DTO로 생성한다.
      *
-     * @param chatMessage 저장된 메시지 엔티티
-     * @param roomId 메시지가 속한 채팅방 ID
+     * <p>수신자별로 다음 값이 달라질 수 있다.
+     * <ul>
+     *   <li>sender.senderNickname: 수신자 기준 표시 이름</li>
+     *   <li>sender.mine: 수신자가 발신자인 경우 true, 아니면 false</li>
+     * </ul>
+     *
+     * <p>발신자의 UUID, 프로필 이미지 URL, 메시지 내용, 생성 시각 등은 저장된 메시지 기준 값을 사용한다.</p>
+     *
+     * @param chatMessage 저장된 채팅 메시지 엔티티
+     * @param roomId 채팅방 ID
      * @param senderId 발신자 사용자 ID
-     * @param receiverUserId 현재 응답을 만들 수신자 사용자 ID
-     * @return 수신자 관점(표시 닉네임/mine)이 반영된 채팅 응답 DTO
+     * @param receiverUserId 현재 브로드캐스트를 수신할 사용자 ID
+     * @param profileImageUrl 발신자 사용자 프로필 이미지 url
+     * @return 수신자 관점이 반영된 실시간 메시지 응답 DTO
      */
     private ChatMessageResponse createResponseForReceiver(
             ChatMessage chatMessage,
             Long roomId,
             Long senderId,
-            Long receiverUserId
+            Long receiverUserId,
+            String profileImageUrl
     ) {
         log.info("createResponseForReceiver 호출");
         log.debug("createResponseForReceiver params - chatMessageId: {}, roomId: {}, senderId: {}, receiverUserId: {}",
@@ -137,24 +153,22 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         String displayNickname = userDisplayNameService
                 .resolveDisplayName(senderId, receiverUserId)
                 .orElse(chatMessage.getSender().getNickname());
-        boolean mine = senderId.equals(receiverUserId);
-        log.debug("senderId : {}", senderId);
-        ChatMessageSenderResponse sender = new ChatMessageSenderResponse(
+
+        ChatMessageResponse response = chatMessageResponseMapper.fromMessage(
+                chatMessage.getId(),
+                roomId,
+                chatMessage.getMessageType().name(),
                 senderId,
                 chatMessage.getSender().getUuid(),
                 displayNickname,
-                null,
-                mine
-        );
-
-        ChatMessageResponse response = new ChatMessageResponse(
-                chatMessage.getId(),
-                roomId,
-                sender,
+                profileImageUrl, // 여기 나중에 profileImageUrl 연결
                 chatMessage.getMessageContent(),
-                chatMessage.getCreatedAt()
+                chatMessage.getCreatedAt(),
+                receiverUserId
         );
         log.debug("createResponseForReceiver return - response: {}", response);
         return response;
     }
+
+
 }

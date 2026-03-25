@@ -14,8 +14,10 @@ import java.time.LocalDateTime;
 public record ChatMessageResponse(
     Long messageId,
     Long roomId,
+    String messageType,
     ChatMessageSenderResponse sender,
     String content,
     LocalDateTime createdAt
 ) {
+
 }

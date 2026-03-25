@@ -4,6 +4,8 @@ import com.chat_server.chatmessage.dto.response.ChatMessageItemResponse;
 import com.chat_server.chatmessage.entity.QChatMessage;
 import com.chat_server.chatmessage.repository.ChatMessageRepositoryCustom;
 import com.chat_server.common.cursor.ChatMessageCursorKey;
+import com.chat_server.userprofile.enrtity.QUserProfile;
+import com.chat_server.userprofileImage.entity.QUserProfileImage;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import java.time.Instant;
@@ -60,9 +62,13 @@ public class ChatMessageRepositoryCustomImpl extends QuerydslRepositorySupport i
                                     .and(qChatMessage.id.lt(cursorKey.lastMessageId())))
             );
         }
-
+        QUserProfile qUserProfile = QUserProfile.userProfile;
+        QUserProfileImage qUserProfileImage = QUserProfileImage.userProfileImage;
         List<ChatMessageItemResponse> rows = from(qChatMessage)
                 .join(qChatMessage.sender)
+                .leftJoin(qUserProfile).on(qUserProfile.user.id.eq(qChatMessage.sender.id))
+                .leftJoin(qUserProfileImage).on(qUserProfileImage.userProfile.id.eq(qUserProfile.id)
+                        .and(qUserProfileImage.current.isTrue()))
                 .where(where)
                 .orderBy(qChatMessage.createdAt.desc(), qChatMessage.id.desc())
                 .limit(limit + 1)
@@ -70,7 +76,9 @@ public class ChatMessageRepositoryCustomImpl extends QuerydslRepositorySupport i
                         ChatMessageItemResponse.class,
                         qChatMessage.id,
                         qChatMessage.sender.id,
+                        qChatMessage.sender.uuid,
                         qChatMessage.sender.nickname,
+                        qUserProfileImage.imageUrl,
                         qChatMessage.messageType.stringValue(),
                         qChatMessage.messageContent,
                         qChatMessage.createdAt

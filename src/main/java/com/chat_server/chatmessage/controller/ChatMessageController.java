@@ -53,6 +53,19 @@ public class ChatMessageController {
      * @param authentication 현재 STOMP 세션 인증 정보(내부 principal에 userId 포함)
      * @throws IllegalArgumentException payload senderId와 인증 사용자 ID가 일치하지 않을 경우
      */
+    /**
+     * 현재 구조에서는 사용하지 않는다.
+     *
+     * 이유:
+     * - 클라이언트는 /chat/message 로만 SEND 한다.
+     * - 서버가 메시지 저장 후 broadcaster를 통해 구독자에게 직접 전파한다.
+     * - 따라서 응답 DTO(ChatMessageResponse)를 입력 DTO로 재사용할 필요가 없다.
+     *
+     * 추후
+     * - 클라이언트가 "브로드캐스트 요청"을 별도로 보내는 구조가 필요할 때
+     * - 별도 요청 DTO(ChatBroadcastRequest)를 정의해서 다시 활성화한다.
+     */
+    /*
     @MessageMapping("/chat/broadcast")
     public void receiveBroadcast(ChatMessageResponse response, Authentication authentication) {
         log.info("receiveBroadcast 호출");
@@ -62,7 +75,6 @@ public class ChatMessageController {
         Long userId = authenticatedUser.userId();
         log.debug("receiveBroadcast authenticated userId: {}", userId);
 
-        // 클라이언트가 보낸 senderId 위변조를 방지한다.
         if (!userId.equals(response.sender().senderId())) {
             log.info("receiveBroadcast senderId 불일치");
             log.debug("receiveBroadcast invalid sender - tokenUserId: {}, payloadSenderId: {}",
@@ -70,11 +82,11 @@ public class ChatMessageController {
             throw new IllegalArgumentException("senderId does not match authenticated user");
         }
 
-        // 브로드캐스트 요청 사용자와 채팅방 멤버십을 검증한다.
         chatRoomQueryService.validateMemberOrThrow(response.roomId(), userId);
 
         chatMessageBroadCaster.relayRoomBroadcast(response);
         log.debug("receiveBroadcast 완료 - roomId: {}, userId: {}", response.roomId(), userId);
     }
+    */
 
 }

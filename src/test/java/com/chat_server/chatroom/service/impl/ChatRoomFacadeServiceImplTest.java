@@ -86,8 +86,8 @@ class ChatRoomFacadeServiceImplTest {
         LocalDateTime t1 = LocalDateTime.of(2026, 3, 20, 10, 0, 0);
         LocalDateTime t2 = LocalDateTime.of(2026, 3, 20, 10, 1, 0);
 
-        ChatMessageItemResponse newer = new ChatMessageItemResponse(20L, 1L, "u1", "TEXT", "new", t2);
-        ChatMessageItemResponse older = new ChatMessageItemResponse(10L, 2L, "u2", "TEXT", "old", t1);
+        ChatMessageItemResponse newer = new ChatMessageItemResponse(20L, 1L, "uuid","u1", "","TEXT", "new", t2);
+        ChatMessageItemResponse older = new ChatMessageItemResponse(10L, 2L, "uuid","u2", "","TEXT", "old", t1);
 
         Slice<ChatMessageItemResponse> slice = new SliceImpl<>(
                 List.of(newer, older),
@@ -134,7 +134,7 @@ class ChatRoomFacadeServiceImplTest {
                 .build();
 
         Slice<ChatMessageItemResponse> slice = new SliceImpl<>(
-                List.of(new ChatMessageItemResponse(1L, 1L, "u", "TEXT", "hi", LocalDateTime.now())),
+                List.of(new ChatMessageItemResponse(1L, 1L, "uuid","u","profileUrl", "TEXT", "hi", LocalDateTime.now())),
                 PageRequest.of(0, 50),
                 false
         );
@@ -228,8 +228,8 @@ class ChatRoomFacadeServiceImplTest {
                 .build();
 
         LocalDateTime same = LocalDateTime.of(2026, 3, 20, 10, 0, 0);
-        ChatMessageItemResponse id20 = new ChatMessageItemResponse(20L, 1L, "u1", "TEXT", "m2", same);
-        ChatMessageItemResponse id10 = new ChatMessageItemResponse(10L, 2L, "u2", "TEXT", "m1", same);
+        ChatMessageItemResponse id20 = new ChatMessageItemResponse(20L, 1L, "uuid","u1", "profileUrl","TEXT", "m2", same);
+        ChatMessageItemResponse id10 = new ChatMessageItemResponse(10L, 2L, "uuid","u2","profileUrl", "TEXT", "m1", same);
 
         Slice<ChatMessageItemResponse> slice = new SliceImpl<>(
                 List.of(id20, id10),

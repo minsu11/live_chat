@@ -8,6 +8,8 @@ import com.chat_server.userprofileImage.entity.UserProfileImage;
 import com.chat_server.userprofileImage.repository.UserProfileImageRepository;
 import com.chat_server.userprofileImage.service.UserProfileImageService;
 import java.time.LocalDateTime;
+import java.util.Optional;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 @RequiredArgsConstructor
 public class UserProfileImageServiceImpl implements UserProfileImageService {
-    private final UserProfileImageRepository userProfileUrlRepository;
+    private final UserProfileImageRepository userProfileImageRepository;
     private final UserProfileRepository userProfileRepository;
     private final UserRepository userRepository;
 
@@ -26,7 +28,7 @@ public class UserProfileImageServiceImpl implements UserProfileImageService {
     @Override
     public void updateUserProfileUrl(Long userId, String newUrl) {
         log.info("Updating user profile url");
-        UserProfileImage oldUserProfileUrl = userProfileUrlRepository.getUserProfileUrl(userId)
+        UserProfileImage oldUserProfileUrl = userProfileImageRepository.getUserProfileImage(userId)
             .orElse(null);
 
         if(oldUserProfileUrl != null) {
@@ -42,8 +44,14 @@ public class UserProfileImageServiceImpl implements UserProfileImageService {
             .uploadedAt(LocalDateTime.now())
             .userProfile(userProfile)
             .build();
-        userProfileUrlRepository.save(newUserProfileUrl);
+        userProfileImageRepository.save(newUserProfileUrl);
         log.info("url 저장 완료");
+    }
+
+    @Override
+    public String getUserProfileUrl(Long userId) {
+        return userProfileImageRepository.getUserProfileImageUrlByUserId(userId)
+                .orElse(null);
     }
 
 }

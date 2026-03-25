@@ -19,7 +19,7 @@ public class CustomUserProfileImageRepositoryImpl extends QuerydslRepositorySupp
     }
 
     @Override
-    public Optional<UserProfileImage> getUserProfileUrl(Long userId) {
+    public Optional<UserProfileImage> getUserProfileImage(Long userId) {
 
 
         return Optional.ofNullable(
@@ -29,6 +29,16 @@ public class CustomUserProfileImageRepositoryImpl extends QuerydslRepositorySupp
                 .leftJoin(qUser).on(qUser.id.eq(qUserProfile.user.id))
                 .where(qUserProfileImage.current.eq(true).and(qUser.id.eq(userId)))
                 .fetchOne()
+        );
+    }
+
+    @Override
+    public Optional<String> getUserProfileImageUrlByUserId(Long userId) {
+        return Optional.ofNullable(
+                from(qUserProfileImage)
+                        .select(qUserProfileImage.imageUrl)
+                        .where(qUserProfileImage.current.isTrue().and(qUserProfileImage.userProfile.user.id.eq(userId)))
+                        .fetchOne()
         );
     }
 }
