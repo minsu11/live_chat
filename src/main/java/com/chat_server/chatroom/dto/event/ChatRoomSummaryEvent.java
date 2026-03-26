@@ -1,9 +1,12 @@
 package com.chat_server.chatroom.dto.event;
+
+import java.time.LocalDateTime;
+
 public record ChatRoomSummaryEvent(
-        String type,
         Long roomId,
+        String type,
         String lastMessagePreview,
-        String lastMessageAtDisplay,
+        LocalDateTime lastMessageAt,
         Integer unreadCount
 ) {
 }

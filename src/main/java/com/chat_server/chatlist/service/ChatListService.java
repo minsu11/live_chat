@@ -6,6 +6,7 @@ import com.chat_server.friend.dto.response.UserFriendResponse;
 import jakarta.annotation.Nullable;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface ChatListService {
@@ -94,4 +95,14 @@ public interface ChatListService {
      * @param messageId 저장된 메시지 ID
      * @return 업데이트된 row 수
      */
-    int markSenderAsReadOnSend(Long roomId, Long senderId, Long messageId);}
+    int markSenderAsReadOnSend(Long roomId, Long senderId, Long messageId);
+
+    /**
+     * 특정 채팅방에서 여러 사용자의 unread count를 조회한다.
+     *
+     * @param roomId 채팅방 ID
+     * @param userIds 사용자 ID 목록
+     * @return key=userId, value=unreadCount 맵
+     */
+    Map<Long, Integer> getUnreadCountMap(Long roomId, List<Long> userIds);
+}

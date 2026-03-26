@@ -1,6 +1,7 @@
 package com.chat_server.chatlist.service.impl;
 
 import com.chat_server.chatlist.dto.response.ChatRoomListResponse;
+import com.chat_server.chatlist.dto.response.ChatUnreadCountRow;
 import com.chat_server.chatlist.repository.ChatListRepository;
 import com.chat_server.chatlist.service.ChatListService;
 import com.chat_server.common.cursor.ChatListCursorCodec;
@@ -10,11 +11,12 @@ import jakarta.annotation.Nullable;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -169,5 +171,36 @@ public class ChatListServiceImpl implements ChatListService {
                 messageId,
                 LocalDateTime.now()
         );
+    }
+
+    /**
+     * 특정 채팅방에서 여러 사용자의 unread count를 조회한다.
+     *
+     * <p>조회되지 않은 사용자도 결과 맵에는 0으로 채워 넣는다.
+     *
+     * @param roomId 채팅방 ID
+     * @param userIds 사용자 ID 목록
+     * @return key=userId, value=unreadCount 맵
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Map<Long, Integer> getUnreadCountMap(Long roomId, List<Long> userIds) {
+        Map<Long, Integer> result = new LinkedHashMap<>();
+
+        if (userIds == null || userIds.isEmpty()) {
+            return result;
+        }
+
+        for (Long userId : userIds) {
+            result.put(userId, 0);
+        }
+
+        List<ChatUnreadCountRow> rows = chatListRepository.findUnreadCountRows(roomId, userIds);
+
+        for (ChatUnreadCountRow row : rows) {
+            result.put(row.userId(), row.unreadCount() == null ? 0 : row.unreadCount());
+        }
+
+        return result;
     }
 }

@@ -1,5 +1,6 @@
 package com.chat_server.chatlist.repository;
 
+import com.chat_server.chatlist.dto.response.ChatUnreadCountRow;
 import com.chat_server.chatlist.entity.ChatList;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -169,5 +170,26 @@ public interface ChatListRepository extends JpaRepository<ChatList, Long>,ChatLi
             @Param("senderId") Long senderId,
             @Param("messageId") Long messageId,
             @Param("openedAt") LocalDateTime openedAt
+    );
+
+    /**
+     * 특정 채팅방에서 여러 사용자의 unread count를 조회한다.
+     *
+     * @param roomId 채팅방 ID
+     * @param userIds 사용자 ID 목록
+     * @return 사용자별 unread count 조회 결과
+     */
+    @Query("""
+        select new com.chat_server.chatlist.dto.response.ChatUnreadCountRow(
+            cl.user.id,
+            cl.unreadCount
+        )
+        from ChatList cl
+        where cl.chatRoom.id = :roomId
+          and cl.user.id in :userIds
+    """)
+    List<ChatUnreadCountRow> findUnreadCountRows(
+            @Param("roomId") Long roomId,
+            @Param("userIds") List<Long> userIds
     );
 }

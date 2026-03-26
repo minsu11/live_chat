@@ -6,16 +6,21 @@ import com.chat_server.chatmessage.dto.response.ChatMessageResponse;
 import com.chat_server.chatmessage.entity.ChatMessage;
 import com.chat_server.chatmessage.service.ChatMessageFacadeService;
 import com.chat_server.chatmessage.service.ChatMessageService;
+import com.chat_server.chatroom.dto.event.ChatRoomSummaryEvent;
 import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.chatroom.service.ChatRoomQueryService;
 import com.chat_server.chatroom.service.ChatRoomService;
 import com.chat_server.common.mapper.ChatMessageResponseMapper;
+import com.chat_server.common.mapper.ChatRoomSummaryEventMapper;
 import com.chat_server.user.service.UserDisplayNameService;
 import com.chat_server.userblock.service.UserBlockService;
 import com.chat_server.userprofileImage.service.UserProfileImageService;
 import com.chat_server.websocket.broadcaster.chatmessage.ChatMessageBroadCaster;
 
 import java.util.List;
+import java.util.Map;
+
+import com.chat_server.websocket.broadcaster.chatroom.ChatRoomSummaryBroadcaster;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -38,6 +43,8 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
     private final ChatListService chatListService;
     private final UserDisplayNameService userDisplayNameService;
     private final UserProfileImageService userProfileImageService;
+    private final ChatRoomSummaryBroadcaster chatRoomSummaryBroadcaster;
+    private final ChatRoomSummaryEventMapper chatRoomSummaryEventMapper;
 
     @Override
     /**
@@ -74,12 +81,24 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         chatListService.increaseUnreadCount(roomId, userId);
         chatListService.markSenderAsReadOnSend(roomId,userId,chatMessage.getId());
 
+
         // 채팅방 멤버 목록을 조회하여 사용자별(수신자별) payload를 생성/전송한다.
         List<Long> roomMemberUserIds = chatListService.getRoomMemberUserIds(roomId);
         log.debug("sendMessage roomMemberUserIds: {}", roomMemberUserIds);
+        Map<Long, Integer> unreadCountMap = chatListService.getUnreadCountMap(roomId, roomMemberUserIds);
         for (Long receiverUserId : roomMemberUserIds) {
             ChatMessageResponse response = createResponseForReceiver(chatMessage, roomId, userId, receiverUserId, memberProfileUrl);
             chatMessageBroadCaster.broadcastMessage(receiverUserId, response);
+            int unreadCount = unreadCountMap.getOrDefault(receiverUserId, 0);
+
+            ChatRoomSummaryEvent event = chatRoomSummaryEventMapper.toEvent(
+                    roomId,
+                    chatMessage.getMessageContent(),
+                    chatMessage.getCreatedAt(),
+                    unreadCount
+            );
+
+            chatRoomSummaryBroadcaster.broadcastToUser(receiverUserId, event);
             log.debug("sendMessage broadcast 완료 - receiverUserId: {}, response: {}", receiverUserId, response);
         }
         log.debug("sendMessage 완료 - roomId: {}, messageId: {}", roomId, chatMessage.getId());
