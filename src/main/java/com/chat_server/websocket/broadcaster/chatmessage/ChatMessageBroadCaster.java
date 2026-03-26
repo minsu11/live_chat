@@ -1,4 +1,4 @@
-package com.chat_server.websocket.broadcaster;
+package com.chat_server.websocket.broadcaster.chatmessage;
 
 import com.chat_server.chatmessage.dto.response.ChatMessageResponse;
 

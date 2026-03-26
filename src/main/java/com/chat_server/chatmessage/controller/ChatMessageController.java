@@ -1,19 +1,15 @@
 package com.chat_server.chatmessage.controller;
 
 import com.chat_server.chatmessage.dto.request.ChatSendRequest;
-import com.chat_server.chatmessage.dto.response.ChatMessageResponse;
 import com.chat_server.chatmessage.service.ChatMessageFacadeService;
 import com.chat_server.chatroom.service.ChatRoomQueryService;
 import com.chat_server.user.dto.response.AuthenticatedUser;
-import com.chat_server.websocket.broadcaster.ChatMessageBroadCaster;
+import com.chat_server.websocket.broadcaster.chatmessage.ChatMessageBroadCaster;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
-import org.springframework.messaging.handler.annotation.Payload;
-
-import java.security.Principal;
 
 @Slf4j
 @Controller

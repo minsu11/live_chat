@@ -1,7 +1,7 @@
-package com.chat_server.websocket.broadcaster.impl;
+package com.chat_server.websocket.broadcaster.chatmessage.impl;
 
 import com.chat_server.chatmessage.dto.response.ChatMessageResponse;
-import com.chat_server.websocket.broadcaster.ChatMessageBroadCaster;
+import com.chat_server.websocket.broadcaster.chatmessage.ChatMessageBroadCaster;
 import com.chat_server.websocket.properties.WebSocketProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
