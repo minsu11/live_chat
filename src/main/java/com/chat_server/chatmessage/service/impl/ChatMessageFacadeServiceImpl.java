@@ -75,6 +75,7 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
 
         updateRoomAndChatListOnSend(room, chatMessage);
         chatListService.increaseUnreadCount(roomId, userId);
+        chatListService.markSenderAsReadOnSend(roomId,userId,chatMessage.getId());
 
         // 채팅방 멤버 목록을 조회하여 사용자별(수신자별) payload를 생성/전송한다.
         List<Long> roomMemberUserIds = chatListService.getRoomMemberUserIds(roomId);

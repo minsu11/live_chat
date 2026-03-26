@@ -51,4 +51,47 @@ public interface ChatListService {
      * @return 커스텀 이름(Optional)
      */
     Optional<String> getCustomRoomName(Long roomId, Long userId);
-}
+
+    /**
+     * 채팅방 입장 시 최신 메시지 기준으로 읽음 상태를 반영한다.
+     *
+     * <p>처리 규칙:
+     * <ul>
+     *   <li>last_read_message_id는 더 작은 값으로 내려가지 않는다.</li>
+     *   <li>unread_count는 0으로 초기화한다.</li>
+     *   <li>last_opened_at을 현재 시각으로 갱신한다.</li>
+     * </ul>
+     *
+     * @param roomId 채팅방 ID
+     * @param userId 사용자 ID
+     * @param messageId 최신 메시지 ID
+     * @return 업데이트된 row 수
+     */
+    int markAsReadOnEnter(Long roomId, Long userId, Long messageId);
+
+    /**
+     * 메시지가 없는 채팅방 입장 시 unread_count만 0으로 초기화한다.
+     *
+     * @param roomId 채팅방 ID
+     * @param userId 사용자 ID
+     * @return 업데이트된 row 수
+     */
+    int clearUnreadCountOnEnter(Long roomId, Long userId);
+
+
+    /**
+     * 메시지 전송 시 발신자 본인의 chat_list를 읽은 상태로 맞춘다.
+     *
+     * <p>처리 규칙:
+     * <ul>
+     *   <li>last_read_message_id는 messageId보다 작을 때만 갱신한다.</li>
+     *   <li>unread_count는 0으로 맞춘다.</li>
+     *   <li>last_opened_at은 현재 시각으로 갱신한다.</li>
+     * </ul>
+     *
+     * @param roomId 채팅방 ID
+     * @param senderId 메시지 발신자 ID
+     * @param messageId 저장된 메시지 ID
+     * @return 업데이트된 row 수
+     */
+    int markSenderAsReadOnSend(Long roomId, Long senderId, Long messageId);}

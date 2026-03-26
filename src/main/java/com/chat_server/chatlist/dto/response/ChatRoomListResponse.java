@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 public record ChatRoomListResponse (
         Long roomId,
         String roomName,
+        Integer unreadCount,
         LocalDateTime lastMessageAt
 ){
 

@@ -7,6 +7,8 @@ import com.chat_server.common.cursor.ChatListCursorCodec;
 import com.chat_server.common.cursor.ChatListCursorKey;
 import com.chat_server.friend.dto.response.CursorPageResponse;
 import jakarta.annotation.Nullable;
+
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
@@ -94,14 +96,14 @@ public class ChatListServiceImpl implements ChatListService {
         log.debug("increaseUnreadCount 완료 - roomId: {}, senderId: {}", roomId, senderId);
     }
 
-    @Override
-    @Transactional(readOnly = true)
     /**
      * 채팅방 멤버 사용자 ID 목록을 조회한다.
      *
      * @param roomId 대상 채팅방 ID
      * @return 멤버 사용자 ID 리스트(없으면 빈 리스트)
      */
+    @Override
+    @Transactional(readOnly = true)
     public List<Long> getRoomMemberUserIds(Long roomId) {
         // 채팅방 브로드캐스트 대상 사용자 목록을 조회한다.
         log.info("getRoomMemberUserIds 호출");
@@ -115,5 +117,57 @@ public class ChatListServiceImpl implements ChatListService {
     @Transactional(readOnly = true)
     public Optional<String> getCustomRoomName(Long roomId, Long userId) {
         return chatListRepository.findCustomNameByUserIdAndRoomId(roomId, userId);
+    }
+
+    /**
+     * 채팅방 입장 시 last_read_message_id와 unread_count를 갱신한다.
+     *
+     * @param roomId 채팅방 ID
+     * @param userId 사용자 ID
+     * @param messageId 최신 메시지 ID
+     * @return 업데이트된 row 수
+     */
+    @Override
+    public int markAsReadOnEnter(Long roomId, Long userId, Long messageId) {
+        return chatListRepository.markAsReadOnEnter(
+                roomId,
+                userId,
+                messageId,
+                LocalDateTime.now()
+        );
+    }
+
+    /**
+     * 메시지가 없는 채팅방 입장 시 unread_count만 초기화한다.
+     *
+     * @param roomId 채팅방 ID
+     * @param userId 사용자 ID
+     * @return 업데이트된 row 수
+     */
+    @Override
+    public int clearUnreadCountOnEnter(Long roomId, Long userId) {
+        return chatListRepository.clearUnreadCountOnEnter(
+                roomId,
+                userId,
+                LocalDateTime.now()
+        );
+    }
+
+    /**
+     * 메시지 전송 시 발신자 본인의 chat_list를 읽은 상태로 맞춘다.
+     *
+     * @param roomId 채팅방 ID
+     * @param senderId 발신자 ID
+     * @param messageId 저장된 메시지 ID
+     * @return 업데이트된 row 수
+     */
+    @Override
+    public int markSenderAsReadOnSend(Long roomId, Long senderId, Long messageId) {
+        return chatListRepository.markSenderAsReadOnSend(
+                roomId,
+                senderId,
+                messageId,
+                LocalDateTime.now()
+        );
     }
 }

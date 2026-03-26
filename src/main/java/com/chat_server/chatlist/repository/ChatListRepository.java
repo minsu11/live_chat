@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -79,5 +80,94 @@ public interface ChatListRepository extends JpaRepository<ChatList, Long>,ChatLi
     Optional<String> findCustomNameByUserIdAndRoomId(
             @Param("roomId") Long roomId,
             @Param("userId") Long userId
+    );
+
+    /**
+     * 채팅방 입장 시 읽음 상태를 갱신한다.
+     *
+     * <p>규칙:
+     * <ul>
+     *   <li>last_read_message_id는 현재 값보다 큰 경우에만 갱신한다.</li>
+     *   <li>unread_count는 항상 0으로 만든다.</li>
+     *   <li>last_opened_at은 현재 시각으로 갱신한다.</li>
+     * </ul>
+     *
+     * @param roomId 채팅방 ID
+     * @param userId 사용자 ID
+     * @param messageId 최신 메시지 ID
+     * @param openedAt 입장 시각
+     * @return 업데이트된 row 수
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+        update ChatList cl
+           set cl.lastReadMessageId =
+                case
+                    when cl.lastReadMessageId is null then :messageId
+                    when cl.lastReadMessageId < :messageId then :messageId
+                    else cl.lastReadMessageId
+                end,
+               cl.unreadCount = 0,
+               cl.lastOpenedAt = :openedAt
+         where cl.chatRoom.id = :roomId
+           and cl.user.id = :userId
+    """)
+    int markAsReadOnEnter(
+            @Param("roomId") Long roomId,
+            @Param("userId") Long userId,
+            @Param("messageId") Long messageId,
+            @Param("openedAt") LocalDateTime openedAt
+    );
+
+    /**
+     * 메시지가 없는 채팅방 입장 시 unread_count만 0으로 초기화한다.
+     *
+     * @param roomId 채팅방 ID
+     * @param userId 사용자 ID
+     * @param openedAt 입장 시각
+     * @return 업데이트된 row 수
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+        update ChatList cl
+           set cl.unreadCount = 0,
+               cl.lastOpenedAt = :openedAt
+         where cl.chatRoom.id = :roomId
+           and cl.user.id = :userId
+    """)
+    int clearUnreadCountOnEnter(
+            @Param("roomId") Long roomId,
+            @Param("userId") Long userId,
+            @Param("openedAt") LocalDateTime openedAt
+    );
+
+    /**
+     * 메시지 전송 시 발신자 본인의 chat_list를 읽은 상태로 맞춘다.
+     *
+     * @param roomId 채팅방 ID
+     * @param senderId 발신자 ID
+     * @param messageId 저장된 메시지 ID
+     * @param openedAt 처리 시각
+     * @return 업데이트된 row 수
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+        update ChatList cl
+           set cl.lastReadMessageId =
+                case
+                    when cl.lastReadMessageId is null then :messageId
+                    when cl.lastReadMessageId < :messageId then :messageId
+                    else cl.lastReadMessageId
+                end,
+               cl.unreadCount = 0,
+               cl.lastOpenedAt = :openedAt
+         where cl.chatRoom.id = :roomId
+           and cl.user.id = :senderId
+    """)
+    int markSenderAsReadOnSend(
+            @Param("roomId") Long roomId,
+            @Param("senderId") Long senderId,
+            @Param("messageId") Long messageId,
+            @Param("openedAt") LocalDateTime openedAt
     );
 }

@@ -10,6 +10,7 @@ import com.chat_server.chatroom.dto.response.ChatRoomResult;
 import com.chat_server.chatroom.dto.response.ChatRoomSummaryResponse;
 import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.chatroom.enums.RoomType;
+import com.chat_server.chatroom.service.ChatReadService;
 import com.chat_server.chatroom.service.ChatRoomFacadeService;
 import com.chat_server.chatroom.service.ChatRoomQueryService;
 import com.chat_server.chatroom.service.ChatRoomService;
@@ -40,6 +41,7 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
     private final ChatRoomQueryService chatRoomQueryService;
     private final UserService userService;
     private final UserDisplayNameService userDisplayNameService;
+    private final ChatReadService chatReadService;
 
     /**
      * 채팅방 summary 정보를 조회한다.
@@ -97,15 +99,19 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
      * </ul>
      */
     @Override
-    @Transactional(readOnly = true)
     public ChatRoomEnterResponse enterChatRoom(Long roomId, Long userId, String cursor, int limit) {
         chatRoomQueryService.validateMemberOrThrow(roomId, userId);
-
+        boolean isInitialEnter = (cursor == null || cursor.isBlank());
         int safeLimit = Math.min(Math.max(limit, 1), 100);
         ChatMessageCursorKey decoded = ChatMessageCursorCodec.decode(cursor);
 
         var room = chatRoomQueryService.getRoomOrThrow(roomId);
         var slice = chatMessageService.getEnterMessagesByCursor(roomId, safeLimit, decoded);
+
+        // 읽음 처리
+        if (isInitialEnter) {
+            chatReadService.markAsReadOnEnter(roomId, userId, room.getLastMessageId());
+        }
 
         Map<Long, String> displayNameCache = new HashMap<>();
 
