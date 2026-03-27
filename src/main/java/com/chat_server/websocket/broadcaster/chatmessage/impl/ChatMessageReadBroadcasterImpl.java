@@ -22,7 +22,10 @@ public class ChatMessageReadBroadcasterImpl implements ChatMessageReadBroadcaste
             + webSocketProperties.getChat().getRoomPath()
             + "/" + roomId
             + "/read";
-
-        messagingTemplate.convertAndSend(destination, event);
+        log.info("Read room broadcast: {}", destination);
+        messagingTemplate.convertAndSendToUser(
+                String.valueOf(event.readerUserId()),
+                destination,
+                event);
     }
 }

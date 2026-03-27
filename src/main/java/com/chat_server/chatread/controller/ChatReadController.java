@@ -17,7 +17,7 @@ public class ChatReadController {
     private final ChatReadFacadeService chatReadFacadeService;
 
 
-    @MessageMapping("/pub/chat/read")
+    @MessageMapping("/chat/read")
     public void read(Authentication authentication,
         @RequestParam  ChatReadRequest request
         ){

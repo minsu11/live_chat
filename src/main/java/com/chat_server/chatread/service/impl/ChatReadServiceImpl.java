@@ -49,4 +49,30 @@ public class ChatReadServiceImpl implements ChatReadService {
 
         return new ChatReadUpdatedEvent(roomId, userId, messageId);
     }
+
+    /**
+     * 채팅방 입장 시 unread_count를 0으로 만들고,
+     * 최신 메시지가 있으면 last_read_message_id를 해당 값까지 올린다.
+     *
+     * @param roomId 채팅방 ID
+     * @param userId 사용자 ID
+     * @param latestMessageId 최신 메시지 ID. null이면 메시지가 없는 방으로 간주한다.
+     */
+    @Override
+    public void markAsReadOnEnter(Long roomId, Long userId, Long latestMessageId) {
+        int updatedRows;
+
+        if(latestMessageId == null){
+            updatedRows = chatListService.clearUnreadCountOnEnter(roomId, userId);
+        }else{
+            updatedRows = chatListService.markAsReadOnEnter(roomId, userId, latestMessageId);
+        }
+
+        if (updatedRows == 0) {
+            throw new IllegalStateException(
+                    "chat_list 멤버십이 없어 입장 읽음 처리를 할 수 없습니다. roomId="
+                            + roomId + ", userId=" + userId
+            );
+        }
+    }
 }

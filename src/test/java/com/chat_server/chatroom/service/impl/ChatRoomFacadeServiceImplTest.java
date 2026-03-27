@@ -43,6 +43,7 @@ class ChatRoomFacadeServiceImplTest {
     private ChatRoomQueryService chatRoomQueryService;
     private UserService userService;
     private UserDisplayNameService userDisplayNameService;
+    private ChatReadService chatReadService;
 
     private ChatRoomFacadeServiceImpl target;
 
@@ -55,6 +56,7 @@ class ChatRoomFacadeServiceImplTest {
         chatRoomQueryService = mock(ChatRoomQueryService.class);
         userService = mock(UserService.class);
         userDisplayNameService = mock(UserDisplayNameService.class);
+        chatReadService = mock(ChatReadService.class);
 
         target = new ChatRoomFacadeServiceImpl(
                 chatRoomService,
@@ -63,7 +65,8 @@ class ChatRoomFacadeServiceImplTest {
                 chatMessageService,
                 chatRoomQueryService,
                 userService,
-                userDisplayNameService
+                userDisplayNameService,
+                chatReadService
         );
 
         when(chatListService.getCustomRoomName(Mockito.anyLong(), Mockito.anyLong())).thenReturn(Optional.empty());
