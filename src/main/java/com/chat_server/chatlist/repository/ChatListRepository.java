@@ -192,4 +192,35 @@ public interface ChatListRepository extends JpaRepository<ChatList, Long>,ChatLi
             @Param("roomId") Long roomId,
             @Param("userIds") List<Long> userIds
     );
+
+    /**
+     * 실시간 읽음 처리 시 last_read_message_id와 unread_count를 갱신한다.
+     *
+     * @param roomId 채팅방 ID
+     * @param userId 사용자 ID
+     * @param messageId 읽은 메시지 ID
+     * @param openedAt 처리 시각
+     * @return 업데이트된 row 수
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+    update ChatList cl
+       set cl.lastReadMessageId =
+            case
+                when cl.lastReadMessageId is null then :messageId
+                when cl.lastReadMessageId < :messageId then :messageId
+                else cl.lastReadMessageId
+            end,
+           cl.unreadCount = 0,
+           cl.lastOpenedAt = :openedAt
+     where cl.chatRoom.id = :roomId
+       and cl.user.id = :userId
+""")
+    int markAsRead(
+        @Param("roomId") Long roomId,
+        @Param("userId") Long userId,
+        @Param("messageId") Long messageId,
+        @Param("openedAt") LocalDateTime openedAt
+    );
+
 }

@@ -172,6 +172,16 @@ public class ChatListServiceImpl implements ChatListService {
                 LocalDateTime.now()
         );
     }
+    @Override
+    public int markAsRead(Long roomId, Long userId, Long messageId) {
+        log.debug("markAsRead start");
+        return chatListRepository.markAsRead(
+            roomId,
+            userId,
+            messageId,
+            LocalDateTime.now()
+        );
+    }
 
     /**
      * 특정 채팅방에서 여러 사용자의 unread count를 조회한다.

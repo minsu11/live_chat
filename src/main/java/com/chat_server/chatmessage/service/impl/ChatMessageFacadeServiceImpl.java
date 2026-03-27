@@ -46,7 +46,6 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
     private final ChatRoomSummaryBroadcaster chatRoomSummaryBroadcaster;
     private final ChatRoomSummaryEventMapper chatRoomSummaryEventMapper;
 
-    @Override
     /**
      * 메시지 전송 전체 플로우를 오케스트레이션한다.
      *
@@ -62,6 +61,7 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
      * @param userId 발신자 사용자 ID
      * @throws RuntimeException 채팅방/멤버 미존재, 권한 오류, 차단 관계 등 도메인 예외 발생 가능
      */
+    @Override
     public void sendMessage(ChatSendRequest request, Long userId) {
         // 메서드 시작 로그는 간단하게 info로 남긴다.
         log.info("sendMessage 호출");

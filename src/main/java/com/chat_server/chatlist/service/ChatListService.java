@@ -98,6 +98,16 @@ public interface ChatListService {
     int markSenderAsReadOnSend(Long roomId, Long senderId, Long messageId);
 
     /**
+     * 실시간 읽음 처리 시 last_read_message_id와 unread_count를 갱신한다.
+     *
+     * @param roomId 채팅방 ID
+     * @param userId 사용자 ID
+     * @param messageId 읽은 메시지 ID
+     * @return 업데이트된 row 수
+     */
+    int markAsRead(Long roomId, Long userId, Long messageId);
+
+    /**
      * 특정 채팅방에서 여러 사용자의 unread count를 조회한다.
      *
      * @param roomId 채팅방 ID
