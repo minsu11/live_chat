@@ -5,6 +5,8 @@ import com.chat_server.chatread.dto.event.ChatReadUpdatedEvent;
 import com.chat_server.chatread.dto.request.ChatReadRequest;
 import com.chat_server.chatread.service.ChatReadService;
 import com.chat_server.chatroom.service.ChatRoomQueryService;
+import com.chat_server.user.exception.UserNotFoundException;
+import com.chat_server.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ChatReadServiceImpl implements ChatReadService {
     private final ChatRoomQueryService chatRoomQueryService;
     private final ChatListService chatListService;
+    private final UserRepository userRepository;
 
     /**
      * 실시간 읽음 요청을 처리한다.
@@ -28,16 +31,12 @@ public class ChatReadServiceImpl implements ChatReadService {
      *   <li>chat_list.unread_count를 0으로 만든다.</li>
      * </ol>
      *
-     * @param request 읽음 요청 DTO
+     * @param roomId 요청 방 ID
      * @param userId 요청 사용자 ID
-     * @return 읽음 갱신 이벤트 DTO
+     * @param messageId 요청 메세지 아이디
      */
     @Override
-    public ChatReadUpdatedEvent read(ChatReadRequest request, Long userId) {
-        Long roomId = request.roomId();
-        Long messageId = request.messageId();
-
-        chatRoomQueryService.validateMemberOrThrow(roomId, userId);
+    public void markAsRead(Long roomId, Long userId, Long messageId) {
 
         int updatedRows = chatListService.markAsRead(roomId, userId, messageId);
         if (updatedRows == 0) {
@@ -47,7 +46,6 @@ public class ChatReadServiceImpl implements ChatReadService {
             );
         }
 
-        return new ChatReadUpdatedEvent(roomId, userId, messageId);
     }
 
     /**

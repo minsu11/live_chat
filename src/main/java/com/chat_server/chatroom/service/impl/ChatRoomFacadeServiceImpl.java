@@ -5,6 +5,7 @@ import com.chat_server.chatmessage.dto.response.ChatMessageItemResponse;
 import com.chat_server.chatmessage.dto.response.ChatMessageResponse;
 import com.chat_server.chatmessage.dto.response.ChatMessageSenderResponse;
 import com.chat_server.chatmessage.service.ChatMessageService;
+import com.chat_server.chatread.service.ChatReadFacadeService;
 import com.chat_server.chatread.service.ChatReadService;
 import com.chat_server.chatroom.dto.response.ChatRoomEnterResponse;
 import com.chat_server.chatroom.dto.response.ChatRoomResult;
@@ -39,7 +40,7 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
     private final ChatRoomQueryService chatRoomQueryService;
     private final UserService userService;
     private final UserDisplayNameService userDisplayNameService;
-    private final ChatReadService chatReadService;
+    private final ChatReadFacadeService chatReadFacadeService;
 
     /**
      * 채팅방 summary 정보를 조회한다.
@@ -108,7 +109,7 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
 
         // 읽음 처리
         if (isInitialEnter) {
-            chatReadService.markAsReadOnEnter(roomId, userId, room.getLastMessageId());
+            chatReadFacadeService.markAsReadOnEnter(roomId, userId, room.getLastMessageId());
         }
 
         Map<Long, String> displayNameCache = new HashMap<>();
