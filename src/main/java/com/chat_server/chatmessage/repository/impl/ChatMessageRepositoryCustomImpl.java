@@ -1,5 +1,6 @@
 package com.chat_server.chatmessage.repository.impl;
 
+import com.chat_server.chatlist.entity.QChatList;
 import com.chat_server.chatmessage.dto.response.ChatMessageItemResponse;
 import com.chat_server.chatmessage.entity.QChatMessage;
 import com.chat_server.chatmessage.repository.ChatMessageRepositoryCustom;
@@ -8,10 +9,14 @@ import com.chat_server.userprofile.enrtity.QUserProfile;
 import com.chat_server.userprofileImage.entity.QUserProfileImage;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.NumberExpression;
+import com.querydsl.jpa.JPAExpressions;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+
+import com.querydsl.jpa.JPQLQuery;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
@@ -22,31 +27,16 @@ public class ChatMessageRepositoryCustomImpl extends QuerydslRepositorySupport i
 
     private final QChatMessage qChatMessage = QChatMessage.chatMessage;
 
-    /**
-     * Querydsl 기반 커스텀 레포지토리 생성자.
-     */
     public ChatMessageRepositoryCustomImpl() {
         super(QChatMessage.class);
     }
 
-    /**
-     * 채팅방 진입용 메시지를 커서 기반으로 조회한다.
-     *
-     * @param roomId 채팅방 ID
-     * @param limit 페이지 크기
-     * @param cursorKey 커서 키(없으면 첫 페이지)
-     * @return 메시지 Slice (hasNext 포함)
-     *
-     * <p>동작 방식:
-     * <ul>
-     *   <li>삭제되지 않은 메시지만 조회</li>
-     *   <li>정렬: createdAt DESC, id DESC</li>
-     *   <li>limit+1 조회 후 hasNext 계산</li>
-     * </ul>
-     */
     @Override
-    public Slice<ChatMessageItemResponse> getEnterMessagesByCursor(Long roomId, int limit,
-                                                                   @Nullable ChatMessageCursorKey cursorKey) {
+    public Slice<ChatMessageItemResponse> getEnterMessagesByCursor(
+            Long roomId,
+            int limit,
+            @Nullable ChatMessageCursorKey cursorKey
+    ) {
         BooleanBuilder where = new BooleanBuilder()
                 .and(qChatMessage.chatRoom.id.eq(roomId))
                 .and(qChatMessage.deleted.isFalse());
@@ -62,13 +52,29 @@ public class ChatMessageRepositoryCustomImpl extends QuerydslRepositorySupport i
                                     .and(qChatMessage.id.lt(cursorKey.lastMessageId())))
             );
         }
+
         QUserProfile qUserProfile = QUserProfile.userProfile;
         QUserProfileImage qUserProfileImage = QUserProfileImage.userProfileImage;
+        QChatList qChatList = QChatList.chatList;
+
+        JPQLQuery<Integer> unreadCountExpr =
+                JPAExpressions
+                        .select(qChatList.count().intValue())
+                        .from(qChatList)
+                        .where(
+                                qChatList.chatRoom.id.eq(qChatMessage.chatRoom.id),
+                                qChatList.user.id.ne(qChatMessage.sender.id),
+                                qChatList.lastReadMessageId.isNull()
+                                        .or(qChatList.lastReadMessageId.lt(qChatMessage.id))
+                        );
+
         List<ChatMessageItemResponse> rows = from(qChatMessage)
                 .join(qChatMessage.sender)
                 .leftJoin(qUserProfile).on(qUserProfile.user.id.eq(qChatMessage.sender.id))
-                .leftJoin(qUserProfileImage).on(qUserProfileImage.userProfile.id.eq(qUserProfile.id)
-                        .and(qUserProfileImage.current.isTrue()))
+                .leftJoin(qUserProfileImage).on(
+                        qUserProfileImage.userProfile.id.eq(qUserProfile.id)
+                                .and(qUserProfileImage.current.isTrue())
+                )
                 .where(where)
                 .orderBy(qChatMessage.createdAt.desc(), qChatMessage.id.desc())
                 .limit(limit + 1)
@@ -81,7 +87,8 @@ public class ChatMessageRepositoryCustomImpl extends QuerydslRepositorySupport i
                         qUserProfileImage.imageUrl,
                         qChatMessage.messageType.stringValue(),
                         qChatMessage.messageContent,
-                        qChatMessage.createdAt
+                        qChatMessage.createdAt,
+                        unreadCountExpr
                 ))
                 .fetch();
 

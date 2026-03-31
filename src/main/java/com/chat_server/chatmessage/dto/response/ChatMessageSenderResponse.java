@@ -11,7 +11,6 @@ package com.chat_server.chatmessage.dto.response;
 public record ChatMessageSenderResponse(
         String senderUuid,
         String senderNickname,
-        String profileImageUrl,
-        boolean mine
+        String profileImageUrl
 ) {
 }

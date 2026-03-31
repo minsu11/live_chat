@@ -10,7 +10,8 @@ public record ChatMessageItemResponse(
         String profileImageUrl,
         String messageType,
         String content,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        int unreadCount
 ) {
 
 }

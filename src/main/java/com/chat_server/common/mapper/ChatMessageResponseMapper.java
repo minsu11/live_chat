@@ -12,7 +12,8 @@ public class ChatMessageResponseMapper {
     public ChatMessageResponse fromItem(
             ChatMessageItemResponse item,
             Long roomId,
-            Long viewerUserId
+            Long viewerUserId,
+            int unread
     ) {
         return new ChatMessageResponse(
                 item.messageId(),
@@ -21,11 +22,12 @@ public class ChatMessageResponseMapper {
                 new ChatMessageSenderResponse(
                         item.senderUuid(),
                         item.senderNickname(),
-                        item.profileImageUrl(),
-                        item.senderId().equals(viewerUserId)
+                        item.profileImageUrl()
                 ),
                 item.content(),
-                item.createdAt()
+                item.createdAt(),
+                item.senderId().equals(viewerUserId),
+                unread
         );
     }
 
@@ -39,7 +41,8 @@ public class ChatMessageResponseMapper {
             String profileImageUrl,
             String content,
             LocalDateTime createdAt,
-            Long viewerUserId
+            Long viewerUserId,
+            int unread
     ) {
         return new ChatMessageResponse(
                 messageId,
@@ -48,11 +51,12 @@ public class ChatMessageResponseMapper {
                 new ChatMessageSenderResponse(
                         senderUuid,
                         senderNickname,
-                        profileImageUrl,
-                        senderId.equals(viewerUserId)
+                        profileImageUrl
                 ),
                 content,
-                createdAt
+                createdAt,
+                senderId.equals(viewerUserId),
+                unread
         );
     }
 

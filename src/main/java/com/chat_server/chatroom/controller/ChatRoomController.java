@@ -104,4 +104,19 @@ public class ChatRoomController {
     public ResponseEntity<ApiResponse<Void>> removeChatRoom(){
         return null;
     }
+
+    @GetMapping("/{roomId}/messages")
+    public ResponseEntity<ApiResponse<ChatRoomEnterResponse>> getChatRoomMessages(
+            @PathVariable Long roomId,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "50") int limit,
+            @AuthenticationPrincipal AuthenticatedUser user
+    ) {
+        log.info("chat room enter");
+
+        ChatRoomEnterResponse response =
+                chatRoomFacadeService.getChatRoomMessages(roomId, user.userId(), cursor, limit);
+        ApiResponse<ChatRoomEnterResponse> apiResponse = ApiResponse.success(200,"대화 메세지 업데이트",response);
+        return ResponseEntity.ok(apiResponse);
+    }
 }

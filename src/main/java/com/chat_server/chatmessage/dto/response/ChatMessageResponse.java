@@ -17,7 +17,10 @@ public record ChatMessageResponse(
     String messageType,
     ChatMessageSenderResponse sender,
     String content,
-    LocalDateTime createdAt
+    LocalDateTime createdAt,
+    boolean mine,
+    Integer unreadCount
+
 ) {
 
 }

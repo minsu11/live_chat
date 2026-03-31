@@ -231,6 +231,46 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
         return chatRoomResult;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public ChatRoomEnterResponse getChatRoomMessages(Long roomId, Long userId, String cursor, int limit) {
+        chatRoomQueryService.validateMemberOrThrow(roomId, userId);
+
+        int safeLimit = Math.min(Math.max(limit, 1), 100);
+        ChatMessageCursorKey decoded = ChatMessageCursorCodec.decode(cursor);
+
+        var room = chatRoomQueryService.getRoomOrThrow(roomId);
+        var slice = chatMessageService.getEnterMessagesByCursor(roomId, safeLimit, decoded);
+
+        Map<Long, String> displayNameCache = new HashMap<>();
+
+        List<ChatMessageResponse> messages = slice.getContent().stream()
+                .map(item -> toChatMessageResponse(item, roomId, userId, displayNameCache))
+                .sorted((a, b) -> a.createdAt().equals(b.createdAt())
+                        ? Long.compare(a.messageId(), b.messageId())
+                        : a.createdAt().compareTo(b.createdAt()))
+                .toList();
+
+        String nextCursor = null;
+        if (slice.hasNext() && !slice.getContent().isEmpty()) {
+            ChatMessageItemResponse last = slice.getContent().get(slice.getContent().size() - 1);
+            long lastAtEpochMillis = last.createdAt()
+                    .atOffset(ZoneOffset.UTC)
+                    .toInstant()
+                    .toEpochMilli();
+            nextCursor = ChatMessageCursorCodec.encode(lastAtEpochMillis, last.messageId());
+        }
+
+        String title = resolveEnterTitle(roomId, userId, room);
+
+        return new ChatRoomEnterResponse(
+                room.getId(),
+                room.getRoomType().name(),
+                title,
+                messages,
+                nextCursor
+        );
+    }
     /**
      * 채팅방 진입 조회용 메시지 DTO를 프론트 공통 메시지 응답 DTO로 변환한다.
      *
@@ -269,11 +309,12 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
                 new ChatMessageSenderResponse(
                         item.senderUuid(),
                         displayNickname,
-                        item.profileImageUrl(),
-                        item.senderId().equals(viewerUserId)
+                        item.profileImageUrl()
                 ),
                 item.content(),
-                item.createdAt()
+                item.createdAt(),
+                item.senderId().equals(viewerUserId),
+                item.unreadCount()
         );
     }
 }

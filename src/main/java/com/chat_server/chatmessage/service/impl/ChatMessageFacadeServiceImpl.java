@@ -86,8 +86,9 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         List<Long> roomMemberUserIds = chatListService.getRoomMemberUserIds(roomId);
         log.debug("sendMessage roomMemberUserIds: {}", roomMemberUserIds);
         Map<Long, Integer> unreadCountMap = chatListService.getUnreadCountMap(roomId, roomMemberUserIds);
+        int messageUnreadCount = Math.max(roomMemberUserIds.size() - 1, 0);
         for (Long receiverUserId : roomMemberUserIds) {
-            ChatMessageResponse response = createResponseForReceiver(chatMessage, roomId, userId, receiverUserId, memberProfileUrl);
+            ChatMessageResponse response = createResponseForReceiver(chatMessage, roomId, userId, receiverUserId, memberProfileUrl,messageUnreadCount);
             chatMessageBroadCaster.broadcastMessage(receiverUserId, response);
             int unreadCount = unreadCountMap.getOrDefault(receiverUserId, 0);
 
@@ -160,7 +161,8 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
             Long roomId,
             Long senderId,
             Long receiverUserId,
-            String profileImageUrl
+            String profileImageUrl,
+            int unreadCount
     ) {
         log.info("createResponseForReceiver 호출");
         log.debug("createResponseForReceiver params - chatMessageId: {}, roomId: {}, senderId: {}, receiverUserId: {}",
@@ -178,10 +180,11 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
                 senderId,
                 chatMessage.getSender().getUuid(),
                 displayNickname,
-                profileImageUrl, // 여기 나중에 profileImageUrl 연결
+                profileImageUrl,
                 chatMessage.getMessageContent(),
                 chatMessage.getCreatedAt(),
-                receiverUserId
+                receiverUserId,
+                unreadCount
         );
         log.debug("createResponseForReceiver return - response: {}", response);
         return response;
