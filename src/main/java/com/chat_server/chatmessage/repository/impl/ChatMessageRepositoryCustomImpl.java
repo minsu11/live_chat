@@ -4,6 +4,7 @@ import com.chat_server.chatlist.entity.QChatList;
 import com.chat_server.chatmessage.dto.response.ChatMessageItemResponse;
 import com.chat_server.chatmessage.entity.QChatMessage;
 import com.chat_server.chatmessage.repository.ChatMessageRepositoryCustom;
+import com.chat_server.chatread.dto.event.UpdatedMessageUnreadCount;
 import com.chat_server.common.cursor.ChatMessageCursorKey;
 import com.chat_server.userprofile.enrtity.QUserProfile;
 import com.chat_server.userprofileImage.entity.QUserProfileImage;
@@ -26,6 +27,10 @@ import org.springframework.lang.Nullable;
 public class ChatMessageRepositoryCustomImpl extends QuerydslRepositorySupport implements ChatMessageRepositoryCustom {
 
     private final QChatMessage qChatMessage = QChatMessage.chatMessage;
+    private final QUserProfile qUserProfile = QUserProfile.userProfile;
+    private final QChatList qChatList = QChatList.chatList;
+    private final QUserProfileImage qUserProfileImage = QUserProfileImage.userProfileImage;
+
 
     public ChatMessageRepositoryCustomImpl() {
         super(QChatMessage.class);
@@ -52,10 +57,6 @@ public class ChatMessageRepositoryCustomImpl extends QuerydslRepositorySupport i
                                     .and(qChatMessage.id.lt(cursorKey.lastMessageId())))
             );
         }
-
-        QUserProfile qUserProfile = QUserProfile.userProfile;
-        QUserProfileImage qUserProfileImage = QUserProfileImage.userProfileImage;
-        QChatList qChatList = QChatList.chatList;
 
         JPQLQuery<Integer> unreadCountExpr =
                 JPAExpressions
@@ -98,5 +99,33 @@ public class ChatMessageRepositoryCustomImpl extends QuerydslRepositorySupport i
         }
 
         return new SliceImpl<>(rows, PageRequest.of(0, limit), hasNext);
+    }
+
+    @Override
+    public List<UpdatedMessageUnreadCount> findUpdatedUnreadCounts(Long roomId, Long lastReadMessageId) {
+        JPQLQuery<Integer> unreadCountExpr =
+                JPAExpressions
+                        .select(qChatList.count().intValue())
+                        .from(qChatList)
+                        .where(
+                                qChatList.chatRoom.id.eq(qChatMessage.chatRoom.id),
+                                qChatList.user.id.ne(qChatMessage.sender.id),
+                                qChatList.lastReadMessageId.isNull()
+                                        .or(qChatList.lastReadMessageId.lt(qChatMessage.id))
+                        );
+
+        return from(qChatMessage)
+                .where(
+                        qChatMessage.chatRoom.id.eq(roomId),
+                        qChatMessage.deleted.isFalse(),
+                        qChatMessage.id.loe(lastReadMessageId)
+                )
+                .orderBy(qChatMessage.id.asc())
+                .select(Projections.constructor(
+                        UpdatedMessageUnreadCount.class,
+                        qChatMessage.id,
+                        unreadCountExpr
+                ))
+                .fetch();
     }
 }

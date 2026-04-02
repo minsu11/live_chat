@@ -1,7 +1,9 @@
 package com.chat_server.chatread.service.impl;
 
 import com.chat_server.chatlist.service.ChatListService;
+import com.chat_server.chatmessage.service.ChatMessageService;
 import com.chat_server.chatread.dto.event.ChatReadUpdatedEvent;
+import com.chat_server.chatread.dto.event.UpdatedMessageUnreadCount;
 import com.chat_server.chatread.dto.request.ChatReadRequest;
 import com.chat_server.chatread.service.ChatReadFacadeService;
 import com.chat_server.chatread.service.ChatReadService;
@@ -13,6 +15,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Slf4j
 @Service
 @Transactional
@@ -23,6 +27,7 @@ public class ChatReadFacadeServiceImpl implements ChatReadFacadeService {
     private final ChatListService chatListService;
     private final ChatMessageReadBroadcaster chatMessageReadBroadcaster;
     private final UserService userService;
+    private final ChatMessageService chatMessageService;
 
     @Override
     public void read(ChatReadRequest request, Long userId) {
@@ -33,11 +38,13 @@ public class ChatReadFacadeServiceImpl implements ChatReadFacadeService {
         chatReadService.markAsRead(roomId, userId, messageId);
 
         String readerUserUuid = userService.getUuidByUserId(userId);
-
+        List<UpdatedMessageUnreadCount> updatedMessageUnreadCounts =
+                chatMessageService.findUpdatedUnreadCounts(roomId, messageId);
         ChatReadUpdatedEvent event = new ChatReadUpdatedEvent(
                 roomId,
                 readerUserUuid,
-                messageId
+                messageId,
+                updatedMessageUnreadCounts
         );
 
         chatMessageReadBroadcaster.readRoomBroadcast(roomId, event);
@@ -54,10 +61,13 @@ public class ChatReadFacadeServiceImpl implements ChatReadFacadeService {
 
         String readerUserUuid = userService.getUuidByUserId(userId);
 
+        List<UpdatedMessageUnreadCount> updatedMessageUnreadCounts =
+                chatMessageService.findUpdatedUnreadCounts(roomId, latestMessageId);
         ChatReadUpdatedEvent event = new ChatReadUpdatedEvent(
                 roomId,
                 readerUserUuid,
-                latestMessageId
+                latestMessageId,
+                updatedMessageUnreadCounts
         );
 
         chatMessageReadBroadcaster.readRoomBroadcast(roomId, event);

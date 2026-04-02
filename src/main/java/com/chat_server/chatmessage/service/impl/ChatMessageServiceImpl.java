@@ -4,6 +4,7 @@ import com.chat_server.chatmessage.dto.response.ChatMessageItemResponse;
 import com.chat_server.chatmessage.entity.ChatMessage;
 import com.chat_server.chatmessage.repository.ChatMessageRepository;
 import com.chat_server.chatmessage.service.ChatMessageService;
+import com.chat_server.chatread.dto.event.UpdatedMessageUnreadCount;
 import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.common.cursor.ChatMessageCursorKey;
 import com.chat_server.user.entity.User;
@@ -15,6 +16,8 @@ import org.springframework.data.domain.Slice;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Slf4j
 @Service
@@ -37,6 +40,11 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     public Slice<ChatMessageItemResponse> getEnterMessagesByCursor(Long roomId, int limit,
                                                                    @Nullable ChatMessageCursorKey cursorKey) {
         return chatMessageRepository.getEnterMessagesByCursor(roomId, limit, cursorKey);
+    }
+    @Override
+    @Transactional(readOnly = true)
+    public List<UpdatedMessageUnreadCount> findUpdatedUnreadCounts(Long roomId, Long lastReadMessageId) {
+        return chatMessageRepository.findUpdatedUnreadCounts(roomId, lastReadMessageId);
     }
 
     /**

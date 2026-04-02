@@ -28,14 +28,14 @@ auth:
 logging:
   level:
     com.chat_server: debug
-    org.springframework.security: debug
+    org.springframework.security: info
     org.hibernate.SQL: debug
     io.netty: info
     reactor.netty: info
     org.apache.http: info
-    org.springframework.messaging: TRACE
-    org.springframework.web.socket.messaging: TRACE
-    org.springframework.messaging.simp.annotation.support.SimpAnnotationMethodMessageHandler: TRACE
-    org.springframework.messaging.handler.annotation.support: TRACE
-    org.springframework.messaging.converter: TRACE
-    org.springframework.messaging.support.ExecutorSubscribableChannel: TRACE
+    org.springframework.messaging: debug
+    org.springframework.web.socket.messaging: debug
+    org.springframework.messaging.simp.annotation.support.SimpAnnotationMethodMessageHandler: debug
+    org.springframework.messaging.handler.annotation.support: debug
+    org.springframework.messaging.converter: debug
+    org.springframework.messaging.support.ExecutorSubscribableChannel: debug

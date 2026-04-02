@@ -88,7 +88,13 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         Map<Long, Integer> unreadCountMap = chatListService.getUnreadCountMap(roomId, roomMemberUserIds);
         int messageUnreadCount = Math.max(roomMemberUserIds.size() - 1, 0);
         for (Long receiverUserId : roomMemberUserIds) {
-            ChatMessageResponse response = createResponseForReceiver(chatMessage, roomId, userId, receiverUserId, memberProfileUrl,messageUnreadCount);
+            ChatMessageResponse response = createResponseForReceiver(
+                    chatMessage,
+                    roomId,
+                    userId,
+                    receiverUserId,
+                    memberProfileUrl,
+                    messageUnreadCount);
             chatMessageBroadCaster.broadcastMessage(receiverUserId, response);
             int unreadCount = unreadCountMap.getOrDefault(receiverUserId, 0);
 
