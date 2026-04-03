@@ -1,7 +1,7 @@
-package com.chat_server.websocket.broadcaster.impl;
+package com.chat_server.websocket.broadcaster.chatmessage.impl;
 
 import com.chat_server.chatmessage.dto.response.ChatMessageResponse;
-import com.chat_server.websocket.broadcaster.ChatMessageBroadCaster;
+import com.chat_server.websocket.broadcaster.chatmessage.ChatMessageBroadCaster;
 import com.chat_server.websocket.properties.WebSocketProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +16,6 @@ public class ChatMessageBroadCasterImpl implements ChatMessageBroadCaster {
     private final WebSocketProperties webSocketProperties;
 
 
-    @Override
     /**
      * 수신자 사용자 전용 큐로 채팅 메시지를 전송한다.
      *
@@ -26,6 +25,7 @@ public class ChatMessageBroadCasterImpl implements ChatMessageBroadCaster {
      * @param receiverUserId 수신자 사용자 ID
      * @param response 전송할 메시지 응답 DTO
      */
+    @Override
     public void broadcastMessage(Long receiverUserId, ChatMessageResponse response) {
         // 사용자별 display nickname/mine 값을 반영하기 위해 사용자 전용 큐로 전송한다.
         log.info("broadcastMessage 호출");
@@ -33,16 +33,18 @@ public class ChatMessageBroadCasterImpl implements ChatMessageBroadCaster {
         String userDestination = webSocketProperties.getSubPrefix()
                 + webSocketProperties.getChat().getRoomPath()
                 + "/" + response.roomId();
+        log.debug("userDestination: {}", userDestination);
+
         messagingTemplate.convertAndSendToUser(String.valueOf(receiverUserId), userDestination, response);
         log.debug("broadcastMessage 완료 - userDestination: {}", userDestination);
     }
 
-    @Override
     /**
      * 룸 구독 경로로 브로드캐스트를 릴레이한다.
      *
      * @param response 릴레이할 메시지 응답 DTO
      */
+    @Override
     public void relayRoomBroadcast(ChatMessageResponse response) {
         // 프론트/외부에서 전달된 브로드캐스트 요청을 채팅방 구독 경로로 릴레이한다.
         log.info("relayRoomBroadcast 호출");
@@ -50,7 +52,10 @@ public class ChatMessageBroadCasterImpl implements ChatMessageBroadCaster {
         String roomDestination = webSocketProperties.getSubPrefix()
                 + webSocketProperties.getChat().getRoomPath()
                 + "/" + response.roomId();
+
         messagingTemplate.convertAndSend(roomDestination, response);
         log.debug("relayRoomBroadcast 완료 - roomDestination: {}", roomDestination);
     }
+
+
 }

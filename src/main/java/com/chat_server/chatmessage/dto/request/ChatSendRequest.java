@@ -1,6 +1,8 @@
 package com.chat_server.chatmessage.dto.request;
 
-public record ChatSendRequest (Long roomId,
+import jakarta.validation.constraints.NotBlank;
+
+public record ChatSendRequest (@NotBlank Long roomId,
                                String messageType,
-                               String text){
+                               @NotBlank String messageContent){
 }

@@ -34,4 +34,7 @@ public interface ChatRoomFacadeService {
      * @return 채팅방 결과(방 ID/신규생성 여부)
      */
     ChatRoomResult getOrCreateOneToOneChatRoom(Long userId, String friendUuid);
+
+    ChatRoomEnterResponse getChatRoomMessages(Long roomId, Long userId, String cursor, int limit);
+
 }

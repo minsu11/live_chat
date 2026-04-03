@@ -108,6 +108,7 @@ public class ChatListRepositoryCustomImpl extends QuerydslRepositorySupport
                         qChatRoom.id,
                         displayName,
                         qChatRoom.lastMessageAt,
+                        qChatList.unreadCount,
                         orderAt
                 ))
                 .fetch();
@@ -121,6 +122,7 @@ public class ChatListRepositoryCustomImpl extends QuerydslRepositorySupport
                 .map(r -> new ChatRoomListResponse(
                         r.roomId(),
                         r.displayName(),
+                        r.unreadCount(),
                         r.lastMessageAt()
                 ))
                 .toList();

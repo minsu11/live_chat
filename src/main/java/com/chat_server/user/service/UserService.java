@@ -22,12 +22,10 @@ public interface UserService {
 
     String createUSer(UserRegisterRequest registerRequest);
 
-    UserPrincipal loadUserByUserId(String userId);
-
     void updateNickname(Long userId, String name);
 
 
     Long getUserIdByUserUuid(String userUuid);
 
-    User getUserByUserId(Long userId);
+    String getUuidByUserId(Long userId);
 }

@@ -75,15 +75,6 @@ public class UserServiceImpl implements UserService {
         return userUuid;
     }
 
-    @Override
-    public UserPrincipal loadUserByUserId(String userId) {
-        log.debug("User Service loadUserByUserId start");
-        UserAuthenticationResponse response = userRepository.getUserByUserId(userId)
-                .orElseThrow(UserNotFoundException::new);
-
-        return new UserPrincipal(userId, UserType.USER, response.userStatus());
-
-    }
 
     @Override
     public void updateNickname(Long userId, String name) {
@@ -103,8 +94,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User getUserByUserId(Long userId) {
-        return userRepository.findById(userId)
+    public String getUuidByUserId(Long userId) {
+        return userRepository.findUuidById(userId)
                 .orElseThrow(UserNotFoundException::new);
     }
 

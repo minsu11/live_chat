@@ -31,6 +31,7 @@ public class UserProfileRepositoryCustomImpl extends QuerydslRepositorySupport i
                         )
                         .select(Projections.constructor(
                                 UserMyProfileSummaryResponse.class,
+                                qUser.uuid,
                                 qUser.nickname,
                                 qUserProfile.stateMessage,
                                 qUserProfileImage.imageUrl

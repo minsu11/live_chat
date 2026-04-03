@@ -3,17 +3,24 @@ package com.chat_server.chatmessage.service.impl;
 import com.chat_server.chatlist.service.ChatListService;
 import com.chat_server.chatmessage.dto.request.ChatSendRequest;
 import com.chat_server.chatmessage.dto.response.ChatMessageResponse;
-import com.chat_server.chatmessage.dto.response.ChatMessageSenderResponse;
 import com.chat_server.chatmessage.entity.ChatMessage;
 import com.chat_server.chatmessage.service.ChatMessageFacadeService;
 import com.chat_server.chatmessage.service.ChatMessageService;
+import com.chat_server.chatroom.dto.event.ChatRoomSummaryEvent;
 import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.chatroom.service.ChatRoomQueryService;
 import com.chat_server.chatroom.service.ChatRoomService;
+import com.chat_server.common.mapper.ChatMessageResponseMapper;
+import com.chat_server.common.mapper.ChatRoomSummaryEventMapper;
 import com.chat_server.user.service.UserDisplayNameService;
 import com.chat_server.userblock.service.UserBlockService;
-import com.chat_server.websocket.broadcaster.ChatMessageBroadCaster;
+import com.chat_server.userprofileImage.service.UserProfileImageService;
+import com.chat_server.websocket.broadcaster.chatmessage.ChatMessageBroadCaster;
+
 import java.util.List;
+import java.util.Map;
+
+import com.chat_server.websocket.broadcaster.chatroom.ChatRoomSummaryBroadcaster;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,7 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 @RequiredArgsConstructor
 public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
-
+    private final ChatMessageResponseMapper chatMessageResponseMapper;
     private final ChatMessageBroadCaster chatMessageBroadCaster;
     private final ChatRoomQueryService chatRoomQueryService;
     private final UserBlockService userBlockService;
@@ -35,8 +42,10 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
     private final ChatRoomService chatRoomService;
     private final ChatListService chatListService;
     private final UserDisplayNameService userDisplayNameService;
+    private final UserProfileImageService userProfileImageService;
+    private final ChatRoomSummaryBroadcaster chatRoomSummaryBroadcaster;
+    private final ChatRoomSummaryEventMapper chatRoomSummaryEventMapper;
 
-    @Override
     /**
      * 메시지 전송 전체 플로우를 오케스트레이션한다.
      *
@@ -52,6 +61,7 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
      * @param userId 발신자 사용자 ID
      * @throws RuntimeException 채팅방/멤버 미존재, 권한 오류, 차단 관계 등 도메인 예외 발생 가능
      */
+    @Override
     public void sendMessage(ChatSendRequest request, Long userId) {
         // 메서드 시작 로그는 간단하게 info로 남긴다.
         log.info("sendMessage 호출");
@@ -59,23 +69,43 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         log.debug("sendMessage params - request: {}, userId: {}", request, userId);
         Long roomId = request.roomId();
         String messageType = request.messageType();
-        String message = request.text();
+        String message = request.messageContent();
 
         ChatRoom room = chatRoomQueryService.getRoomOrThrow(roomId);
         Long memberId = chatRoomQueryService.getMemberId(room.getId(), userId);
-
+        String memberProfileUrl = userProfileImageService.getUserProfileUrl(userId);
         validateSendPermission(room, userId, memberId, request);
         ChatMessage chatMessage = chatMessageService.createChatMessage(room, userId, messageType, message);
 
         updateRoomAndChatListOnSend(room, chatMessage);
         chatListService.increaseUnreadCount(roomId, userId);
+        chatListService.markSenderAsReadOnSend(roomId,userId,chatMessage.getId());
+
 
         // 채팅방 멤버 목록을 조회하여 사용자별(수신자별) payload를 생성/전송한다.
         List<Long> roomMemberUserIds = chatListService.getRoomMemberUserIds(roomId);
         log.debug("sendMessage roomMemberUserIds: {}", roomMemberUserIds);
+        Map<Long, Integer> unreadCountMap = chatListService.getUnreadCountMap(roomId, roomMemberUserIds);
+        int messageUnreadCount = Math.max(roomMemberUserIds.size() - 1, 0);
         for (Long receiverUserId : roomMemberUserIds) {
-            ChatMessageResponse response = createResponseForReceiver(chatMessage, roomId, userId, receiverUserId);
+            ChatMessageResponse response = createResponseForReceiver(
+                    chatMessage,
+                    roomId,
+                    userId,
+                    receiverUserId,
+                    memberProfileUrl,
+                    messageUnreadCount);
             chatMessageBroadCaster.broadcastMessage(receiverUserId, response);
+            int unreadCount = unreadCountMap.getOrDefault(receiverUserId, 0);
+
+            ChatRoomSummaryEvent event = chatRoomSummaryEventMapper.toEvent(
+                    roomId,
+                    chatMessage.getMessageContent(),
+                    chatMessage.getCreatedAt(),
+                    unreadCount
+            );
+
+            chatRoomSummaryBroadcaster.broadcastToUser(receiverUserId, event);
             log.debug("sendMessage broadcast 완료 - receiverUserId: {}, response: {}", receiverUserId, response);
         }
         log.debug("sendMessage 완료 - roomId: {}, messageId: {}", roomId, chatMessage.getId());
@@ -115,19 +145,30 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
     }
 
     /**
-     * 수신자 기준 display nickname 우선순위(친구 커스텀 닉네임 -> 사용자 기본 닉네임)를 반영한다.
+     * 저장된 메시지를 특정 수신자(receiverUserId) 관점의 실시간 브로드캐스트 응답 DTO로 생성한다.
      *
-     * @param chatMessage 저장된 메시지 엔티티
-     * @param roomId 메시지가 속한 채팅방 ID
+     * <p>수신자별로 다음 값이 달라질 수 있다.
+     * <ul>
+     *   <li>sender.senderNickname: 수신자 기준 표시 이름</li>
+     *   <li>sender.mine: 수신자가 발신자인 경우 true, 아니면 false</li>
+     * </ul>
+     *
+     * <p>발신자의 UUID, 프로필 이미지 URL, 메시지 내용, 생성 시각 등은 저장된 메시지 기준 값을 사용한다.</p>
+     *
+     * @param chatMessage 저장된 채팅 메시지 엔티티
+     * @param roomId 채팅방 ID
      * @param senderId 발신자 사용자 ID
-     * @param receiverUserId 현재 응답을 만들 수신자 사용자 ID
-     * @return 수신자 관점(표시 닉네임/mine)이 반영된 채팅 응답 DTO
+     * @param receiverUserId 현재 브로드캐스트를 수신할 사용자 ID
+     * @param profileImageUrl 발신자 사용자 프로필 이미지 url
+     * @return 수신자 관점이 반영된 실시간 메시지 응답 DTO
      */
     private ChatMessageResponse createResponseForReceiver(
             ChatMessage chatMessage,
             Long roomId,
             Long senderId,
-            Long receiverUserId
+            Long receiverUserId,
+            String profileImageUrl,
+            int unreadCount
     ) {
         log.info("createResponseForReceiver 호출");
         log.debug("createResponseForReceiver params - chatMessageId: {}, roomId: {}, senderId: {}, receiverUserId: {}",
@@ -137,24 +178,23 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         String displayNickname = userDisplayNameService
                 .resolveDisplayName(senderId, receiverUserId)
                 .orElse(chatMessage.getSender().getNickname());
-        boolean mine = senderId.equals(receiverUserId);
 
-        ChatMessageSenderResponse sender = new ChatMessageSenderResponse(
+        ChatMessageResponse response = chatMessageResponseMapper.fromMessage(
+                chatMessage.getId(),
+                roomId,
+                chatMessage.getMessageType().name(),
                 senderId,
                 chatMessage.getSender().getUuid(),
                 displayNickname,
-                null,
-                mine
-        );
-
-        ChatMessageResponse response = new ChatMessageResponse(
-                chatMessage.getId(),
-                roomId,
-                sender,
+                profileImageUrl,
                 chatMessage.getMessageContent(),
-                chatMessage.getCreatedAt()
+                chatMessage.getCreatedAt(),
+                receiverUserId,
+                unreadCount
         );
         log.debug("createResponseForReceiver return - response: {}", response);
         return response;
     }
+
+
 }
