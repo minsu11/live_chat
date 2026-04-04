@@ -1,12 +1,15 @@
 package com.chat_server.chatroom.controller;
 
 
+import com.chat_server.chatroom.dto.request.CreateGroupChatRoomRequest;
 import com.chat_server.chatroom.dto.response.ChatRoomEnterResponse;
 import com.chat_server.chatroom.dto.response.ChatRoomResult;
 import com.chat_server.chatroom.dto.response.ChatRoomSummaryResponse;
+import com.chat_server.chatroom.dto.response.CreateChatRoomResponse;
 import com.chat_server.chatroom.service.ChatRoomFacadeService;
 import com.chat_server.common.dto.response.ApiResponse;
 import com.chat_server.user.dto.response.AuthenticatedUser;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -117,6 +120,21 @@ public class ChatRoomController {
         ChatRoomEnterResponse response =
                 chatRoomFacadeService.getChatRoomMessages(roomId, user.userId(), cursor, limit);
         ApiResponse<ChatRoomEnterResponse> apiResponse = ApiResponse.success(200,"대화 메세지 업데이트",response);
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    @PostMapping("group")
+    public ResponseEntity<ApiResponse<CreateChatRoomResponse>> createGroupChatRoom(
+            @AuthenticationPrincipal AuthenticatedUser user,
+            @RequestBody @Valid CreateGroupChatRoomRequest request
+    ){
+        log.info("create group start");
+        Long userId = user.userId();
+        CreateChatRoomResponse response = chatRoomFacadeService.createGroupChatRoom(
+                userId,
+                request
+        );
+        ApiResponse<CreateChatRoomResponse> apiResponse = ApiResponse.success(201,"그룹방이 만들어졌습니다.",response);
         return ResponseEntity.ok(apiResponse);
     }
 }

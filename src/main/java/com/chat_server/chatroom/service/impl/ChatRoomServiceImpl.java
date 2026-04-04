@@ -95,4 +95,17 @@ public class ChatRoomServiceImpl implements ChatRoomService {
                 chatMessage.getCreatedAt()
         );
     }
+
+    @Override
+    public ChatRoom createGroupChatRoom(String title, Long createdBy) {
+        User createdUser = userRepository.findById(createdBy).orElseThrow(UserNotFoundException::new);
+
+        ChatRoom chatRoom = ChatRoom.builder()
+                .roomType(RoomType.GROUP)
+                .name(title)
+                .createdBy(createdUser)
+                .build();
+
+        return chatRoomRepository.save(chatRoom);
+    }
 }

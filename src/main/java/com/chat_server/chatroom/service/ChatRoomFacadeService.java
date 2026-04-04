@@ -1,8 +1,10 @@
 package com.chat_server.chatroom.service;
 
+import com.chat_server.chatroom.dto.request.CreateGroupChatRoomRequest;
 import com.chat_server.chatroom.dto.response.ChatRoomEnterResponse;
 import com.chat_server.chatroom.dto.response.ChatRoomResult;
 import com.chat_server.chatroom.dto.response.ChatRoomSummaryResponse;
+import com.chat_server.chatroom.dto.response.CreateChatRoomResponse;
 
 public interface ChatRoomFacadeService {
 
@@ -36,5 +38,7 @@ public interface ChatRoomFacadeService {
     ChatRoomResult getOrCreateOneToOneChatRoom(Long userId, String friendUuid);
 
     ChatRoomEnterResponse getChatRoomMessages(Long roomId, Long userId, String cursor, int limit);
+
+    CreateChatRoomResponse createGroupChatRoom(Long requesterUserId, CreateGroupChatRoomRequest request);
 
 }

@@ -7,9 +7,11 @@ import com.chat_server.chatmessage.dto.response.ChatMessageSenderResponse;
 import com.chat_server.chatmessage.service.ChatMessageService;
 import com.chat_server.chatread.service.ChatReadFacadeService;
 import com.chat_server.chatread.service.ChatReadService;
+import com.chat_server.chatroom.dto.request.CreateGroupChatRoomRequest;
 import com.chat_server.chatroom.dto.response.ChatRoomEnterResponse;
 import com.chat_server.chatroom.dto.response.ChatRoomResult;
 import com.chat_server.chatroom.dto.response.ChatRoomSummaryResponse;
+import com.chat_server.chatroom.dto.response.CreateChatRoomResponse;
 import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.chatroom.service.ChatRoomFacadeService;
 import com.chat_server.chatroom.service.ChatRoomQueryService;
@@ -271,6 +273,85 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
                 nextCursor
         );
     }
+
+    @Override
+    public CreateChatRoomResponse createGroupChatRoom(Long requesterUserId, CreateGroupChatRoomRequest request) {
+        log.info("createGroupChatRoom start requesterUserId={}", requesterUserId);
+
+        if (request == null) {
+            throw new IllegalArgumentException("그룹 채팅방 요청 값이 없습니다.");
+        }
+
+        List<String> requestedMemberUuids = request.memberUuids();
+
+        if (requestedMemberUuids == null || requestedMemberUuids.isEmpty()) {
+            throw new IllegalArgumentException("그룹 채팅방에 초대할 멤버를 선택해야 합니다.");
+        }
+
+        // 1. uuid 정리: null/blank 제거 + trim + 중복 제거
+        List<String> normalizedUuids = requestedMemberUuids.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(uuid -> !uuid.isBlank())
+                .distinct()
+                .toList();
+
+        if (normalizedUuids.size() < 2) {
+            throw new IllegalArgumentException("그룹 채팅방은 본인을 제외한 2명 이상의 멤버가 필요합니다.");
+        }
+
+        // 2. uuid -> userId 변환
+        // 현재 UserService가 단건만 있다면 일단 반복 호출로 맞춘다.
+        List<Long> targetUserIds = normalizedUuids.stream()
+                .map(userService::getUserIdByUserUuid)
+                .distinct()
+                .toList();
+
+        // 3. 자기 자신 제거
+        List<Long> filteredTargetUserIds = targetUserIds.stream()
+                .filter(targetUserId -> !targetUserId.equals(requesterUserId))
+                .distinct()
+                .toList();
+
+        if (filteredTargetUserIds.size() < 2) {
+            throw new IllegalArgumentException("그룹 채팅방은 본인을 제외한 2명 이상의 멤버가 필요합니다.");
+        }
+
+        // 4. 최종 참여자 구성: 생성자 + 초대 대상
+        LinkedHashSet<Long> participantUserIds = new LinkedHashSet<>();
+        participantUserIds.add(requesterUserId);
+        participantUserIds.addAll(filteredTargetUserIds);
+
+        if (participantUserIds.size() < 3) {
+            throw new IllegalArgumentException("그룹 채팅방은 최소 3명 이상이어야 합니다.");
+        }
+
+        String title = normalizeRoomTitle(request.title());
+
+        // 5. 채팅방 생성
+        ChatRoom createdRoom = chatRoomService.createGroupChatRoom(title, requesterUserId);
+
+        Long roomId = createdRoom.getId();
+
+        // 6. 멤버십 생성
+        for (Long participantUserId : participantUserIds) {
+            chatRoomMemberService.ensureMembership(participantUserId, roomId);
+        }
+
+        // 7. chat_list row 생성
+        for (Long participantUserId : participantUserIds) {
+            chatListService.ensureMembership(roomId, participantUserId);
+        }
+
+        log.info("createGroupChatRoom end roomId={}, participantCount={}", roomId, participantUserIds.size());
+
+        return new CreateChatRoomResponse(
+                roomId,
+                createdRoom.getRoomType().name(),
+                title
+        );
+    }
+
     /**
      * 채팅방 진입 조회용 메시지 DTO를 프론트 공통 메시지 응답 DTO로 변환한다.
      *
@@ -316,5 +397,14 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
                 item.senderId().equals(viewerUserId),
                 item.unreadCount()
         );
+    }
+
+    private String normalizeRoomTitle(String title) {
+        if (title == null) {
+            return null;
+        }
+
+        String trimmed = title.trim();
+        return trimmed.isBlank() ? null : trimmed;
     }
 }

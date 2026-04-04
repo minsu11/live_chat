@@ -18,4 +18,6 @@ public interface ChatRoomService {
     ChatRoomSummaryResponse getChatRoomSummary(Long roomId, Long userId);
 
     void updateLastMessageInfo(ChatRoom chatRoom, ChatMessage chatMessage);
+    ChatRoom createGroupChatRoom(String title, Long createdBy);
+
 }
