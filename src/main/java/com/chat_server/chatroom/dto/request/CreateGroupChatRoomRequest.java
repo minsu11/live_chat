@@ -7,6 +7,7 @@ import java.util.List;
 
 public record CreateGroupChatRoomRequest(@Size(max = 50, message = "채팅방 이름은 50자를 초과할 수 없습니다.")
                                          String title,
-                                         @NotBlank List<String> memberUuids
+                                         @Size(min = 2, message = "2명 이하 입니다.") List<String> memberUuids
+
                                          ) {
 }

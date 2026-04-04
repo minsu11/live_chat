@@ -19,6 +19,7 @@ import com.chat_server.websocket.broadcaster.chatmessage.ChatMessageBroadCaster;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import com.chat_server.websocket.broadcaster.chatroom.ChatRoomSummaryBroadcaster;
 import lombok.RequiredArgsConstructor;
@@ -71,10 +72,11 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         String messageType = request.messageType();
         String message = request.messageContent();
 
+        // chatting room
         ChatRoom room = chatRoomQueryService.getRoomOrThrow(roomId);
-        Long memberId = chatRoomQueryService.getMemberId(room.getId(), userId);
         String memberProfileUrl = userProfileImageService.getUserProfileUrl(userId);
-        validateSendPermission(room, userId, memberId, request);
+        // 발신자의 전송 권한
+        validateSendPermission(room, userId);
         ChatMessage chatMessage = chatMessageService.createChatMessage(room, userId, messageType, message);
 
         updateRoomAndChatListOnSend(room, chatMessage);
@@ -88,6 +90,14 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         Map<Long, Integer> unreadCountMap = chatListService.getUnreadCountMap(roomId, roomMemberUserIds);
         int messageUnreadCount = Math.max(roomMemberUserIds.size() - 1, 0);
         for (Long receiverUserId : roomMemberUserIds) {
+
+            // 🔥 2. 차단 체크 (핵심 추가)
+            if (!userId.equals(receiverUserId) &&
+                    userBlockService.isBlocked(userId, receiverUserId)) {
+                log.debug("차단된 사용자 - sender: {}, receiver: {}", userId, receiverUserId);
+                continue; // ❌ 이 사람한테는 안보냄
+            }
+
             ChatMessageResponse response = createResponseForReceiver(
                     chatMessage,
                     roomId,
@@ -96,7 +106,7 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
                     memberProfileUrl,
                     messageUnreadCount);
             chatMessageBroadCaster.broadcastMessage(receiverUserId, response);
-            int unreadCount = unreadCountMap.getOrDefault(receiverUserId, 0);
+            int unreadCount = Objects.equals(receiverUserId, userId) ? 0: unreadCountMap.getOrDefault(receiverUserId, 0);
 
             ChatRoomSummaryEvent event = chatRoomSummaryEventMapper.toEvent(
                     roomId,
@@ -116,17 +126,14 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
      *
      * @param room 메시지를 보내려는 채팅방
      * @param userId 발신자 사용자 ID
-     * @param memberId 상대 멤버 사용자 ID
-     * @param request 원본 전송 요청(디버그 추적용)
      * @throws RuntimeException 멤버십 없음/차단됨 등 검증 실패 시 도메인 예외
      */
-    private void validateSendPermission(ChatRoom room, Long userId, Long memberId, ChatSendRequest request) {
+    private void validateSendPermission(ChatRoom room, Long userId) {
         // 송신자 권한 및 차단 상태를 검증한다.
         log.info("validateSendPermission 호출");
-        log.debug("validateSendPermission params - roomId: {}, userId: {}, memberId: {}, request: {}",
-                room.getId(), userId, memberId, request);
+        log.debug("validateSendPermission params - roomId: {}, userId: {}",
+                room.getId(), userId);
         chatRoomQueryService.validateMemberOrThrow(room.getId(), userId);
-        userBlockService.validateSenderNotBlocked(userId, memberId);
         log.debug("validateSendPermission 완료 - roomId: {}, userId: {}", room.getId(), userId);
     }
 
