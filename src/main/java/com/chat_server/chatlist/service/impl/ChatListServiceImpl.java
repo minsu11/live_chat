@@ -60,8 +60,13 @@ public class ChatListServiceImpl implements ChatListService {
         log.info("chat list : {}", slice.toString());
         if (slice.hasNext() && !slice.getContent().isEmpty()) {
             ChatRoomListResponse last = slice.getContent().get(slice.getContent().size() - 1);
-
-            long lastAtEpochMillis = last.lastMessageAt()
+            LocalDateTime cursorBase = last.orderAt();
+            if (cursorBase == null) {
+                throw new IllegalStateException(
+                    "chat list next cursor 생성 실패: orderAt is null. roomId=" + last.roomId()
+                );
+            }
+            long lastAtEpochMillis = cursorBase
                 .atOffset(ZoneOffset.UTC)   // DB를 UTC 기준 LocalDateTime으로 본다는 가정
                 .toInstant()
                 .toEpochMilli();
