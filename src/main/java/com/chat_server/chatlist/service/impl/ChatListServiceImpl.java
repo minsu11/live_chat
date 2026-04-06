@@ -1,5 +1,6 @@
 package com.chat_server.chatlist.service.impl;
 
+import com.chat_server.chatlist.dto.response.ChatListItemResponse;
 import com.chat_server.chatlist.dto.response.ChatRoomListResponse;
 import com.chat_server.chatlist.dto.response.ChatUnreadCountRow;
 import com.chat_server.chatlist.repository.ChatListRepository;
@@ -212,5 +213,10 @@ public class ChatListServiceImpl implements ChatListService {
         }
 
         return result;
+    }
+    @Override
+    @Transactional(readOnly = true)
+    public ChatListItemResponse getChatListItem(Long roomId, Long userId) {
+        return chatListQueryService.getChatListItem(roomId, userId);
     }
 }

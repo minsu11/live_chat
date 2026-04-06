@@ -21,5 +21,6 @@ public class WebSocketProperties {
         private String messagePath;
         private String roomPath;
         private String summaryEventPath;
+        private String chatList;
     }
 }

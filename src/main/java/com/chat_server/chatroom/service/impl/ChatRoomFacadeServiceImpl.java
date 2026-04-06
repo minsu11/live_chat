@@ -7,6 +7,7 @@ import com.chat_server.chatmessage.dto.response.ChatMessageSenderResponse;
 import com.chat_server.chatmessage.service.ChatMessageService;
 import com.chat_server.chatread.service.ChatReadFacadeService;
 import com.chat_server.chatread.service.ChatReadService;
+import com.chat_server.chatroom.dto.event.ChatListUpsertEvent;
 import com.chat_server.chatroom.dto.request.CreateGroupChatRoomRequest;
 import com.chat_server.chatroom.dto.response.ChatRoomEnterResponse;
 import com.chat_server.chatroom.dto.response.ChatRoomResult;
@@ -21,6 +22,7 @@ import com.chat_server.common.cursor.ChatMessageCursorCodec;
 import com.chat_server.common.cursor.ChatMessageCursorKey;
 import com.chat_server.user.service.UserDisplayNameService;
 import com.chat_server.user.service.UserService;
+import com.chat_server.websocket.broadcaster.chatmessage.ChatListEventBroadcaster;
 import java.time.ZoneOffset;
 import java.util.*;
 
@@ -43,6 +45,7 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
     private final UserService userService;
     private final UserDisplayNameService userDisplayNameService;
     private final ChatReadFacadeService chatReadFacadeService;
+    private final ChatListEventBroadcaster chatListEventBroadcaster;
 
     /**
      * 채팅방 summary 정보를 조회한다.
@@ -343,6 +346,11 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
             chatListService.ensureMembership(roomId, participantUserId);
         }
 
+        for (Long participantUserId : participantUserIds) {
+            ChatListUpsertEvent event =
+            chatListEventBroadcaster.broadcastToUser(requesterUserId,);
+        }
+
         log.info("createGroupChatRoom end roomId={}, participantCount={}", roomId, participantUserIds.size());
 
         return new CreateChatRoomResponse(
@@ -398,6 +406,50 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
                 item.unreadCount()
         );
     }
+
+    /**
+     * 그룹방 생성 직후, 참여자 각각에게 chat list upsert 이벤트를 전송한다.
+     *
+     * <p>주의:
+     * <ul>
+     *   <li>room 기준 공용 이벤트가 아니라 user 기준 개별 이벤트다.</li>
+     *   <li>title, unreadCount는 사용자 기준 summary를 사용한다.</li>
+     * </ul>
+     *
+     * @param roomId 생성된 채팅방 ID
+     * @param participantUserIds 참여자 userId 목록
+     */
+    private void broadcastChatListUpsertEvents(Long roomId, Set<Long> participantUserIds) {
+        for (Long participantUserId : participantUserIds) {
+            ChatRoomSummaryResponse summary = getChatRoomSummary(roomId, participantUserId);
+            ChatListUpsertEvent event = toChatListUpsertEvent(summary);
+            chatListEventBroadcaster.broadcastToUser(participantUserId, event);
+        }
+    }
+
+    /**
+     * 채팅방 summary 응답을 chat list upsert 이벤트로 변환한다.
+     *
+     * <p>여기서 사용하는 unreadCount는 "채팅방 목록용 unreadCount"이다.</p>
+     *
+     * @param summary 사용자 기준 채팅방 summary 응답
+     * @return chat list row 생성/갱신 이벤트
+     */
+    private ChatListUpsertEvent toChatListUpsertEvent(ChatRoomSummaryResponse summary) {
+        if (summary == null) {
+            throw new IllegalArgumentException("채팅방 summary 정보가 없습니다.");
+        }
+
+        return new ChatListUpsertEvent(
+            summary.roomId(),
+            summary.roomType(),
+            summary.title(),
+            summary.lastMessagePreview(),
+            summary.lastMessageAt(),
+            summary.unreadCount()
+        );
+    }
+
 
     private String normalizeRoomTitle(String title) {
         if (title == null) {

@@ -7,4 +7,5 @@ custom:
       message-path: /chat/message
       room-path: /chat/rooms
       summary-event-path: /chat/summary
+      chat-list: /chat-list
 
