@@ -217,6 +217,8 @@ public class ChatListServiceImpl implements ChatListService {
     @Override
     @Transactional(readOnly = true)
     public ChatListItemResponse getChatListItem(Long roomId, Long userId) {
-        return chatListQueryService.getChatListItem(roomId, userId);
-    }
+        return chatListRepository.findChatListItem(roomId, userId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "채팅방 목록 row를 찾을 수 없습니다. roomId=" + roomId + ", userId=" + userId
+                ));    }
 }

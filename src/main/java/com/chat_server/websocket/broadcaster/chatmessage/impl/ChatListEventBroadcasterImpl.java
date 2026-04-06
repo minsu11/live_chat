@@ -1,6 +1,6 @@
 package com.chat_server.websocket.broadcaster.chatmessage.impl;
 
-import com.chat_server.chatroom.dto.event.ChatListUpsertEvent;
+import com.chat_server.chatlist.dto.event.ChatListUpsertEvent;
 import com.chat_server.websocket.broadcaster.chatmessage.ChatListEventBroadcaster;
 import com.chat_server.websocket.properties.WebSocketProperties;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +16,7 @@ public class ChatListEventBroadcasterImpl implements ChatListEventBroadcaster {
     private final WebSocketProperties webSocketProperties;
 
     @Override
-    public void broadcastToUser(Long userId, ChatListUpsertEvent event) {
+    public void broadcastUpsertToUser(Long userId, ChatListUpsertEvent event) {
         if (userId == null) {
             log.warn("chat list broadcast skipped. userId is null. event={}", event);
             return;

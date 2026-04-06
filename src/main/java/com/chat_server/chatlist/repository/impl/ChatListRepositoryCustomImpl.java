@@ -1,5 +1,6 @@
 package com.chat_server.chatlist.repository.impl;
 
+import com.chat_server.chatlist.dto.response.ChatListItemResponse;
 import com.chat_server.chatlist.dto.response.ChatRoomListResponse;
 import com.chat_server.chatlist.dto.response.ChatRoomListRow;
 import com.chat_server.chatlist.entity.QChatList;
@@ -12,11 +13,15 @@ import com.chat_server.user.entity.QUser;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.DateTimeExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
+
+import com.querydsl.core.types.dsl.StringExpression;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
@@ -128,5 +133,69 @@ public class ChatListRepositoryCustomImpl extends QuerydslRepositorySupport
                 .toList();
 
         return new SliceImpl<>(content, PageRequest.of(0, limit), hasNext);
+    }
+
+    @Override
+    public Optional<ChatListItemResponse> findChatListItem(Long roomId, Long userId) {
+        StringExpression displayName = getDisplayNameExpression(userId);
+        DateTimeExpression<LocalDateTime> orderAt = getOrderAtExpression();
+
+        ChatListItemResponse result = from(qChatList)
+                .join(qChatList.chatRoom, qChatRoom)
+                .leftJoin(qChatRoomMember).on(getDmPartnerJoinCondition(userId))
+                .leftJoin(qChatRoomMember.user, qPartnerUser)
+                .leftJoin(qFriend).on(
+                        qFriend.user.id.eq(userId)
+                                .and(qFriend.friendUser.id.eq(qPartnerUser.id))
+                )
+                .where(
+                        qChatList.user.id.eq(userId),
+                        qChatRoom.id.eq(roomId)
+                )
+                .select(Projections.constructor(
+                        ChatListItemResponse.class,
+                        qChatRoom.id,
+                        displayName,
+                        qChatList.unreadCount,
+                        qChatRoom.lastMessageAt,
+                        orderAt
+                ))
+                .fetchOne();
+
+        return Optional.ofNullable(result);
+    }
+
+    private StringExpression getDisplayNameExpression(Long userId) {
+        var isDm = qChatRoom.dmKey.isNotNull();
+
+        var dmDisplayName = Expressions.stringTemplate(
+                "COALESCE({0}, {1}, {2})",
+                qFriend.customNickname,
+                qPartnerUser.nickname,
+                qChatRoom.name
+        );
+
+        return new CaseBuilder()
+                .when(qChatList.customName.isNotNull()).then(qChatList.customName)
+                .when(isDm).then(dmDisplayName)
+                .otherwise(qChatRoom.name);
+    }
+
+    private DateTimeExpression<LocalDateTime> getOrderAtExpression() {
+        return Expressions.dateTimeTemplate(
+                LocalDateTime.class,
+                "COALESCE({0}, {1})",
+                qChatRoom.lastMessageAt,
+                qChatRoom.createdAt
+        );
+    }
+
+    private BooleanBuilder getDmPartnerJoinCondition(Long userId) {
+        return new BooleanBuilder()
+                .and(qChatRoomMember.chatRoom.eq(qChatRoom))
+                .and(qChatRoom.dmKey.isNotNull())
+                .and(qChatRoomMember.user.id.ne(userId))
+                .and(qChatRoomMember.active.isTrue())
+                .and(qChatRoomMember.leftAt.isNull());
     }
 }
