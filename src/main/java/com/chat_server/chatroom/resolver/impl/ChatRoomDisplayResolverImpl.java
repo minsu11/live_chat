@@ -131,8 +131,7 @@ public class ChatRoomDisplayResolverImpl implements ChatRoomDisplayResolver {
             return String.join(", ", names);
         }
 
-        String firstThree = names.subList(0, 3).stream()
-                .collect(Collectors.joining(", "));
+        String firstThree = String.join(", ", names.subList(0, 3));
 
         return firstThree + " 외 " + (names.size() - 3) + "명";
     }

@@ -50,7 +50,7 @@ public class UserDisplayNameServiceImpl implements UserDisplayNameService {
         // 2순위: 발신자가 설정한 기본 닉네임
         Optional<String> senderNickname = userRepository.findById(senderId)
                 .map(User::getNickname)
-                .filter(nickname -> nickname != null && !nickname.isBlank());
+                .filter(nickname -> !nickname.isBlank());
         log.debug("resolveDisplayName senderNickname: {}", senderNickname.orElse(null));
         log.debug("resolveDisplayName return(기본 닉네임): {}", senderNickname.orElse(null));
         return senderNickname;
