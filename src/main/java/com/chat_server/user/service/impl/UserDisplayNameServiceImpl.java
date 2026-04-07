@@ -19,7 +19,6 @@ public class UserDisplayNameServiceImpl implements UserDisplayNameService {
     private final FriendRepository friendRepository;
     private final UserRepository userRepository;
 
-    @Override
     /**
      * 메시지 수신자 관점에서 발신자 display name을 결정한다.
      *
@@ -33,6 +32,7 @@ public class UserDisplayNameServiceImpl implements UserDisplayNameService {
      * @param receiverId 수신자 사용자 ID
      * @return 우선순위에 따라 결정된 표시 이름 Optional
      */
+    @Override
     public Optional<String> resolveDisplayName(Long senderId, Long receiverId) {
         // 메서드 진입 로그는 info 레벨로 간단히 남긴다.
         log.info("resolveDisplayName 호출");
