@@ -10,6 +10,8 @@ import com.chat_server.chatread.dto.request.ChatReadRequest;
 import com.chat_server.chatread.service.ChatReadFacadeService;
 import com.chat_server.chatread.service.ChatReadService;
 import com.chat_server.chatroom.service.ChatRoomQueryService;
+import com.chat_server.common.mapper.ChatListUpsertEventMapper;
+import com.chat_server.common.mapper.ChatReadUpdatedEventMapper;
 import com.chat_server.user.service.UserService;
 import com.chat_server.websocket.broadcaster.chatmessage.ChatListEventBroadcaster;
 import com.chat_server.websocket.broadcaster.chatmessage.ChatMessageReadBroadcaster;
@@ -32,6 +34,8 @@ public class ChatReadFacadeServiceImpl implements ChatReadFacadeService {
     private final UserService userService;
     private final ChatMessageService chatMessageService;
     private final ChatListEventBroadcaster chatListEventBroadcaster;
+    private final ChatReadUpdatedEventMapper chatReadUpdatedEventMapper;
+    private final ChatListUpsertEventMapper chatListUpsertEventMapper;
 
     @Override
     public void read(ChatReadRequest request, Long userId) {
@@ -75,7 +79,7 @@ public class ChatReadFacadeServiceImpl implements ChatReadFacadeService {
         List<UpdatedMessageUnreadCount> updatedMessageUnreadCounts =
                 chatMessageService.findUpdatedUnreadCounts(roomId, messageId);
 
-        ChatReadUpdatedEvent event = new ChatReadUpdatedEvent(
+        ChatReadUpdatedEvent event = chatReadUpdatedEventMapper.toChatReadUpdatedEvent(
                 roomId,
                 readerUserUuid,
                 messageId,
@@ -97,7 +101,7 @@ public class ChatReadFacadeServiceImpl implements ChatReadFacadeService {
     private void broadcastChatListUpsertEvent(Long roomId, Long userId) {
         ChatListItemResponse item = chatListService.getChatListItem(roomId, userId);
 
-        ChatListUpsertEvent event = new ChatListUpsertEvent(
+        ChatListUpsertEvent event = chatListUpsertEventMapper.toChatListUpsertEvent(
                 item.roomId(),
                 item.displayName(),
                 item.unreadCount(),

@@ -1,12 +1,7 @@
 package com.chat_server.chatread.service.impl;
 
 import com.chat_server.chatlist.service.ChatListService;
-import com.chat_server.chatread.dto.event.ChatReadUpdatedEvent;
-import com.chat_server.chatread.dto.request.ChatReadRequest;
 import com.chat_server.chatread.service.ChatReadService;
-import com.chat_server.chatroom.service.ChatRoomQueryService;
-import com.chat_server.user.exception.UserNotFoundException;
-import com.chat_server.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,9 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 @RequiredArgsConstructor
 public class ChatReadServiceImpl implements ChatReadService {
-    private final ChatRoomQueryService chatRoomQueryService;
     private final ChatListService chatListService;
-    private final UserRepository userRepository;
 
     /**
      * 실시간 읽음 요청을 처리한다.

@@ -21,6 +21,11 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -75,13 +80,6 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     }
 
     @Override
-    public ChatRoomSummaryResponse getChatRoomSummary(Long roomId, Long userId) {
-        log.info("get chat room summary");
-        return chatRoomRepository.findChatRoomSummaryByRoomId(roomId, userId)
-                .orElseThrow(ChatRoomNotFoundException::new);
-    }
-
-    @Override
     @Transactional
     public void updateLastMessageInfo(ChatRoom chatRoom, ChatMessage chatMessage) {
         Long senderId = chatMessage.getSender().getId();
@@ -108,4 +106,5 @@ public class ChatRoomServiceImpl implements ChatRoomService {
 
         return chatRoomRepository.save(chatRoom);
     }
+
 }
