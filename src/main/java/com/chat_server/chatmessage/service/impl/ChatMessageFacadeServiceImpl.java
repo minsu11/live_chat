@@ -6,11 +6,14 @@ import com.chat_server.chatmessage.dto.response.ChatMessageResponse;
 import com.chat_server.chatmessage.entity.ChatMessage;
 import com.chat_server.chatmessage.service.ChatMessageFacadeService;
 import com.chat_server.chatmessage.service.ChatMessageService;
+import com.chat_server.chatnotification.dto.event.ChatNotificationEvent;
 import com.chat_server.chatroom.dto.event.ChatRoomSummaryEvent;
 import com.chat_server.chatroom.entity.ChatRoom;
+import com.chat_server.chatroom.resolver.ChatRoomDisplayResolver;
 import com.chat_server.chatroom.service.ChatRoomQueryService;
 import com.chat_server.chatroom.service.ChatRoomService;
 import com.chat_server.common.mapper.ChatMessageResponseMapper;
+import com.chat_server.common.mapper.ChatNotificationEventMapper;
 import com.chat_server.common.mapper.ChatRoomSummaryEventMapper;
 import com.chat_server.user.service.UserDisplayNameService;
 import com.chat_server.userblock.service.UserBlockService;
@@ -21,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import com.chat_server.websocket.broadcaster.chatmessage.ChatNotificationBroadcaster;
 import com.chat_server.websocket.broadcaster.chatroom.ChatRoomSummaryBroadcaster;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +50,9 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
     private final UserProfileImageService userProfileImageService;
     private final ChatRoomSummaryBroadcaster chatRoomSummaryBroadcaster;
     private final ChatRoomSummaryEventMapper chatRoomSummaryEventMapper;
+    private final ChatNotificationBroadcaster chatNotificationBroadcaster;
+    private final ChatNotificationEventMapper chatNotificationEventMapper;
+    private final ChatRoomDisplayResolver chatRoomDisplayResolver;
 
     /**
      * 메시지 전송 전체 플로우를 오케스트레이션한다.
@@ -116,6 +123,16 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
             );
 
             chatRoomSummaryBroadcaster.broadcastToUser(receiverUserId, event);
+            if(!userId.equals(receiverUserId)) {
+                String title = chatRoomDisplayResolver.resolveTitle(roomId,receiverUserId,room);
+                ChatNotificationEvent chatNotificationEvent = chatNotificationEventMapper.toChatNotificationEvent(
+                        roomId,
+                        title,
+                        chatMessage.getMessageContent(),
+                        chatMessage.getCreatedAt()
+                );
+                chatNotificationBroadcaster.broadcastToUser(receiverUserId,chatNotificationEvent);
+            }
             log.debug("sendMessage broadcast 완료 - receiverUserId: {}, response: {}", receiverUserId, response);
         }
         log.debug("sendMessage 완료 - roomId: {}, messageId: {}", roomId, chatMessage.getId());
