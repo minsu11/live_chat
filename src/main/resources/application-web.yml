@@ -8,4 +8,10 @@ custom:
       room-path: /chat/rooms
       summary-event-path: /chat/summary
       chat-list: /chat-list
+      chat-notification: /chat/notification
+    event:
+      room-summary-updated: ROOM_SUMMARY_UPDATED
+      message-read: MESSAGE_READ_UNREAD_COUNT_UPDATED
+      chat-notification: MESSAGE_NOTIFICATION
+      chat-list-upsert: CHAT_LIST_UPSERT_UPDATED
 
