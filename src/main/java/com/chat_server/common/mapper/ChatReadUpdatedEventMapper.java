@@ -16,7 +16,7 @@ public class ChatReadUpdatedEventMapper {
     public ChatReadUpdatedEvent toChatReadUpdatedEvent(
             Long roomId,
             String readerUserUuid,
-            Long messageId,
+            Long lastReadMessageId,
             List<UpdatedMessageUnreadCount> updatedMessageUnreadCounts
     ) {
         String messageType=  webSocketProperties.getEvent().getMessageRead();
@@ -24,7 +24,7 @@ public class ChatReadUpdatedEventMapper {
                 roomId,
                 messageType,
                 readerUserUuid,
-                messageId,
+                lastReadMessageId,
                 updatedMessageUnreadCounts
         );
     }

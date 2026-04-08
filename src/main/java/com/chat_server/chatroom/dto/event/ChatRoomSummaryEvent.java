@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 
 public record ChatRoomSummaryEvent(
         Long roomId,
-        String type,
+        String eventType,
         String lastMessagePreview,
         LocalDateTime lastMessageAt,
         Integer unreadCount

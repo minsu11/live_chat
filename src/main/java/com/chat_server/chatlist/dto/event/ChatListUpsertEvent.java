@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
  */
 public record ChatListUpsertEvent(
         Long roomId,
-        String type,
+        String eventType,
         String displayName,
         Integer unreadCount,
         String lastMessagePreview,

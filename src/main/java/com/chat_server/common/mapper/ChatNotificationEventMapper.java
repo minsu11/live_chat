@@ -19,11 +19,11 @@ public class ChatNotificationEventMapper {
             String preview,
             LocalDateTime createdAt
     ) {
-        String messageType = webSocketProperties.getEvent().getChatNotification();
+        String eventType = webSocketProperties.getEvent().getChatNotification();
 
         return new ChatNotificationEvent(
                 roomId,
-                messageType,
+                eventType,
                 title,
                 preview,
                 createdAt

@@ -21,10 +21,10 @@ public class ChatListUpsertEventMapper {
             LocalDateTime lastMessageAt,
             LocalDateTime orderAt
     ) {
-        String messageType = webSocketProperties.getEvent().getChatListUpsert();
+        String eventType = webSocketProperties.getEvent().getChatListUpsert();
         return new ChatListUpsertEvent(
                 roomId,
-                messageType,
+                eventType,
                 displayName,
                 unreadCount,
                 lastMessagePreview,

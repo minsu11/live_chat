@@ -19,10 +19,10 @@ public class ChatRoomSummaryEventMapper {
                                      LocalDateTime lastMessageAt,
                                      Integer unreadCount
                                      ) {
-        String messageType = webSocketProperties.getEvent().getRoomSummaryUpdated();
+        String eventType = webSocketProperties.getEvent().getRoomSummaryUpdated();
         return new ChatRoomSummaryEvent(
                 roomId,
-                messageType,
+                eventType,
                 lastMessagePreview,
                 lastMessageAt,
                 unreadCount

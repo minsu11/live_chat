@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 
 public record ChatNotificationEvent(
         Long roomId,
-        String type,
+        String eventType,
         String title,
         String preview,
         LocalDateTime createdAt

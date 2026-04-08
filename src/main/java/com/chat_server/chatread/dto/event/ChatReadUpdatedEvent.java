@@ -12,7 +12,7 @@ import java.util.List;
  */
 public record ChatReadUpdatedEvent(
     Long roomId,
-    String type,
+    String eventType,
     String readerUserUuid,
     Long lastReadMessageId,
     List<UpdatedMessageUnreadCount> updatedMessages
