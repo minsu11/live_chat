@@ -290,7 +290,7 @@ CREATE TABLE `chat_message` (
                                 `is_deleted`          TINYINT(1) NOT NULL DEFAULT 0,
                                 `client_message_id`   VARCHAR(100) NULL,
 
-                                CONSTRAINT `ck_chat_message_type` CHECK (`message_type` IN ('TEXT', 'IMAGE', 'FILE', 'SYSTEM')),
+                                CONSTRAINT `ck_chat_message_type` CHECK (`message_type` IN ('TEXT', 'EMOJI', 'IMAGE', 'FILE', 'SYSTEM')),
                                 CONSTRAINT `uk_chat_message_client` UNIQUE (`client_message_id`),
                                 CONSTRAINT `fk_chat_message_room`
                                     FOREIGN KEY (`chat_room_id`) REFERENCES `chat_room`(`id`) ON DELETE CASCADE,
