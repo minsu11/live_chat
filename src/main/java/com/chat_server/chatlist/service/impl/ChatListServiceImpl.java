@@ -1,9 +1,11 @@
 package com.chat_server.chatlist.service.impl;
 
+import com.chat_server.chatlist.dto.response.ChatListItemResponse;
 import com.chat_server.chatlist.dto.response.ChatRoomListResponse;
 import com.chat_server.chatlist.dto.response.ChatUnreadCountRow;
 import com.chat_server.chatlist.repository.ChatListRepository;
 import com.chat_server.chatlist.service.ChatListService;
+import com.chat_server.chatroom.resolver.ChatRoomDisplayResolver;
 import com.chat_server.common.cursor.ChatListCursorCodec;
 import com.chat_server.common.cursor.ChatListCursorKey;
 import com.chat_server.friend.dto.response.CursorPageResponse;
@@ -27,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class ChatListServiceImpl implements ChatListService {
     private final ChatListRepository chatListRepository;
+    private final ChatRoomDisplayResolver chatRoomDisplayResolver;
 
     @Override
     @Transactional(readOnly = true)
@@ -54,13 +57,28 @@ public class ChatListServiceImpl implements ChatListService {
         Slice<ChatRoomListResponse> slice =
             chatListRepository.getChatRoomListByCursor(userId, limit, decoded);
 
+        List<ChatRoomListResponse> content = slice.getContent().stream()
+                .map(item -> new ChatRoomListResponse(
+                        item.roomId(),
+                        chatRoomDisplayResolver.resolveTitle(item.roomId(), userId),
+                        item.unreadCount(),
+                        item.lastMessagePreview(),
+                        item.lastMessageAt(),
+                        item.orderAt()
+                ))
+                .toList();
         // 3) next 커서 생성
         String next = null;
         log.info("chat list : {}", slice.toString());
-        if (slice.hasNext() && !slice.getContent().isEmpty()) {
-            ChatRoomListResponse last = slice.getContent().get(slice.getContent().size() - 1);
-
-            long lastAtEpochMillis = last.lastMessageAt()
+        if (slice.hasNext() && !content.isEmpty()) {
+            ChatRoomListResponse last = content.get(content.size() - 1);
+            LocalDateTime cursorBase = last.orderAt();
+            if (cursorBase == null) {
+                throw new IllegalStateException(
+                    "chat list next cursor 생성 실패: orderAt is null. roomId=" + last.roomId()
+                );
+            }
+            long lastAtEpochMillis = cursorBase
                 .atOffset(ZoneOffset.UTC)   // DB를 UTC 기준 LocalDateTime으로 본다는 가정
                 .toInstant()
                 .toEpochMilli();
@@ -69,7 +87,7 @@ public class ChatListServiceImpl implements ChatListService {
         }
 
         // 4) 공통 응답 래핑
-        return new CursorPageResponse<>(slice.getContent(), next, slice.hasNext());
+        return new CursorPageResponse<>(content, next, slice.hasNext());
     }
 
     @Override
@@ -212,5 +230,21 @@ public class ChatListServiceImpl implements ChatListService {
         }
 
         return result;
+    }
+    @Override
+    @Transactional(readOnly = true)
+    public ChatListItemResponse getChatListItem(Long roomId, Long userId) {
+        ChatListItemResponse item = chatListRepository.findChatListItem(roomId, userId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "채팅방 목록 row를 찾을 수 없습니다. roomId=" + roomId + ", userId=" + userId
+                ));
+        return new ChatListItemResponse(
+                item.roomId(),
+                chatRoomDisplayResolver.resolveTitle(item.roomId(), userId),
+                item.unreadCount(),
+                item.lastMessagePreview(),
+                item.lastMessageAt(),
+                item.orderAt()
+        );
     }
 }

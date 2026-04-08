@@ -14,6 +14,7 @@ public class WebSocketProperties {
     private String pubPrefix;
     private String endPoint;
     private Chat chat;
+    private Event event;
 
     @Getter
     @Setter
@@ -21,5 +22,16 @@ public class WebSocketProperties {
         private String messagePath;
         private String roomPath;
         private String summaryEventPath;
+        private String chatList;
+        private String chatNotification;
+    }
+
+    @Getter
+    @Setter
+    public static class Event{
+        private String roomSummaryUpdated;
+        private String messageRead;
+        private String chatNotification;
+        private String chatListUpsert;
     }
 }

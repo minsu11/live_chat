@@ -2,13 +2,12 @@ package com.chat_server.chatlist.dto.response;
 
 import java.time.LocalDateTime;
 
-public record ChatRoomListResponse (
+public record ChatListItemResponse(
         Long roomId,
-        String roomName,
+        String displayName,
         Integer unreadCount,
         String lastMessagePreview,
         LocalDateTime lastMessageAt,
         LocalDateTime orderAt
-){
-
+) {
 }

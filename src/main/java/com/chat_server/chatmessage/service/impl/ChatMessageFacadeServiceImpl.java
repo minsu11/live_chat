@@ -1,25 +1,34 @@
 package com.chat_server.chatmessage.service.impl;
 
+import com.chat_server.chatlist.dto.event.ChatListUpsertEvent;
+import com.chat_server.chatlist.dto.response.ChatListItemResponse;
 import com.chat_server.chatlist.service.ChatListService;
 import com.chat_server.chatmessage.dto.request.ChatSendRequest;
 import com.chat_server.chatmessage.dto.response.ChatMessageResponse;
 import com.chat_server.chatmessage.entity.ChatMessage;
 import com.chat_server.chatmessage.service.ChatMessageFacadeService;
 import com.chat_server.chatmessage.service.ChatMessageService;
+import com.chat_server.chatnotification.dto.event.ChatNotificationEvent;
 import com.chat_server.chatroom.dto.event.ChatRoomSummaryEvent;
 import com.chat_server.chatroom.entity.ChatRoom;
+import com.chat_server.chatroom.resolver.ChatRoomDisplayResolver;
 import com.chat_server.chatroom.service.ChatRoomQueryService;
 import com.chat_server.chatroom.service.ChatRoomService;
+import com.chat_server.common.mapper.ChatListUpsertEventMapper;
 import com.chat_server.common.mapper.ChatMessageResponseMapper;
+import com.chat_server.common.mapper.ChatNotificationEventMapper;
 import com.chat_server.common.mapper.ChatRoomSummaryEventMapper;
 import com.chat_server.user.service.UserDisplayNameService;
 import com.chat_server.userblock.service.UserBlockService;
 import com.chat_server.userprofileImage.service.UserProfileImageService;
+import com.chat_server.websocket.broadcaster.chatmessage.ChatListEventBroadcaster;
 import com.chat_server.websocket.broadcaster.chatmessage.ChatMessageBroadCaster;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
+import com.chat_server.websocket.broadcaster.chatmessage.ChatNotificationBroadcaster;
 import com.chat_server.websocket.broadcaster.chatroom.ChatRoomSummaryBroadcaster;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,8 +52,11 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
     private final ChatListService chatListService;
     private final UserDisplayNameService userDisplayNameService;
     private final UserProfileImageService userProfileImageService;
-    private final ChatRoomSummaryBroadcaster chatRoomSummaryBroadcaster;
-    private final ChatRoomSummaryEventMapper chatRoomSummaryEventMapper;
+    private final ChatNotificationBroadcaster chatNotificationBroadcaster;
+    private final ChatNotificationEventMapper chatNotificationEventMapper;
+    private final ChatRoomDisplayResolver chatRoomDisplayResolver;
+    private final ChatListEventBroadcaster chatListEventBroadcaster;
+    private final ChatListUpsertEventMapper chatListUpsertEventMapper;
 
     /**
      * 메시지 전송 전체 플로우를 오케스트레이션한다.
@@ -71,10 +83,11 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         String messageType = request.messageType();
         String message = request.messageContent();
 
+        // chatting room
         ChatRoom room = chatRoomQueryService.getRoomOrThrow(roomId);
-        Long memberId = chatRoomQueryService.getMemberId(room.getId(), userId);
         String memberProfileUrl = userProfileImageService.getUserProfileUrl(userId);
-        validateSendPermission(room, userId, memberId, request);
+        // 발신자의 전송 권한
+        validateSendPermission(room, userId);
         ChatMessage chatMessage = chatMessageService.createChatMessage(room, userId, messageType, message);
 
         updateRoomAndChatListOnSend(room, chatMessage);
@@ -88,6 +101,14 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         Map<Long, Integer> unreadCountMap = chatListService.getUnreadCountMap(roomId, roomMemberUserIds);
         int messageUnreadCount = Math.max(roomMemberUserIds.size() - 1, 0);
         for (Long receiverUserId : roomMemberUserIds) {
+
+            // 🔥 2. 차단 체크 (핵심 추가)
+            if (!userId.equals(receiverUserId) &&
+                    userBlockService.isBlocked(userId, receiverUserId)) {
+                log.debug("차단된 사용자 - sender: {}, receiver: {}", userId, receiverUserId);
+                continue; // ❌ 이 사람한테는 안보냄
+            }
+
             ChatMessageResponse response = createResponseForReceiver(
                     chatMessage,
                     roomId,
@@ -95,17 +116,29 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
                     receiverUserId,
                     memberProfileUrl,
                     messageUnreadCount);
+            int unreadCount = Objects.equals(receiverUserId, userId) ? 0: unreadCountMap.getOrDefault(receiverUserId, 0);
+            log.info("broadcast room message. roomId={}, messageId={}", roomId, chatMessage.getId());
             chatMessageBroadCaster.broadcastMessage(receiverUserId, response);
-            int unreadCount = unreadCountMap.getOrDefault(receiverUserId, 0);
 
-            ChatRoomSummaryEvent event = chatRoomSummaryEventMapper.toEvent(
-                    roomId,
-                    chatMessage.getMessageContent(),
-                    chatMessage.getCreatedAt(),
-                    unreadCount
-            );
+            ChatListItemResponse chatListItem = chatListService.getChatListItem(roomId, receiverUserId);
+            ChatListUpsertEvent chatListEvent =
+                    chatListUpsertEventMapper.toChatListUpsertEvent(chatListItem);
 
-            chatRoomSummaryBroadcaster.broadcastToUser(receiverUserId, event);
+            chatListEventBroadcaster.broadcastUpsertToUser(receiverUserId, chatListEvent);
+
+            if (!userId.equals(receiverUserId)) {
+                String title = chatRoomDisplayResolver.resolveTitle(roomId, receiverUserId, room);
+
+                ChatNotificationEvent notificationEvent =
+                        chatNotificationEventMapper.toChatNotificationEvent(
+                                roomId,
+                                title,
+                                chatMessage.getMessageContent(),
+                                chatMessage.getCreatedAt()
+                        );
+
+                chatNotificationBroadcaster.broadcastToUser(receiverUserId, notificationEvent);
+            }
             log.debug("sendMessage broadcast 완료 - receiverUserId: {}, response: {}", receiverUserId, response);
         }
         log.debug("sendMessage 완료 - roomId: {}, messageId: {}", roomId, chatMessage.getId());
@@ -116,17 +149,14 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
      *
      * @param room 메시지를 보내려는 채팅방
      * @param userId 발신자 사용자 ID
-     * @param memberId 상대 멤버 사용자 ID
-     * @param request 원본 전송 요청(디버그 추적용)
      * @throws RuntimeException 멤버십 없음/차단됨 등 검증 실패 시 도메인 예외
      */
-    private void validateSendPermission(ChatRoom room, Long userId, Long memberId, ChatSendRequest request) {
+    private void validateSendPermission(ChatRoom room, Long userId) {
         // 송신자 권한 및 차단 상태를 검증한다.
         log.info("validateSendPermission 호출");
-        log.debug("validateSendPermission params - roomId: {}, userId: {}, memberId: {}, request: {}",
-                room.getId(), userId, memberId, request);
+        log.debug("validateSendPermission params - roomId: {}, userId: {}",
+                room.getId(), userId);
         chatRoomQueryService.validateMemberOrThrow(room.getId(), userId);
-        userBlockService.validateSenderNotBlocked(userId, memberId);
         log.debug("validateSendPermission 완료 - roomId: {}, userId: {}", room.getId(), userId);
     }
 

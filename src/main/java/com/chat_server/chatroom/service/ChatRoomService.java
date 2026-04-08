@@ -15,7 +15,8 @@ public interface ChatRoomService {
 
     ChatRoomResult getOrCreateOneToOneChatRoom(Long userId, Long friendId);
 
-    ChatRoomSummaryResponse getChatRoomSummary(Long roomId, Long userId);
 
     void updateLastMessageInfo(ChatRoom chatRoom, ChatMessage chatMessage);
+    ChatRoom createGroupChatRoom(String title, Long createdBy);
+
 }

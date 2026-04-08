@@ -25,4 +25,10 @@ public class UserBlockServiceImpl implements UserBlockService {
             throw new UserBlockExistsException("차단된 관계입니다..");
         }
     }
+
+    @Override
+    public boolean isBlocked(Long senderUserId, Long receiverUserId) {
+        return     userBlockRepository.existsByUserBlock(senderUserId,receiverUserId)
+                || userBlockRepository.existsByUserBlock(receiverUserId,senderUserId);
+    }
 }

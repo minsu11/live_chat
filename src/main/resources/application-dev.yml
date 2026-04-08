@@ -33,6 +33,9 @@ logging:
     io.netty: info
     reactor.netty: info
     org.apache.http: info
+    org.springframework: debug
+    sun.rmi: info
+    javax.management: info
     org.springframework.messaging: debug
     org.springframework.web.socket.messaging: debug
     org.springframework.messaging.simp.annotation.support.SimpAnnotationMethodMessageHandler: debug

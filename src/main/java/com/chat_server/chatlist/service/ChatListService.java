@@ -1,5 +1,6 @@
 package com.chat_server.chatlist.service;
 
+import com.chat_server.chatlist.dto.response.ChatListItemResponse;
 import com.chat_server.chatlist.dto.response.ChatRoomListResponse;
 import com.chat_server.friend.dto.response.CursorPageResponse;
 import com.chat_server.friend.dto.response.UserFriendResponse;
@@ -106,6 +107,15 @@ public interface ChatListService {
      * @return 업데이트된 row 수
      */
     int markAsRead(Long roomId, Long userId, Long messageId);
+
+    /**
+     * 특정 사용자 기준으로 채팅방 목록 row 1건을 조회한다.
+     *
+     * @param roomId 채팅방 ID
+     * @param userId 사용자 ID
+     * @return chat list row DTO
+     */
+    ChatListItemResponse getChatListItem(Long roomId, Long userId);
 
     /**
      * 특정 채팅방에서 여러 사용자의 unread count를 조회한다.

@@ -15,6 +15,7 @@ import com.querydsl.jpa.JPAExpressions;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
 
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -69,7 +70,7 @@ public class ChatRoomRepositoryCustomImpl extends QuerydslRepositorySupport impl
                 .select(Projections.constructor(
                         ChatRoomSummaryResponse.class,
                         qChatRoom.id,
-                        qChatRoom.roomType,
+                        qChatRoom.roomType.stringValue(),
                         titleExpr,
                         imageUrlExpr,
                         qChatRoom.maxPerson
@@ -96,6 +97,28 @@ public class ChatRoomRepositoryCustomImpl extends QuerydslRepositorySupport impl
                 )
                 .fetchOne()
         );
+    }
+
+    @Override
+    public List<Long> findOtherMemberIdsByRoomId(Long roomId, Long userId) {
+        return from(qChatList)
+                .select(qChatList.user.id)
+                .join(qChatList.chatRoom, qChatRoom)
+                .where(
+                        qChatRoom.id.eq(roomId)
+                                .and(qChatList.user.id.ne(userId))
+                )
+                .fetch();
+    }
+
+    @Override
+    public Long countMembersByRoomId(Long roomId) {
+        Long count = from(qChatList)
+                .select(qChatList.count())
+                .join(qChatList.chatRoom, qChatRoom)
+                .where(qChatRoom.id.eq(roomId))
+                .fetchOne();
+        return count == null ? 0 : count;
     }
 
     // room에 본인 유저 아이디가 있는지 판별하는 아이디
