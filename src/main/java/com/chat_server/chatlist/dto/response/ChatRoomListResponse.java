@@ -6,6 +6,7 @@ public record ChatRoomListResponse (
         Long roomId,
         String roomName,
         Integer unreadCount,
+        String lastMessagePreview,
         LocalDateTime lastMessageAt,
         LocalDateTime orderAt
 ){

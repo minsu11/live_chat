@@ -105,6 +105,7 @@ public class ChatReadFacadeServiceImpl implements ChatReadFacadeService {
                 item.roomId(),
                 item.displayName(),
                 item.unreadCount(),
+                item.lastMessagePreview(),
                 item.lastMessageAt(),
                 item.orderAt()
         );

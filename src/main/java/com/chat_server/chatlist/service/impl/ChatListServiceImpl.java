@@ -62,6 +62,7 @@ public class ChatListServiceImpl implements ChatListService {
                         item.roomId(),
                         chatRoomDisplayResolver.resolveTitle(item.roomId(), userId),
                         item.unreadCount(),
+                        item.lastMessagePreview(),
                         item.lastMessageAt(),
                         item.orderAt()
                 ))
@@ -241,6 +242,7 @@ public class ChatListServiceImpl implements ChatListService {
                 item.roomId(),
                 chatRoomDisplayResolver.resolveTitle(item.roomId(), userId),
                 item.unreadCount(),
+                item.lastMessagePreview(),
                 item.lastMessageAt(),
                 item.orderAt()
         );

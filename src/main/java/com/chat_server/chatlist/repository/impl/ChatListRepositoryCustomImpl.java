@@ -82,6 +82,7 @@ public class ChatListRepositoryCustomImpl extends QuerydslRepositorySupport
                 ChatRoomListRow.class,
                 qChatRoom.id,
                 displayName,
+                qChatRoom.lastMessagePreview,
                 qChatRoom.lastMessageAt,
                 qChatList.unreadCount,
                 orderAt
@@ -98,6 +99,7 @@ public class ChatListRepositoryCustomImpl extends QuerydslRepositorySupport
                 r.roomId(),
                 r.displayName(),
                 r.unreadCount(),
+                r.lastMessagePreview(),
                 r.lastMessageAt(),
                 r.orderAt()
             ))
@@ -128,6 +130,7 @@ public class ChatListRepositoryCustomImpl extends QuerydslRepositorySupport
                 qChatRoom.id,
                 displayName,
                 qChatList.unreadCount,
+                qChatRoom.lastMessagePreview,
                 qChatRoom.lastMessageAt,
                 orderAt
             ))

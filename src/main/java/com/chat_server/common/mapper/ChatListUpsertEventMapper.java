@@ -17,6 +17,7 @@ public class ChatListUpsertEventMapper {
             Long roomId,
             String displayName,
             Integer unreadCount,
+            String lastMessagePreview,
             LocalDateTime lastMessageAt,
             LocalDateTime orderAt
     ) {
@@ -26,6 +27,7 @@ public class ChatListUpsertEventMapper {
                 messageType,
                 displayName,
                 unreadCount,
+                lastMessagePreview,
                 lastMessageAt,
                 orderAt
         );
@@ -36,6 +38,7 @@ public class ChatListUpsertEventMapper {
                 item.roomId(),
                 item.displayName(),
                 item.unreadCount(),
+                item.lastMessagePreview(),
                 item.lastMessageAt(),
                 item.orderAt()
         );

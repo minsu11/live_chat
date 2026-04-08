@@ -19,6 +19,7 @@ public record ChatListUpsertEvent(
         String type,
         String displayName,
         Integer unreadCount,
+        String lastMessagePreview,
         LocalDateTime lastMessageAt,
         LocalDateTime orderAt
 ) {

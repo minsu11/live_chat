@@ -2,9 +2,7 @@ package com.chat_server.chatmessage.controller;
 
 import com.chat_server.chatmessage.dto.request.ChatSendRequest;
 import com.chat_server.chatmessage.service.ChatMessageFacadeService;
-import com.chat_server.chatroom.service.ChatRoomQueryService;
 import com.chat_server.user.dto.response.AuthenticatedUser;
-import com.chat_server.websocket.broadcaster.chatmessage.ChatMessageBroadCaster;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -17,8 +15,6 @@ import org.springframework.stereotype.Controller;
 public class ChatMessageController {
 
     private final ChatMessageFacadeService messageFacadeService;
-    private final ChatMessageBroadCaster chatMessageBroadCaster;
-    private final ChatRoomQueryService chatRoomQueryService;
 
     /**
      * 프론트에서 전송한 메시지를 저장하고 대상자에게 실시간 전파한다.
