@@ -11,10 +11,10 @@ spring:
     group:
       dev:
         - custom
-        - web
+        - web-dev
       prod:
         - custom
-        - web
+        - web-prod
 
 server:
   port: 7070
@@ -26,3 +26,9 @@ logging:
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
   level:
     root: debug
+
+file:
+  upload:
+    profile-dir: /app/uploads/profile
+    chat-image-dir: /app/uploads/chat/images
+    chat-file-dir: /app/uploads/chat/files

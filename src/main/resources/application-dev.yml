@@ -25,6 +25,12 @@ auth:
   key:
     public-path: classpath:rsa/login_public_key.pem
 
+file:
+  upload:
+    profile-dir: C:\project_file\live_chat\src\main\resources\image\profile
+    chat-image-dir: C:\project_file\live_chat\src\main\resources\image\chat
+    chat-file-dir: C:\project_file\live_chat\src\main\resources\image\file
+
 logging:
   level:
     com.chat_server: debug
