@@ -80,7 +80,12 @@ public class ChatMessage {
             type = MessageType.TEXT;
         }else if(messageType.equalsIgnoreCase("image")) {
             type = MessageType.IMAGE;
-        }else if(messageType.equalsIgnoreCase("system")) {}
+        }else if(messageType.equalsIgnoreCase("system")) {
+            type = MessageType.SYSTEM;
+        }
+        else if(messageType.equalsIgnoreCase("emoji")) {
+            type = MessageType.EMOJI;
+        }
         else{
             type = MessageType.FILE;
         }

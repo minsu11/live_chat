@@ -80,7 +80,7 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         // 상세 파라미터는 debug에만 남겨 운영 로그 노이즈를 줄인다.
         log.debug("sendMessage params - request: {}, userId: {}", request, userId);
         Long roomId = request.roomId();
-        String messageType = request.messageType();
+        String messageType = request.messageType().name();
         String message = request.messageContent();
 
         // chatting room
