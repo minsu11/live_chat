@@ -1,11 +1,10 @@
 package com.chat_server.chatroom.service.impl;
 
 import com.chat_server.chatmessage.entity.ChatMessage;
+import com.chat_server.chatmessage.resolver.ChatMessagePreviewResolver;
 import com.chat_server.chatroom.dto.response.ChatRoomResult;
-import com.chat_server.chatroom.dto.response.ChatRoomSummaryResponse;
 import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.chatroom.enums.RoomType;
-import com.chat_server.chatroom.exception.ChatRoomNotFoundException;
 import com.chat_server.chatroom.repository.ChatRoomRepository;
 import com.chat_server.chatroom.service.ChatRoomService;
 import com.chat_server.friend.dto.response.CursorPageResponse;
@@ -21,10 +20,6 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -84,7 +79,7 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     public void updateLastMessageInfo(ChatRoom chatRoom, ChatMessage chatMessage) {
         Long senderId = chatMessage.getSender().getId();
         Long messageId = chatMessage.getId();
-        String preview = chatMessage.getMessageContent();
+        String preview = ChatMessagePreviewResolver.resolve(chatMessage.getMessageType(), chatMessage.getMessageContent());
 
         chatRoom.updateLastMessageAt(
                 senderId,

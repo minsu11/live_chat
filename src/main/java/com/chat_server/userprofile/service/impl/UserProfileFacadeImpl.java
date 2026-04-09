@@ -1,7 +1,7 @@
 package com.chat_server.userprofile.service.impl;
 
 
-import com.chat_server.file.FileService;
+import com.chat_server.file.service.FileService;
 import com.chat_server.user.service.UserService;
 import com.chat_server.userprofile.dto.request.UserProfileUpdateRequest;
 import com.chat_server.userprofile.dto.response.UserProfileUpdateImageResponse;

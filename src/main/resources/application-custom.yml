@@ -32,6 +32,8 @@ custom:
       prefix: "/search"
     chat-room:
       prefix: "/chat-room"
+    chat-file:
+      prefix: "/chat-files"
 
   redis:
     timeout: 3000

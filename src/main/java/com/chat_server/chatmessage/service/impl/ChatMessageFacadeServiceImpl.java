@@ -9,7 +9,6 @@ import com.chat_server.chatmessage.entity.ChatMessage;
 import com.chat_server.chatmessage.service.ChatMessageFacadeService;
 import com.chat_server.chatmessage.service.ChatMessageService;
 import com.chat_server.chatnotification.dto.event.ChatNotificationEvent;
-import com.chat_server.chatroom.dto.event.ChatRoomSummaryEvent;
 import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.chatroom.resolver.ChatRoomDisplayResolver;
 import com.chat_server.chatroom.service.ChatRoomQueryService;
@@ -17,7 +16,6 @@ import com.chat_server.chatroom.service.ChatRoomService;
 import com.chat_server.common.mapper.ChatListUpsertEventMapper;
 import com.chat_server.common.mapper.ChatMessageResponseMapper;
 import com.chat_server.common.mapper.ChatNotificationEventMapper;
-import com.chat_server.common.mapper.ChatRoomSummaryEventMapper;
 import com.chat_server.user.service.UserDisplayNameService;
 import com.chat_server.userblock.service.UserBlockService;
 import com.chat_server.userprofileImage.service.UserProfileImageService;
@@ -26,10 +24,8 @@ import com.chat_server.websocket.broadcaster.chatmessage.ChatMessageBroadCaster;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import com.chat_server.websocket.broadcaster.chatmessage.ChatNotificationBroadcaster;
-import com.chat_server.websocket.broadcaster.chatroom.ChatRoomSummaryBroadcaster;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -80,7 +76,7 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         // 상세 파라미터는 debug에만 남겨 운영 로그 노이즈를 줄인다.
         log.debug("sendMessage params - request: {}, userId: {}", request, userId);
         Long roomId = request.roomId();
-        String messageType = request.messageType();
+        String messageType = request.messageType().name();
         String message = request.messageContent();
 
         // chatting room
@@ -98,7 +94,6 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         // 채팅방 멤버 목록을 조회하여 사용자별(수신자별) payload를 생성/전송한다.
         List<Long> roomMemberUserIds = chatListService.getRoomMemberUserIds(roomId);
         log.debug("sendMessage roomMemberUserIds: {}", roomMemberUserIds);
-        Map<Long, Integer> unreadCountMap = chatListService.getUnreadCountMap(roomId, roomMemberUserIds);
         int messageUnreadCount = Math.max(roomMemberUserIds.size() - 1, 0);
         for (Long receiverUserId : roomMemberUserIds) {
 
@@ -116,7 +111,6 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
                     receiverUserId,
                     memberProfileUrl,
                     messageUnreadCount);
-            int unreadCount = Objects.equals(receiverUserId, userId) ? 0: unreadCountMap.getOrDefault(receiverUserId, 0);
             log.info("broadcast room message. roomId={}, messageId={}", roomId, chatMessage.getId());
             chatMessageBroadCaster.broadcastMessage(receiverUserId, response);
 
@@ -133,7 +127,7 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
                         chatNotificationEventMapper.toChatNotificationEvent(
                                 roomId,
                                 title,
-                                chatMessage.getMessageContent(),
+                                chatListItem.lastMessagePreview(),
                                 chatMessage.getCreatedAt()
                         );
 

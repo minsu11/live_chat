@@ -9,6 +9,12 @@ auth:
   key:
     public-path: ${AUTH_KEY_PUBLIC_PATH:classpath:rsa/login_public_key.pem}
 
+file:
+  upload:
+    profile-dir: /app/uploads/profile
+    chat-image-dir: /app/uploads/chat/images
+    chat-file-dir: /app/uploads/chat/files
+
 logging:
   level:
     com.chat_server: info
