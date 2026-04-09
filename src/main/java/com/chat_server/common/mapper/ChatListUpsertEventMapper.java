@@ -43,15 +43,5 @@ public class ChatListUpsertEventMapper {
                 item.orderAt()
         );
     }
-    public ChatListUpsertEvent toChatListUpsertEvent(ChatListItemResponse item, String preview) {
-        return toChatListUpsertEvent(
-                item.roomId(),
-                item.displayName(),
-                item.unreadCount(),
-                preview,
-                item.lastMessageAt(),
-                item.orderAt()
-        );
-    }
 
 }

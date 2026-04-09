@@ -94,7 +94,6 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         // 채팅방 멤버 목록을 조회하여 사용자별(수신자별) payload를 생성/전송한다.
         List<Long> roomMemberUserIds = chatListService.getRoomMemberUserIds(roomId);
         log.debug("sendMessage roomMemberUserIds: {}", roomMemberUserIds);
-        Map<Long, Integer> unreadCountMap = chatListService.getUnreadCountMap(roomId, roomMemberUserIds);
         int messageUnreadCount = Math.max(roomMemberUserIds.size() - 1, 0);
         for (Long receiverUserId : roomMemberUserIds) {
 
