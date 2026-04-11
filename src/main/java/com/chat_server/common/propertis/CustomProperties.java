@@ -92,6 +92,7 @@ public class CustomProperties {
         private Search search;
         private ChatRoom chatRoom;
         private ChatFile chatFile;
+        private ChatAttachments chatAttachments;
 
         @Getter
         @Setter
@@ -125,6 +126,12 @@ public class CustomProperties {
         @Getter
         @Setter
         public static class ChatFile{
+            private String prefix;
+        }
+
+        @Getter
+        @Setter
+        public static class ChatAttachments{
             private String prefix;
         }
     }

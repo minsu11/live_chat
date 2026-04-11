@@ -35,6 +35,7 @@ public class FileServiceImpl implements FileService {
     @Override
     public String saveChatFile(Long userId, MultipartFile file) {
         validateFile(file);
+        validateChatFile(file);
         return save(userId, file, fileUploadProperties.getChatFileDir(), "/uploads/chat/files/");
     }
 
@@ -69,7 +70,27 @@ public class FileServiceImpl implements FileService {
             throw new IllegalArgumentException("이미지 파일만 업로드할 수 있습니다.");
         }
     }
+    private void validateChatFile(MultipartFile file) {
+        String fileName = Objects.requireNonNullElse(file.getOriginalFilename(), "").toLowerCase();
 
+        boolean allowed =
+                fileName.endsWith(".pdf") ||
+                        fileName.endsWith(".doc") ||
+                        fileName.endsWith(".docx") ||
+                        fileName.endsWith(".xls") ||
+                        fileName.endsWith(".xlsx") ||
+                        fileName.endsWith(".txt") ||
+                        fileName.endsWith(".zip");
+
+        if (!allowed) {
+            throw new IllegalArgumentException("지원하지 않는 파일 형식입니다.");
+        }
+
+        long maxSize = 20 * 1024 * 1024L;
+        if (file.getSize() > maxSize) {
+            throw new IllegalArgumentException("파일 최대 크기를 초과했습니다.");
+        }
+    }
     private String getExtension(String fileName) {
         int idx = fileName.lastIndexOf(".");
         return idx > 0 ? fileName.substring(idx) : "";

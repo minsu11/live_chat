@@ -324,7 +324,9 @@ ALTER TABLE `chat_room`
 -- =========================================
 CREATE TABLE `chat_attachment` (
                                    `id`                  BIGINT AUTO_INCREMENT PRIMARY KEY,
-                                   `chat_message_id`     BIGINT NOT NULL,
+                                   `chat_message_id`     BIGINT ,
+                                    `room_id`            BIGINT NOT NULL ,
+                                    `uploader_id`        BIGINT NOT NULL ,
                                    `file_url`            VARCHAR(255) NOT NULL,
                                    `original_file_name`  VARCHAR(255) NOT NULL,
                                    `stored_file_name`    VARCHAR(255) NULL,
@@ -336,8 +338,15 @@ CREATE TABLE `chat_attachment` (
                                        FOREIGN KEY (`chat_message_id`) REFERENCES `chat_message`(`id`) ON DELETE CASCADE
 );
 
-CREATE INDEX `idx_chat_attachment_message` ON `chat_attachment`(`chat_message_id`);
+ALTER TABLE `chat_attachment`
+    ADD CONSTRAINT `fk_chat_attachment_room`
+        FOREIGN KEY (`room_id`) REFERENCES `chat_room`(`id`) ON DELETE CASCADE,
+    ADD CONSTRAINT `fk_chat_attachment_uploader`
+        FOREIGN KEY (`uploader_id`) REFERENCES `user`(`id`) ON DELETE CASCADE;
 
+CREATE INDEX `idx_chat_attachment_message` ON `chat_attachment`(`chat_message_id`);
+CREATE INDEX idx_chat_attachment_room_id ON chat_attachment(room_id);
+CREATE INDEX idx_chat_attachment_uploader_id ON chat_attachment(uploader_id);
 
 -- =========================================
 -- 16. CHAT ROOM SETTING
