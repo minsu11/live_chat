@@ -4,11 +4,14 @@ import com.chat_server.common.propertis.CustomProperties;
 import com.chat_server.error.dto.ErrorResponse;
 import com.chat_server.error.enumulation.ErrorCode;
 import com.chat_server.error.exception.BusinessException;
+import com.chat_server.file.exception.FileValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 
 /**
  * ErrorCode + application-custom.yml 메시지를 기반으로 예외를 응답한다.
@@ -168,5 +171,28 @@ public class GlobalExceptionHandler {
         }
         log.debug("resolveRuntimeErrorCode return - resolved: {}", resolved);
         return resolved;
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException e) {
+        ErrorCode errorCode = ErrorCode.FILE_SIZE_EXCEEDED;
+        ErrorResponse response = new ErrorResponse(errorCode, "파일 크기가 제한을 초과했습니다.");
+        return ResponseEntity.status(errorCode.getStatus()).body(response);
+    }
+
+    @ExceptionHandler(MultipartException.class)
+    public ResponseEntity<ErrorResponse> handleMultipartException(MultipartException e) {
+        ErrorResponse response = new ErrorResponse(ErrorCode.INVALID_FILE_UPLOAD, "파일 업로드 요청이 올바르지 않습니다.");
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(FileValidationException.class)
+    public ResponseEntity<ErrorResponse> handleFileValidationException(FileValidationException e) {
+        ErrorCode errorCode = e.getErrorCode();
+        ErrorResponse response = new ErrorResponse(
+                errorCode,
+                e.getMessage()
+        );
+        return ResponseEntity.status(errorCode.getStatus()).body(response);
     }
 }

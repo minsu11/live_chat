@@ -18,7 +18,10 @@ public enum ErrorCode {
     USER_ALREADY_EXISTS(HttpStatus.CONFLICT),
     USER_BLOCK_EXISTS(HttpStatus.CONFLICT),
     INVALID_INPUT(HttpStatus.BAD_REQUEST),
-    VALIDATION_ERROR(HttpStatus.BAD_REQUEST);
+    VALIDATION_ERROR(HttpStatus.BAD_REQUEST),
+    FILE_SIZE_EXCEEDED(HttpStatus.PAYLOAD_TOO_LARGE),
+    INVALID_FILE_UPLOAD(HttpStatus.PAYLOAD_TOO_LARGE),
+    ;
 
     private final HttpStatus status;
 
