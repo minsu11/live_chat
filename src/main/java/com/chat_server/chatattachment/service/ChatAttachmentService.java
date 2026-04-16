@@ -7,6 +7,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface ChatAttachmentService {
     ChatAttachmentUploadResponse upload(Long roomId, Long userId, MultipartFile file);
-    void connectMessage(Long attachmentId, Long userId, ChatMessage chatMessage);
+
+    void connectMessage(Long attachmentId, ChatMessage chatMessage, Long userId);
+
     ChatAttachmentDownloadResult download(Long attachmentId, Long userId);
 }

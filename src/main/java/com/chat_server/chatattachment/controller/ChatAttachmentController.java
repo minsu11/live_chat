@@ -8,6 +8,7 @@ import com.chat_server.user.dto.response.AuthenticatedUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -36,7 +37,7 @@ public class ChatAttachmentController {
     }
 
     @GetMapping("/{attachmentId}/download")
-    public ResponseEntity<ApiResponse<Resource>> download(
+    public ResponseEntity<Resource> download(
             @PathVariable Long attachmentId,
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser
     ){
@@ -46,8 +47,14 @@ public class ChatAttachmentController {
         ContentDisposition disposition = ContentDisposition.attachment()
                 .filename(result.fileName(), StandardCharsets.UTF_8)
                 .build();
-        ApiResponse<Resource> response = ApiResponse.success(200,"다운로드 완료", result.resource());
-        return ResponseEntity.ok(response);
+
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.parseMediaType(result.contentType()))
+                .contentLength(result.contentLength())
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .header("X-Content-Type-Options", "nosniff")
+                .body(result.resource());
     }
 
 }
