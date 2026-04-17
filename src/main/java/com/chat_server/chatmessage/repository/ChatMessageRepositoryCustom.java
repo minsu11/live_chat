@@ -22,4 +22,6 @@ public interface ChatMessageRepositoryCustom {
                                                             @Nullable ChatMessageCursorKey cursorKey);
 
     List<UpdatedMessageUnreadCount> findUpdatedUnreadCounts(Long roomId, Long lastReadMessageId);
+
+    Slice<ChatMessageItemResponse> getMessagesAfter(Long roomId, Long afterMessageId, int limit);
 }

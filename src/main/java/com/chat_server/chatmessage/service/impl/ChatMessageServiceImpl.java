@@ -47,6 +47,11 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         return chatMessageRepository.findUpdatedUnreadCounts(roomId, lastReadMessageId);
     }
 
+    @Override
+    public Slice<ChatMessageItemResponse> getMessagesAfter(Long roomId, Long afterMessageId, int limit) {
+        return chatMessageRepository.getMessagesAfter(roomId, afterMessageId, limit);
+    }
+
     /**
      * 채팅 메시지를 생성하여 저장한다.
      *

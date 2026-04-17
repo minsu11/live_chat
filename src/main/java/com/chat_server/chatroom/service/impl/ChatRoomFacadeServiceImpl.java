@@ -2,6 +2,7 @@ package com.chat_server.chatroom.service.impl;
 
 import com.chat_server.chatlist.dto.response.ChatListItemResponse;
 import com.chat_server.chatlist.service.ChatListService;
+import com.chat_server.chatmessage.dto.response.ChatMessageCatchUpResponse;
 import com.chat_server.chatmessage.dto.response.ChatMessageItemResponse;
 import com.chat_server.chatmessage.dto.response.ChatMessageResponse;
 import com.chat_server.chatmessage.dto.response.ChatMessageSenderResponse;
@@ -25,6 +26,7 @@ import com.chat_server.common.mapper.ChatListUpsertEventMapper;
 import com.chat_server.user.service.UserDisplayNameService;
 import com.chat_server.user.service.UserService;
 import com.chat_server.websocket.broadcaster.chatmessage.ChatListEventBroadcaster;
+
 import java.time.ZoneOffset;
 import java.util.*;
 
@@ -88,10 +90,10 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
      * @param roomId 채팅방 ID
      * @param userId 요청 사용자 ID
      * @param cursor 메시지 커서(Base64). null이거나 디코딩 실패 시 첫 페이지처럼 동작한다.
-     * @param limit 페이지 크기. 1~100 범위로 보정하여 사용한다.
+     * @param limit  페이지 크기. 1~100 범위로 보정하여 사용한다.
      * @return 채팅방 진입 응답 DTO.
-     *         채팅방 기본 정보(roomId, roomType, title), 프론트 공통 메시지 응답 목록(messages),
-     *         다음 페이지 커서(nextCursor)를 포함한다.
+     * 채팅방 기본 정보(roomId, roomType, title), 프론트 공통 메시지 응답 목록(messages),
+     * 다음 페이지 커서(nextCursor)를 포함한다.
      *
      * <p>메시지 응답의 특징:
      * <ul>
@@ -156,7 +158,7 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
     /**
      * 1:1 채팅방을 조회/생성하고 멤버십을 보장한다.
      *
-     * @param userId 요청 유저 ID
+     * @param userId     요청 유저 ID
      * @param friendUuid 상대 유저 UUID
      * @return 채팅방 결과 DTO
      *
@@ -309,6 +311,38 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
         );
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public ChatMessageCatchUpResponse getMessagesAfter(Long roomId, Long userId, Long afterMessageId, int limit) {
+        chatRoomQueryService.validateMemberOrThrow(roomId, userId);
+
+        int safeLimit = Math.min(Math.max(limit, 1), 100);
+
+        var room = chatRoomQueryService.getRoomOrThrow(roomId);
+
+        var slice = chatMessageService.getMessagesAfter(roomId, afterMessageId, safeLimit);
+
+        Map<Long, String> displayNameCache = new HashMap<>();
+
+        List<ChatMessageResponse> messages = slice.getContent().stream()
+                .map(item -> toChatMessageResponse(item, roomId, userId, displayNameCache))
+                .sorted((a, b) -> a.createdAt().equals(b.createdAt())
+                        ? Long.compare(a.messageId(), b.messageId())
+                        : a.createdAt().compareTo(b.createdAt()))
+                .toList();
+
+        Long lastMessageId = messages.isEmpty()
+                ? afterMessageId
+                : messages.get(messages.size() - 1).messageId();
+
+        return new ChatMessageCatchUpResponse(
+                room.getId(),
+                messages,
+                slice.hasNext(),
+                lastMessageId
+        );
+    }
+
     /**
      * 채팅방 진입 조회용 메시지 DTO를 프론트 공통 메시지 응답 DTO로 변환한다.
      *
@@ -321,9 +355,9 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
      *   <li>발신자 ID와 요청 사용자 ID가 같으면 sender.mine 값을 true로 설정한다.</li>
      * </ul>
      *
-     * @param item 채팅방 진입 조회용 메시지 DTO
-     * @param roomId 채팅방 ID
-     * @param viewerUserId 현재 메시지를 조회 중인 사용자 ID
+     * @param item             채팅방 진입 조회용 메시지 DTO
+     * @param roomId           채팅방 ID
+     * @param viewerUserId     현재 메시지를 조회 중인 사용자 ID
      * @param displayNameCache 동일 요청 내 발신자별 표시 이름 재사용을 위한 임시 캐시
      * @return 프론트 공통 메시지 응답 DTO
      */
@@ -371,12 +405,12 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
 
         String trimmed = title.trim();
 
-        if(trimmed.isBlank()){
+        if (trimmed.isBlank()) {
             return null;
         }
 
-        String normalized = trimmed.replaceAll("[,\\s]+","");
-        if(normalized.isBlank()){
+        String normalized = trimmed.replaceAll("[,\\s]+", "");
+        if (normalized.isBlank()) {
             return null;
         }
 
