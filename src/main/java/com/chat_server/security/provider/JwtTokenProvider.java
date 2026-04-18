@@ -29,7 +29,7 @@ public class JwtTokenProvider {
         try {
             Claims claims = parseClaims(token);
             // todo 인가 처리, 알고리즘 등 조금 더 다듬어야함
-            return claims.getIssuer().equals("chat");
+            return "chat".equals(claims.getIssuer());
         } catch (ExpiredJwtException e) {
             log.warn("토큰 만료", e);
             return false;

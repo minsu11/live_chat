@@ -40,6 +40,7 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
         // CONNECT: 최초 WebSocket 연결 시 Authorization 헤더 검사
         if (StompCommand.CONNECT.equals(command)) {
             String rawToken = accessor.getFirstNativeHeader("Authorization");
+            log.info("[WS-CONNECT] raw auth header={}", rawToken == null ? "null" : rawToken.substring(0, Math.min(30, rawToken.length())) + "...");
 
             if (rawToken == null || !rawToken.startsWith("Bearer ")) {
                 log.warn("❌ WebSocket 인증 실패: Authorization 헤더 없음 또는 Bearer 형식 아님");

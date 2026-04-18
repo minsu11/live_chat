@@ -60,6 +60,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = CookieUtil.getCookie(request,"accessToken");
         log.info("token 값 가지고 오기");
+        log.info("[HTTP-JWT] path={}, token={}", request.getRequestURI(), maskToken(token));
         if (token != null && jwtTokenProvider.validateToken(token)) {
             log.info("if문 안");
             String userId = jwtTokenProvider.getUserId(token);
@@ -90,5 +91,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     new UsernamePasswordAuthenticationToken(authenticatedUser, null, authorities);
             context.setAuthentication(authentication);
         }
+    }
+    private String maskToken(String token) {
+        if (token == null || token.isBlank()) {
+            return "null";
+        }
+        int len = token.length();
+        int end = Math.min(20, len);
+        return token.substring(0, end) + "...(" + len + ")";
     }
 }
