@@ -1,6 +1,7 @@
 package com.chat_server.file.controller;
 
 import com.chat_server.common.dto.response.ApiResponse;
+import com.chat_server.file.dto.response.ChatFileUploadResponse;
 import com.chat_server.file.dto.response.ChatImageUploadResponse;
 import com.chat_server.file.service.ChatFileFacadeService;
 import com.chat_server.user.dto.response.AuthenticatedUser;
@@ -31,7 +32,19 @@ public class ChatFileController {
         log.info("chat image upload start");
         Long userId = authenticatedUser.userId();
         ChatImageUploadResponse chatImageUploadResponse = fileFacadeService.uploadChatImage(userId, file);
-        ApiResponse<ChatImageUploadResponse> response = ApiResponse.success(201,"파일 저장 완료", chatImageUploadResponse);
+        ApiResponse<ChatImageUploadResponse> response = ApiResponse.success(201,"이미지파일 저장 완료", chatImageUploadResponse);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping(value="/files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<ChatFileUploadResponse>> uploadChatFile(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+            @RequestPart("file") MultipartFile file
+    ){
+        Long userId=authenticatedUser.userId();
+        log.info("chat file upload start");
+        ChatFileUploadResponse chatFileUploadResponse = fileFacadeService.uploadChatFile(userId, file);
+        ApiResponse<ChatFileUploadResponse> response = ApiResponse.success(201, "파일 저장됐습니다.", chatFileUploadResponse);
         return ResponseEntity.ok(response);
     }
 }

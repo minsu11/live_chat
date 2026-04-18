@@ -1,5 +1,7 @@
 package com.chat_server.chatmessage.service.impl;
 
+import com.chat_server.chatattachment.dto.response.ChatAttachmentMessagePayload;
+import com.chat_server.chatattachment.service.ChatAttachmentService;
 import com.chat_server.chatlist.dto.event.ChatListUpsertEvent;
 import com.chat_server.chatlist.dto.response.ChatListItemResponse;
 import com.chat_server.chatlist.service.ChatListService;
@@ -26,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.chat_server.websocket.broadcaster.chatmessage.ChatNotificationBroadcaster;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -53,7 +56,8 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
     private final ChatRoomDisplayResolver chatRoomDisplayResolver;
     private final ChatListEventBroadcaster chatListEventBroadcaster;
     private final ChatListUpsertEventMapper chatListUpsertEventMapper;
-
+    private final ObjectMapper objectMapper;
+    private final ChatAttachmentService chatAttachmentService;
     /**
      * 메시지 전송 전체 플로우를 오케스트레이션한다.
      *
@@ -71,37 +75,32 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
      */
     @Override
     public void sendMessage(ChatSendRequest request, Long userId) {
-        // 메서드 시작 로그는 간단하게 info로 남긴다.
         log.info("sendMessage 호출");
-        // 상세 파라미터는 debug에만 남겨 운영 로그 노이즈를 줄인다.
         log.debug("sendMessage params - request: {}, userId: {}", request, userId);
         Long roomId = request.roomId();
         String messageType = request.messageType().name();
         String message = request.messageContent();
 
-        // chatting room
         ChatRoom room = chatRoomQueryService.getRoomOrThrow(roomId);
         String memberProfileUrl = userProfileImageService.getUserProfileUrl(userId);
-        // 발신자의 전송 권한
+
         validateSendPermission(room, userId);
         ChatMessage chatMessage = chatMessageService.createChatMessage(room, userId, messageType, message);
 
+        connectAttachmentIfNeeded(request, chatMessage, userId);
         updateRoomAndChatListOnSend(room, chatMessage);
         chatListService.increaseUnreadCount(roomId, userId);
         chatListService.markSenderAsReadOnSend(roomId,userId,chatMessage.getId());
 
-
-        // 채팅방 멤버 목록을 조회하여 사용자별(수신자별) payload를 생성/전송한다.
         List<Long> roomMemberUserIds = chatListService.getRoomMemberUserIds(roomId);
         log.debug("sendMessage roomMemberUserIds: {}", roomMemberUserIds);
         int messageUnreadCount = Math.max(roomMemberUserIds.size() - 1, 0);
         for (Long receiverUserId : roomMemberUserIds) {
 
-            // 🔥 2. 차단 체크 (핵심 추가)
             if (!userId.equals(receiverUserId) &&
                     userBlockService.isBlocked(userId, receiverUserId)) {
                 log.debug("차단된 사용자 - sender: {}, receiver: {}", userId, receiverUserId);
-                continue; // ❌ 이 사람한테는 안보냄
+                continue;
             }
 
             ChatMessageResponse response = createResponseForReceiver(
@@ -138,6 +137,25 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         log.debug("sendMessage 완료 - roomId: {}, messageId: {}", roomId, chatMessage.getId());
     }
 
+
+    private void connectAttachmentIfNeeded(ChatSendRequest request, ChatMessage chatMessage, Long userId) {
+        if (!"FILE".equalsIgnoreCase(request.messageType().name())) {
+            return;
+        }
+
+        try {
+            ChatAttachmentMessagePayload payload =
+                    objectMapper.readValue(request.messageContent(), ChatAttachmentMessagePayload.class);
+
+            if (payload.attachmentId() == null) {
+                throw new IllegalArgumentException("attachmentId가 비어 있습니다.");
+            }
+
+            chatAttachmentService.connectMessage(payload.attachmentId(), chatMessage, userId);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("FILE 메시지 첨부 정보가 올바르지 않습니다.", e);
+        }
+    }
     /**
      * 발신자의 전송 가능 여부를 검증한다.
      *

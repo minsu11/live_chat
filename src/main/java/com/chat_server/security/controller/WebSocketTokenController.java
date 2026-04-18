@@ -21,7 +21,18 @@ public class WebSocketTokenController {
         String accessToken = CookieUtil.getCookie(request, "accessToken");
         ApiResponse<String> response = ApiResponse.success(200,"access token 반환", accessToken);
         log.info("token: {}", accessToken);
+        log.info("[WS-TOKEN] extracted token={}", maskToken(accessToken));
+
         return ResponseEntity.ok(response);
+    }
+
+    private String maskToken(String token) {
+        if (token == null || token.isBlank()) {
+            return "null";
+        }
+        int len = token.length();
+        int end = Math.min(20, len);
+        return token.substring(0, end) + "...(" + len + ")";
     }
 
 }

@@ -1,5 +1,6 @@
 package com.chat_server.file.service.impl;
 
+import com.chat_server.file.dto.response.ChatFileUploadResponse;
 import com.chat_server.file.dto.response.ChatImageUploadResponse;
 import com.chat_server.file.service.ChatFileFacadeService;
 import com.chat_server.file.service.FileService;
@@ -22,6 +23,17 @@ public class ChatFileFacadeServiceImpl implements ChatFileFacadeService {
         String fileUrl = fileService.saveChatImage(userId, file);
 
         return new ChatImageUploadResponse(
+                fileUrl,
+                Objects.requireNonNullElse(file.getOriginalFilename(), ""),
+                file.getContentType(),
+                file.getSize()
+        );
+    }
+
+    @Override
+    public ChatFileUploadResponse uploadChatFile(Long userId, MultipartFile file) {
+        String fileUrl = fileService.saveChatFile(userId, file);
+        return new ChatFileUploadResponse(
                 fileUrl,
                 Objects.requireNonNullElse(file.getOriginalFilename(), ""),
                 file.getContentType(),

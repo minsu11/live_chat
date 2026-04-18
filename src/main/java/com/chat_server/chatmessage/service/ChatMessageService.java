@@ -39,4 +39,7 @@ public interface ChatMessageService {
     Slice<ChatMessageItemResponse> getEnterMessagesByCursor(Long roomId, int limit,
                                                             @Nullable ChatMessageCursorKey cursorKey);
 
-    List<UpdatedMessageUnreadCount> findUpdatedUnreadCounts(Long roomId, Long lastReadMessageId);}
+    List<UpdatedMessageUnreadCount> findUpdatedUnreadCounts(Long roomId, Long lastReadMessageId);
+
+    Slice<ChatMessageItemResponse> getMessagesAfter(Long roomId, Long afterMessageId, int limit);
+}

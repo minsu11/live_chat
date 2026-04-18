@@ -128,4 +128,53 @@ public class ChatMessageRepositoryCustomImpl extends QuerydslRepositorySupport i
                 ))
                 .fetch();
     }
+
+    @Override
+    public Slice<ChatMessageItemResponse> getMessagesAfter(Long roomId, Long afterMessageId, int limit) {
+        JPQLQuery<Integer> unreadCountExpr =
+                JPAExpressions
+                        .select(qChatList.count().intValue())
+                        .from(qChatList)
+                        .where(
+                                qChatList.chatRoom.id.eq(qChatMessage.chatRoom.id),
+                                qChatList.user.id.ne(qChatMessage.sender.id),
+                                qChatList.lastReadMessageId.isNull()
+                                        .or(qChatList.lastReadMessageId.lt(qChatMessage.id))
+                        );
+
+        List<ChatMessageItemResponse> rows = from(qChatMessage)
+                .join(qChatMessage.sender)
+                .leftJoin(qUserProfile).on(qUserProfile.user.id.eq(qChatMessage.sender.id))
+                .leftJoin(qUserProfileImage).on(
+                        qUserProfileImage.userProfile.id.eq(qUserProfile.id)
+                                .and(qUserProfileImage.current.isTrue())
+                )
+                .where(
+                        qChatMessage.chatRoom.id.eq(roomId),
+                        qChatMessage.deleted.isFalse(),
+                        qChatMessage.id.gt(afterMessageId)
+                )
+                .orderBy(qChatMessage.createdAt.asc(), qChatMessage.id.asc())
+                .limit(limit + 1)
+                .select(Projections.constructor(
+                        ChatMessageItemResponse.class,
+                        qChatMessage.id,
+                        qChatMessage.sender.id,
+                        qChatMessage.sender.uuid,
+                        qChatMessage.sender.nickname,
+                        qUserProfileImage.imageUrl,
+                        qChatMessage.messageType.stringValue(),
+                        qChatMessage.messageContent,
+                        qChatMessage.createdAt,
+                        unreadCountExpr
+                ))
+                .fetch();
+
+        boolean hasNext = rows.size() > limit;
+        if (hasNext) {
+            rows = rows.subList(0, limit);
+        }
+
+        return new SliceImpl<>(rows, PageRequest.of(0, limit), hasNext);
+    }
 }

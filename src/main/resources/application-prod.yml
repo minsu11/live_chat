@@ -14,7 +14,22 @@ file:
     profile-dir: /app/uploads/profile
     chat-image-dir: /app/uploads/chat/images
     chat-file-dir: /app/uploads/chat/files
-
+    chat-file-max-size: 1MB
+    chat-file-allowed-extensions:
+      - pdf
+      - txt
+      - doc
+      - docx
+      - xls
+      - xlsx
+      - ppt
+      - pptx
+      - zip
+      - hwp
+      - hwpx
+      - jpg
+      - jpeg
+      - png
 logging:
   level:
     com.chat_server: info
