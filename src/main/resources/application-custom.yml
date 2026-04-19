@@ -37,6 +37,8 @@ custom:
       prefix: "/chat-files"
     chat-attachments:
       prefix: /chat-attachments
+    chat-setting:
+      prefix: "/setting"
 
   redis:
     timeout: 3000

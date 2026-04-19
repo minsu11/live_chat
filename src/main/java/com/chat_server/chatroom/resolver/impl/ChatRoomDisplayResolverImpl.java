@@ -41,12 +41,20 @@ public class ChatRoomDisplayResolverImpl implements ChatRoomDisplayResolver {
      * </ul>
      */
     public String resolveTitle(Long roomId, Long userId, ChatRoom room) {
-        String roomTitle = room.getName() == null ? "" : room.getName();
+        // [수정 포인트 1] 1순위: 내가 설정한 커스텀 이름이 있다면, 방 타입 상관없이 즉시 반환 (조기 종료)
+        Optional<String> customRoomName = chatListRepository.findCustomNameByUserIdAndRoomId(roomId, userId);
+        if (customRoomName.isPresent() && !customRoomName.get().isBlank()) {
+            return customRoomName.get();
+        }
 
+        // 2순위: DB에 저장된 방의 기본 이름
+        String fallbackRoomTitle = room.getName() == null ? "" : room.getName();
+
+        // [수정 포인트 2] 1순위가 없을 때만 방 타입별로 깔끔하게 분기
         return switch (room.getRoomType()) {
-            case DM -> resolveDmTitle(roomId, userId, roomTitle);
-            case GROUP -> resolveGroupTitle(roomId, userId, roomTitle);
-            case OPEN -> resolveOpenTitle(roomId, userId, roomTitle);
+            case DM -> resolveDmTitle(roomId, userId, fallbackRoomTitle);
+            case GROUP -> resolveGroupTitle(roomId, userId, fallbackRoomTitle);
+            case OPEN -> resolveOpenTitle(roomId, userId, fallbackRoomTitle);
         };
     }
 
@@ -80,12 +88,6 @@ public class ChatRoomDisplayResolverImpl implements ChatRoomDisplayResolver {
     }
 
     private String resolveGroupTitle(Long roomId, Long userId, String fallback) {
-        Optional<String> customRoomName = chatListRepository.findCustomNameByUserIdAndRoomId(roomId, userId);
-
-        if (customRoomName.isPresent() && !customRoomName.get().isBlank()) {
-            return customRoomName.get();
-        }
-
         if (!fallback.isBlank()) {
             return fallback;
         }
@@ -94,11 +96,6 @@ public class ChatRoomDisplayResolverImpl implements ChatRoomDisplayResolver {
     }
 
     private String resolveOpenTitle(Long roomId, Long userId, String fallback) {
-        Optional<String> customRoomName = chatListRepository.findCustomNameByUserIdAndRoomId(roomId, userId);
-
-        if (customRoomName.isPresent() && !customRoomName.get().isBlank()) {
-            return customRoomName.get();
-        }
 
         if (!fallback.isBlank()) {
             return fallback;

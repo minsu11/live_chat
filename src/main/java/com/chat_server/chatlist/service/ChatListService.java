@@ -2,6 +2,8 @@ package com.chat_server.chatlist.service;
 
 import com.chat_server.chatlist.dto.response.ChatListItemResponse;
 import com.chat_server.chatlist.dto.response.ChatRoomListResponse;
+import com.chat_server.chatlist.entity.ChatList;
+import com.chat_server.chatroomsetting.dto.response.ChatRoomNameUpdateResponse;
 import com.chat_server.friend.dto.response.CursorPageResponse;
 import com.chat_server.friend.dto.response.UserFriendResponse;
 import jakarta.annotation.Nullable;
@@ -125,4 +127,6 @@ public interface ChatListService {
      * @return key=userId, value=unreadCount 맵
      */
     Map<Long, Integer> getUnreadCountMap(Long roomId, List<Long> userIds);
+
+    ChatList updateCustomRoomName(Long userId, Long roomId, String newName);
 }

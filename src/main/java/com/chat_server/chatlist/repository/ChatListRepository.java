@@ -223,4 +223,5 @@ public interface ChatListRepository extends JpaRepository<ChatList, Long>,ChatLi
         @Param("openedAt") LocalDateTime openedAt
     );
 
+    Optional<ChatList> findByChatRoomIdAndUserId(Long roomId, Long userId);
 }

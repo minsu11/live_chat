@@ -6,9 +6,11 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 
+@Slf4j
 @Getter
 @Entity
 @Table(
@@ -58,4 +60,13 @@ public class ChatList {
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    public void updateCustomName(String customName) {
+        if (customName != null && customName.trim().isEmpty()) {
+            this.customName = null;
+        }else{
+            log.info("이름 변경");
+            this.customName = customName;
+        }
+    }
 }

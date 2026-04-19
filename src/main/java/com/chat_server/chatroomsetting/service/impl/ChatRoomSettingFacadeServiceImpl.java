@@ -1,5 +1,9 @@
 package com.chat_server.chatroomsetting.service.impl;
 
+import com.chat_server.chatlist.entity.ChatList;
+import com.chat_server.chatlist.service.ChatListService;
+import com.chat_server.chatroomsetting.dto.request.ChatRoomDisplayNameUpdateRequest;
+import com.chat_server.chatroomsetting.dto.response.ChatRoomNameUpdateResponse;
 import com.chat_server.chatroomsetting.service.ChatRoomSettingFacadeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,5 +15,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 @RequiredArgsConstructor
 public class ChatRoomSettingFacadeServiceImpl implements ChatRoomSettingFacadeService {
+    private final ChatListService chatListService;
 
+    @Override
+    public ChatRoomNameUpdateResponse updateChatRoomName(Long userId, Long roomId, ChatRoomDisplayNameUpdateRequest request) {
+        log.info("update chatroom name start");
+        String newName = request.displayName();
+        ChatList chatList = chatListService.updateCustomRoomName(userId, roomId, newName);
+        return ChatRoomNameUpdateResponse.of(roomId,chatList.getCustomName());
+    }
 }

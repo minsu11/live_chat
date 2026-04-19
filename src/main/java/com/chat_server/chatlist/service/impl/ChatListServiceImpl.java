@@ -3,11 +3,16 @@ package com.chat_server.chatlist.service.impl;
 import com.chat_server.chatlist.dto.response.ChatListItemResponse;
 import com.chat_server.chatlist.dto.response.ChatRoomListResponse;
 import com.chat_server.chatlist.dto.response.ChatUnreadCountRow;
+import com.chat_server.chatlist.entity.ChatList;
 import com.chat_server.chatlist.repository.ChatListRepository;
 import com.chat_server.chatlist.service.ChatListService;
 import com.chat_server.chatroom.resolver.ChatRoomDisplayResolver;
+import com.chat_server.chatroomsetting.dto.response.ChatRoomNameUpdateResponse;
 import com.chat_server.common.cursor.ChatListCursorCodec;
 import com.chat_server.common.cursor.ChatListCursorKey;
+import com.chat_server.common.propertis.CustomProperties;
+import com.chat_server.error.enumulation.ErrorCode;
+import com.chat_server.error.exception.BusinessException;
 import com.chat_server.friend.dto.response.CursorPageResponse;
 import jakarta.annotation.Nullable;
 
@@ -30,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ChatListServiceImpl implements ChatListService {
     private final ChatListRepository chatListRepository;
     private final ChatRoomDisplayResolver chatRoomDisplayResolver;
+    private final CustomProperties customProperties;
 
     @Override
     @Transactional(readOnly = true)
@@ -231,6 +237,16 @@ public class ChatListServiceImpl implements ChatListService {
 
         return result;
     }
+
+    @Override
+    public ChatList updateCustomRoomName(Long userId, Long roomId, String newName) {
+        ChatList chatList = chatListRepository.findByChatRoomIdAndUserId(roomId,userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, customProperties.getError().getMessage(ErrorCode.NOT_FOUND)));
+        chatList.updateCustomName(newName);
+        log.info("update end");
+        return chatList;
+    }
+
     @Override
     @Transactional(readOnly = true)
     public ChatListItemResponse getChatListItem(Long roomId, Long userId) {
