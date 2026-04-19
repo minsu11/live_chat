@@ -1,6 +1,7 @@
 package com.chat_server.chatroom.service.impl;
 
 import com.chat_server.chatlist.dto.response.ChatListItemResponse;
+import com.chat_server.chatlist.entity.ChatList;
 import com.chat_server.chatlist.service.ChatListService;
 import com.chat_server.chatmessage.dto.response.ChatMessageCatchUpResponse;
 import com.chat_server.chatmessage.dto.response.ChatMessageItemResponse;
@@ -146,12 +147,14 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
 
         String title = chatRoomDisplayResolver.resolveTitle(roomId, userId, room);
 
+
         return new ChatRoomEnterResponse(
                 room.getId(),
                 room.getRoomType().name(),
                 title,
                 messages,
-                nextCursor
+                nextCursor,
+                chatListService.getMuted(roomId,userId)
         );
     }
 
@@ -227,7 +230,8 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
                 room.getRoomType().name(),
                 title,
                 messages,
-                nextCursor
+                nextCursor,
+                chatListService.getMuted(roomId,userId)
         );
     }
 

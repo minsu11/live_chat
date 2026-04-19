@@ -69,4 +69,8 @@ public class ChatList {
             this.customName = customName;
         }
     }
+
+    public void updateMuted(boolean muted){
+        this.muted = muted;
+    }
 }

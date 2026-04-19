@@ -1,5 +1,7 @@
 package com.chat_server.chatroomsetting.controller;
 
+import com.chat_server.chatlist.dto.reqeust.ChatRoomNotificationUpdateRequest;
+import com.chat_server.chatlist.dto.response.ChatRoomNotificationUpdateResponse;
 import com.chat_server.chatroomsetting.dto.request.ChatRoomDisplayNameUpdateRequest;
 import com.chat_server.chatroomsetting.dto.response.ChatRoomNameUpdateResponse;
 import com.chat_server.chatroomsetting.service.ChatRoomSettingFacadeService;
@@ -31,6 +33,21 @@ public class ChatRoomSettingController {
                 chatRoomSettingFacadeService.updateChatRoomName(userId,roomId,request);
         ApiResponse<ChatRoomNameUpdateResponse> apiResponse = ApiResponse.success(200,"이름이 변경됐습니다.",chatRoomNameUpdateResponse);
         return ResponseEntity.ok(apiResponse);
+    }
+
+    @PatchMapping("/{roomId}/settings/notification")
+    public ResponseEntity<ApiResponse<ChatRoomNotificationUpdateResponse>> updateNotification(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+            @PathVariable Long roomId,
+            @RequestBody ChatRoomNotificationUpdateRequest request
+    ) {
+        log.info("notification start");
+        Long userId = authenticatedUser.userId();
+        ChatRoomNotificationUpdateResponse response =
+                chatRoomSettingFacadeService.updateNotification(roomId, userId, request);
+
+        String message = response.muted() ? "알림이 꺼졌습니다." : "알림이 켜졌습니다.";
+        return ResponseEntity.ok(ApiResponse.success(200, message, response));
     }
 
 }

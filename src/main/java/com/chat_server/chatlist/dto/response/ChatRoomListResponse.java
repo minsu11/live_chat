@@ -8,7 +8,8 @@ public record ChatRoomListResponse (
         Integer unreadCount,
         String lastMessagePreview,
         LocalDateTime lastMessageAt,
-        LocalDateTime orderAt
+        LocalDateTime orderAt,
+        boolean muted
 ){
 
 }

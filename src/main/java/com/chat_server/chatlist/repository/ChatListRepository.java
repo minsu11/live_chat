@@ -224,4 +224,6 @@ public interface ChatListRepository extends JpaRepository<ChatList, Long>,ChatLi
     );
 
     Optional<ChatList> findByChatRoomIdAndUserId(Long roomId, Long userId);
-}
+
+    @Query("SELECT c.muted FROM ChatList c WHERE c.chatRoom.id = :roomId AND c.user.id = :userId")
+    Optional<Boolean> findMutedByChatRoomIdAndUserId(@Param("roomId") Long roomId, @Param("userId") Long userId);}

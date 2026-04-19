@@ -37,8 +37,6 @@ public class ChatListServiceImpl implements ChatListService {
     private final ChatRoomDisplayResolver chatRoomDisplayResolver;
     private final CustomProperties customProperties;
 
-    @Override
-    @Transactional(readOnly = true)
     /**
      * 커서 기반 채팅방 목록을 조회한다.
      *
@@ -54,6 +52,8 @@ public class ChatListServiceImpl implements ChatListService {
      * @param cursor 현재 페이지 커서(없으면 첫 페이지)
      * @return 커서 페이지 응답
      */
+    @Override
+    @Transactional(readOnly = true)
     public CursorPageResponse<ChatRoomListResponse> getChatRoomListsByCursor(Long userId, int limit,
         @Nullable String cursor) {
         // 1) 커서 디코드 (없거나 깨졌으면 null 반환되어 첫 페이지로 처리됨)
@@ -70,7 +70,8 @@ public class ChatListServiceImpl implements ChatListService {
                         item.unreadCount(),
                         item.lastMessagePreview(),
                         item.lastMessageAt(),
-                        item.orderAt()
+                        item.orderAt(),
+                        item.muted()
                 ))
                 .toList();
         // 3) next 커서 생성
@@ -239,11 +240,26 @@ public class ChatListServiceImpl implements ChatListService {
     }
 
     @Override
+    public boolean getMuted(Long roomId, Long userId) {
+        return chatListRepository.findMutedByChatRoomIdAndUserId(roomId,userId)
+                .orElseThrow(()-> new BusinessException(ErrorCode.NOT_FOUND,customProperties.getError().getMessage(ErrorCode.NOT_FOUND)));
+
+    }
+
+    @Override
     public ChatList updateCustomRoomName(Long userId, Long roomId, String newName) {
         ChatList chatList = chatListRepository.findByChatRoomIdAndUserId(roomId,userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, customProperties.getError().getMessage(ErrorCode.NOT_FOUND)));
         chatList.updateCustomName(newName);
         log.info("update end");
+        return chatList;
+    }
+
+    @Override
+    public ChatList updateMutedStatus(Long roomId, Long userId, boolean muted) {
+        ChatList chatList = chatListRepository.findByChatRoomIdAndUserId(roomId,userId)
+                .orElseThrow(()-> new BusinessException(ErrorCode.NOT_FOUND,customProperties.getError().getMessage(ErrorCode.NOT_FOUND)));
+        chatList.updateMuted(muted);
         return chatList;
     }
 

@@ -85,7 +85,8 @@ public class ChatListRepositoryCustomImpl extends QuerydslRepositorySupport
                 qChatRoom.lastMessagePreview,
                 qChatRoom.lastMessageAt,
                 qChatList.unreadCount,
-                orderAt
+                orderAt,
+                    qChatList.muted
             ))
             .fetch();
 
@@ -101,7 +102,8 @@ public class ChatListRepositoryCustomImpl extends QuerydslRepositorySupport
                 r.unreadCount(),
                 r.lastMessagePreview(),
                 r.lastMessageAt(),
-                r.orderAt()
+                r.orderAt(),
+                    r.muted()
             ))
             .toList();
 

@@ -128,5 +128,11 @@ public interface ChatListService {
      */
     Map<Long, Integer> getUnreadCountMap(Long roomId, List<Long> userIds);
 
+    boolean getMuted(Long roomId, Long userId);
+
     ChatList updateCustomRoomName(Long userId, Long roomId, String newName);
+
+    ChatList updateMutedStatus(Long roomId, Long userId, boolean muted);
+
+
 }

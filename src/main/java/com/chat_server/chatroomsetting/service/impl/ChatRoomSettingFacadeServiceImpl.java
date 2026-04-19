@@ -1,5 +1,7 @@
 package com.chat_server.chatroomsetting.service.impl;
 
+import com.chat_server.chatlist.dto.reqeust.ChatRoomNotificationUpdateRequest;
+import com.chat_server.chatlist.dto.response.ChatRoomNotificationUpdateResponse;
 import com.chat_server.chatlist.entity.ChatList;
 import com.chat_server.chatlist.service.ChatListService;
 import com.chat_server.chatroomsetting.dto.request.ChatRoomDisplayNameUpdateRequest;
@@ -24,4 +26,10 @@ public class ChatRoomSettingFacadeServiceImpl implements ChatRoomSettingFacadeSe
         ChatList chatList = chatListService.updateCustomRoomName(userId, roomId, newName);
         return ChatRoomNameUpdateResponse.of(roomId,chatList.getCustomName());
     }
+
+    @Override
+    public ChatRoomNotificationUpdateResponse updateNotification(Long roomId, Long userId, ChatRoomNotificationUpdateRequest request) {
+        ChatList updatedChatList = chatListService.updateMutedStatus(roomId, userId, request.muted());
+
+        return ChatRoomNotificationUpdateResponse.of(roomId, updatedChatList.isMuted());    }
 }

@@ -8,7 +8,9 @@ public record ChatRoomListRow(Long roomId,
                               String lastMessagePreview,
                               LocalDateTime lastMessageAt,
                               Integer unreadCount,
-                              LocalDateTime orderAt) {
+                              LocalDateTime orderAt,
+                              boolean muted
+) {
 
 }
 
