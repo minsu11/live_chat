@@ -10,7 +10,8 @@ public enum MessageType {
     IMAGE,
     FILE,
     SYSTEM,
-    SYSTEM_LEAVE;
+    SYSTEM_LEAVE,
+    SYSTEM_INVITE;
 
     @JsonCreator
     public static MessageType from(String value) {

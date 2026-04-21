@@ -13,7 +13,7 @@ public final class ChatMessagePreviewResolver {
             case IMAGE -> "사진 보냈습니다.";
             case FILE -> "파일 보냈습니다.";
             case SYSTEM -> "시스템 알림입니다.";
-            case SYSTEM_LEAVE -> null;
+            case SYSTEM_LEAVE, SYSTEM_INVITE -> null;
         };
     }
 

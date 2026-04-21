@@ -5,6 +5,7 @@ import feign.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long>, UserRepositoryCustom {
@@ -14,4 +15,6 @@ public interface UserRepository extends JpaRepository<User, Long>, UserRepositor
     Optional<String> findUuidById(@Param("id") Long id);
 
     boolean existsByInputId(String inputId);
+
+    List<User> findAllByUuidIn(List<String> uuids);
 }

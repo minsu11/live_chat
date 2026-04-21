@@ -7,6 +7,8 @@ import com.chat_server.chatmessage.dto.response.ChatMessageCatchUpResponse;
 import com.chat_server.chatmessage.dto.response.ChatMessageItemResponse;
 import com.chat_server.chatmessage.dto.response.ChatMessageResponse;
 import com.chat_server.chatmessage.dto.response.ChatMessageSenderResponse;
+import com.chat_server.chatmessage.enums.MessageType;
+import com.chat_server.chatmessage.service.ChatMessageFacadeService;
 import com.chat_server.chatmessage.service.ChatMessageService;
 import com.chat_server.chatread.service.ChatReadFacadeService;
 import com.chat_server.chatlist.dto.event.ChatListUpsertEvent;
@@ -20,10 +22,13 @@ import com.chat_server.chatroom.resolver.ChatRoomDisplayResolver;
 import com.chat_server.chatroom.service.ChatRoomFacadeService;
 import com.chat_server.chatroom.service.ChatRoomQueryService;
 import com.chat_server.chatroom.service.ChatRoomService;
+import com.chat_server.chatroommember.dto.response.ChatRoomMemberInfoDto;
+import com.chat_server.chatroommember.dto.response.ChatRoomMemberResponse;
 import com.chat_server.chatroommember.service.ChatRoomMemberService;
 import com.chat_server.common.cursor.ChatMessageCursorCodec;
 import com.chat_server.common.cursor.ChatMessageCursorKey;
 import com.chat_server.common.mapper.ChatListUpsertEventMapper;
+import com.chat_server.user.entity.User;
 import com.chat_server.user.service.UserDisplayNameService;
 import com.chat_server.user.service.UserService;
 import com.chat_server.websocket.broadcaster.chatmessage.ChatListEventBroadcaster;
@@ -31,6 +36,8 @@ import com.chat_server.websocket.broadcaster.chatmessage.ChatListEventBroadcaste
 import java.time.ZoneOffset;
 import java.util.*;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -53,6 +60,9 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
     private final ChatListEventBroadcaster chatListEventBroadcaster;
     private final ChatRoomDisplayResolver chatRoomDisplayResolver;
     private final ChatListUpsertEventMapper chatListUpsertEventMapper;
+    private final ChatMessageFacadeService chatMessageFacadeService;
+    private final ObjectMapper objectMapper;
+
 
     /**
      * 채팅방 summary 정보를 조회한다.
@@ -385,6 +395,70 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
                 lastMessageId
         );
     }
+
+    @Override
+    public List<ChatRoomMemberResponse> getChatroomMembers(Long roomId, Long userId) {
+
+        List<ChatRoomMemberInfoDto> memberInfos = chatRoomMemberService.getChatRoomMemberIds(roomId);
+
+        List<Long> memberUserIds = memberInfos.stream()
+                .map(ChatRoomMemberInfoDto::userId)
+                .toList();
+
+        Map<Long, String> displayNameCache = userDisplayNameService.resolveDisplayNamesBulk(userId, memberUserIds);
+
+        return memberInfos.stream()
+                .map(info -> {
+                    // 커스텀 닉네임이 있으면 쓰고, 없으면 DTO에 있는 원래 닉네임 사용
+                    String finalName = displayNameCache.getOrDefault(info.userId(), info.nickname());
+
+                    return new ChatRoomMemberResponse(
+                            info.uuid(),
+                            finalName,
+                            info.profileUrl(),
+                            info.userId().equals(userId) // isMe 판단
+                    );
+                })
+                .toList();
+    }
+
+    @Override
+    public void inviteMembers(Long roomId, Long inviterId, List<String> inviteeUuids) {
+        chatRoomQueryService.validateMemberOrThrow(roomId, inviterId);
+        ChatRoom chatRoom = chatRoomQueryService.getRoomOrThrow(roomId);
+
+        chatRoomMemberService.addMembers(roomId,inviteeUuids);
+
+        List<User> invitees = userService.getUserIdByUserUuids(inviteeUuids);
+        User inviter = userService.getUserById(inviterId);
+
+
+        Map<String, Object> payload = new HashMap<>();
+
+        payload.put("inviter", Map.of(
+                "uuid",inviter.getUuid(),
+                "name", inviter.getNickname()
+        ) );
+
+        // 2-2. 피초대자들 정보 리스트 (UUID + 원래 닉네임)
+        List<Map<String, String>> inviteeInfos = invitees.stream()
+                .map(u -> Map.of("uuid", u.getUuid(), "name", u.getNickname()))
+                .toList();
+        payload.put("invitees", inviteeInfos);
+
+        // 3. JSON 문자열로 직렬화 (ObjectMapper 활용)
+        String content = "";
+        try {
+            // 💡 클래스 상단에 private final ObjectMapper objectMapper; 주입 필요
+            content = objectMapper.writeValueAsString(payload);
+        } catch (JsonProcessingException e) {
+            log.error("시스템 초대 메시지 JSON 변환 실패", e);
+            // 에러 발생 시 Fallback으로 단순 문자열 저장
+            content = String.format("{\"fallback\": \"%s님이 %d명을 초대했습니다.\"}", inviter.getNickname(), invitees.size());
+        }
+        chatMessageFacadeService.saveAndBroadcastSystemMessage(roomId, inviterId, MessageType.SYSTEM_INVITE, content);
+    }
+
 
     /**
      * 채팅방 진입 조회용 메시지 DTO를 프론트 공통 메시지 응답 DTO로 변환한다.

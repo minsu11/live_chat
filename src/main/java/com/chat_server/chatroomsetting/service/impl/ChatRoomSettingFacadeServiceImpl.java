@@ -4,6 +4,7 @@ import com.chat_server.chatlist.dto.reqeust.ChatRoomNotificationUpdateRequest;
 import com.chat_server.chatlist.dto.response.ChatRoomNotificationUpdateResponse;
 import com.chat_server.chatlist.entity.ChatList;
 import com.chat_server.chatlist.service.ChatListService;
+import com.chat_server.chatmessage.enums.MessageType;
 import com.chat_server.chatmessage.service.ChatMessageFacadeService;
 import com.chat_server.chatroom.service.ChatRoomService;
 import com.chat_server.chatroommember.service.ChatRoomMemberService;
@@ -53,7 +54,8 @@ public class ChatRoomSettingFacadeServiceImpl implements ChatRoomSettingFacadeSe
 
         chatRoomService.decrementParticipantCount(roomId);
 
-        messageFacadeService.sendSystemLeaveMessage(roomId, userId);
+        // 추 후에 변경
+        messageFacadeService.saveAndBroadcastSystemMessage(roomId, userId, MessageType.SYSTEM_LEAVE, "님이 나갔습니다.");
 
     }
 }

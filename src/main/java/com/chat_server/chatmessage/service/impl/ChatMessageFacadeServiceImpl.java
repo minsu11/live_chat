@@ -140,33 +140,38 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
     }
 
     @Override
-    public void sendSystemLeaveMessage(Long roomId, Long userId) {
+    public void saveAndBroadcastSystemMessage(Long roomId, Long userId, MessageType messageType, String content) {
         ChatRoom chatRoom = chatRoomQueryService.getRoomOrThrow(roomId);
 
         List<Long> roomMemberUserIds = chatListService.getRoomMemberUserIds(roomId);
 
-        ChatMessage chatMessage = chatMessageService.createChatMessage(chatRoom, userId, MessageType.SYSTEM_LEAVE.name(), "님이 나갔습니다.");
+        ChatMessage chatMessage = chatMessageService.createChatMessage(chatRoom, userId, messageType.name(), content);
 
+        Map<Long, String> displayNameMap = userDisplayNameService.resolveDisplayNamesBulk(userId,roomMemberUserIds);
         for(Long receiverUserId : roomMemberUserIds){
-            String displayNickname = userDisplayNameService.resolveDisplayName(userId, receiverUserId)
-                    .orElse(chatMessage.getSender().getNickname());
+            String displayNickname = displayNameMap.getOrDefault(receiverUserId, chatMessage.getSender().getNickname());
 
-            String personalizedContent = displayNickname + chatMessage.getMessageContent();
+            String finalContent = chatMessage.getMessageContent();
+            if (messageType == MessageType.SYSTEM_LEAVE) {
+                finalContent = displayNickname + chatMessage.getMessageContent();
+            }
 
+            // 4. 전송용 DTO 조립
             ChatMessageResponse response = new ChatMessageResponse(
                     chatMessage.getId(),
                     roomId,
-                    MessageType.SYSTEM_LEAVE.name(),
+                    messageType.name(),
                     new ChatMessageSenderResponse(
                             chatMessage.getSender().getUuid(),
                             displayNickname,
-                            null
+                            null // 시스템 메시지는 프로필 이미지 생략 가능
                     ),
-                    personalizedContent,
+                    finalContent,
                     chatMessage.getCreatedAt(),
-                    userId.equals(receiverUserId),
+                    userId.equals(receiverUserId), // 본인 여부
                     0
-                    );
+            );
+
             chatMessageBroadCaster.broadcastMessage(receiverUserId, response);
             // 5. 사이드바(ChatList) 정보 갱신
             ChatListItemResponse chatListItem = chatListService.getChatListItem(roomId, receiverUserId);
@@ -178,14 +183,14 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
 
             // 6. [중요] 알림 처리 분기 (민수님 제안 로직)
             // 나 자신이 아니고 && 시스템 퇴장 메시지가 아닐 때만 '외부 알림' 발송
-            if (!userId.equals(receiverUserId) && !MessageType.SYSTEM_LEAVE.equals(chatMessage.getMessageType())) {
-                log.info("시스템 알람이 간다.");
-                String title = chatRoomDisplayResolver.resolveTitle(roomId, receiverUserId, chatRoom);
-                ChatNotificationEvent notificationEvent = chatNotificationEventMapper.toChatNotificationEvent(
-                        roomId, title, personalizedContent, chatMessage.getCreatedAt()
-                );
-                chatNotificationBroadcaster.broadcastToUser(receiverUserId, notificationEvent);
-            }
+//            if (!userId.equals(receiverUserId) && !MessageType.SYSTEM_LEAVE.equals(chatMessage.getMessageType())) {
+//                log.info("시스템 알람이 간다.");
+//                String title = chatRoomDisplayResolver.resolveTitle(roomId, receiverUserId, chatRoom);
+//                ChatNotificationEvent notificationEvent = chatNotificationEventMapper.toChatNotificationEvent(
+//                        roomId, title, personalizedContent, chatMessage.getCreatedAt()
+//                );
+//                chatNotificationBroadcaster.broadcastToUser(receiverUserId, notificationEvent);
+//            }
         }
     }
 

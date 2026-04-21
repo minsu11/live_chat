@@ -6,9 +6,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.List;
 import java.util.Optional;
 
-public interface ChatRoomMemberRepository extends JpaRepository<ChatRoomMember, Long> {
+public interface ChatRoomMemberRepository extends JpaRepository<ChatRoomMember, Long>, ChatRoomMemberRepositoryCustom {
     @Modifying
     @Query(value = """
         INSERT INTO chat_room_member (chat_room_id, user_id, role, joined_at, is_active)

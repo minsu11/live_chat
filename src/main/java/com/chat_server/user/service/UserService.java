@@ -5,6 +5,7 @@ import com.chat_server.user.dto.request.UserRegisterRequest;
 import com.chat_server.user.dto.response.UserIdResponse;
 import com.chat_server.user.entity.User;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -24,8 +25,11 @@ public interface UserService {
 
     void updateNickname(Long userId, String name);
 
+    List<User> getUserIdByUserUuids(List<String> uuids);
 
     Long getUserIdByUserUuid(String userUuid);
 
     String getUuidByUserId(Long userId);
+
+    User getUserById(Long userId);
 }
