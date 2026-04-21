@@ -32,7 +32,8 @@ public class SearchController {
     ){
         log.info("search controller");
         log.info("id : {}", request.userId());
-        SearchUserResponse searchUserResponse = searchService.searchUserByUserId(request);
+        Long userId = authenticatedUser.userId();
+        SearchUserResponse searchUserResponse = searchService.searchUserByUserId(userId, request);
         log.info("search response: {}", searchUserResponse);
         ApiResponse<SearchUserResponse> response = ApiResponse.success(200, "검색에 성공했습니다.",searchUserResponse);
         log.info("response : {}", response.getData());
