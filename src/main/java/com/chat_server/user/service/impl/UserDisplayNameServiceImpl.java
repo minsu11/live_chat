@@ -1,10 +1,17 @@
 package com.chat_server.user.service.impl;
 
+import com.chat_server.friend.entity.Friend;
 import com.chat_server.friend.repository.FriendRepository;
 import com.chat_server.user.entity.User;
 import com.chat_server.user.repository.UserRepository;
 import com.chat_server.user.service.UserDisplayNameService;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -54,5 +61,21 @@ public class UserDisplayNameServiceImpl implements UserDisplayNameService {
         log.debug("resolveDisplayName senderNickname: {}", senderNickname.orElse(null));
         log.debug("resolveDisplayName return(기본 닉네임): {}", senderNickname.orElse(null));
         return senderNickname;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<Long, String> resolveDisplayNamesBulk(Long myUserId, List<Long> senderIds) {
+        if (senderIds == null || senderIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        // 1. 내가 친구로 추가한 사람들의 내역을 한 번에 가져옴
+        List<Friend> friends = friendRepository.findFriendsByUserIdAndFriendUserIds(myUserId, senderIds);
+
+        // 2. 커스텀 닉네임이 있는 경우만 Map으로 추출 (친구가 아니거나 커스텀 닉네임이 없으면 Map에 안 들어감)
+        return friends.stream()
+                .filter(f -> f.getCustomNickname() != null && !f.getCustomNickname().isBlank())
+                .collect(Collectors.toMap(f -> f.getFriendUser().getId(), Friend::getCustomNickname));
     }
 }

@@ -2,11 +2,13 @@ package com.chat_server.chatlist.repository;
 
 import com.chat_server.chatlist.dto.response.ChatListItemResponse;
 import com.chat_server.chatlist.dto.response.ChatRoomListResponse;
+import com.chat_server.chatlist.dto.response.ChatRoomListRow;
 import com.chat_server.common.cursor.ChatListCursorKey;
 import com.chat_server.common.cursor.CursorKey;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.repository.NoRepositoryBean;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ChatListRepositoryCustom {
@@ -20,4 +22,6 @@ public interface ChatListRepositoryCustom {
      * @return chat list row DTO
      */
     Optional<ChatListItemResponse> findChatListItem(Long roomId, Long userId);
+
+    List<ChatRoomListRow> findChatListItemsBulk(Long roomId, List<Long> userIds);
 }

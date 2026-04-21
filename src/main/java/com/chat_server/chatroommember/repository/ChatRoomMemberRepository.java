@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.Optional;
+
 public interface ChatRoomMemberRepository extends JpaRepository<ChatRoomMember, Long> {
     @Modifying
     @Query(value = """
@@ -26,5 +28,6 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatRoomMember, 
     """)
     boolean existsActiveMember(@Param("roomId") Long roomId, @Param("userId") Long userId);
 
+    Optional<ChatRoomMember> findByChatRoomIdAndUserId(Long chatRoomId, Long userId);
 
 }

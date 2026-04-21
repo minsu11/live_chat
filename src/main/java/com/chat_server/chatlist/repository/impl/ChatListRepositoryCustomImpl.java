@@ -49,7 +49,7 @@ public class ChatListRepositoryCustomImpl extends QuerydslRepositorySupport
         int limit,
         @Nullable ChatListCursorKey cursorKey
     ) {
-        StringExpression displayName = getDisplayNameExpression(userId);
+        StringExpression displayName = getDisplayNameExpression();
         DateTimeExpression<LocalDateTime> orderAt = getOrderAtExpression();
 
         BooleanBuilder where = new BooleanBuilder()
@@ -80,6 +80,7 @@ public class ChatListRepositoryCustomImpl extends QuerydslRepositorySupport
             .limit(limit + 1)
             .select(Projections.constructor(
                 ChatRoomListRow.class,
+                qChatList.user.id,
                 qChatRoom.id,
                 displayName,
                 qChatRoom.lastMessagePreview,
@@ -112,7 +113,7 @@ public class ChatListRepositoryCustomImpl extends QuerydslRepositorySupport
 
     @Override
     public Optional<ChatListItemResponse> findChatListItem(Long roomId, Long userId) {
-        StringExpression displayName = getDisplayNameExpression(userId);
+        StringExpression displayName = getDisplayNameExpression();
         DateTimeExpression<LocalDateTime> orderAt = getOrderAtExpression();
 
         ChatListItemResponse result = from(qChatList)
@@ -141,7 +142,43 @@ public class ChatListRepositoryCustomImpl extends QuerydslRepositorySupport
         return Optional.ofNullable(result);
     }
 
-    private StringExpression getDisplayNameExpression(Long userId) {
+    @Override
+    public List<ChatRoomListRow> findChatListItemsBulk(Long roomId, List<Long> userIds) {
+        StringExpression displayName = getDisplayNameExpressionBulk();
+        DateTimeExpression<LocalDateTime> orderAt = getOrderAtExpression();
+
+        return from(qChatList)
+                .join(qChatList.chatRoom, qChatRoom)
+                .leftJoin(qChatRoomMember).on(
+                        qChatRoomMember.chatRoom.eq(qChatRoom)
+                                .and(qChatRoom.dmKey.isNotNull())
+                                .and(qChatRoomMember.user.id.ne(qChatList.user.id))
+                                .and(qChatRoomMember.active.isTrue())
+                                .and(qChatRoomMember.leftAt.isNull())
+                )
+                .leftJoin(qChatRoomMember.user, qPartnerUser)
+                .leftJoin(qFriend).on(
+                        qFriend.user.id.eq(qChatList.user.id)
+                                .and(qFriend.friendUser.id.eq(qPartnerUser.id))
+                )
+                .where(
+                        qChatList.chatRoom.id.eq(roomId),
+                        qChatList.user.id.in(userIds)
+                )
+                .select(Projections.constructor(ChatRoomListRow.class,
+                        qChatList.user.id,
+                        qChatRoom.id,
+                        displayName,
+                        qChatRoom.lastMessagePreview,
+                        qChatRoom.lastMessageAt,
+                        qChatList.unreadCount,
+                        orderAt,
+                        qChatList.muted
+                ))
+                .fetch();
+    }
+
+    private StringExpression getDisplayNameExpression() {
         var isDm = qChatRoom.dmKey.isNotNull();
 
         var dmDisplayName = Expressions.stringTemplate(
@@ -173,5 +210,20 @@ public class ChatListRepositoryCustomImpl extends QuerydslRepositorySupport
             .and(qChatRoomMember.user.id.ne(userId))
             .and(qChatRoomMember.active.isTrue())
             .and(qChatRoomMember.leftAt.isNull());
+    }
+
+
+    private StringExpression getDisplayNameExpressionBulk() {
+        var isDm = qChatRoom.dmKey.isNotNull();
+        var dmDisplayName = Expressions.stringTemplate(
+                "COALESCE({0}, {1}, {2})",
+                qFriend.customNickname,
+                qPartnerUser.nickname,
+                qChatRoom.name
+        );
+        return new CaseBuilder()
+                .when(qChatList.customName.isNotNull()).then(qChatList.customName)
+                .when(isDm).then(dmDisplayName)
+                .otherwise(qChatRoom.name);
     }
 }

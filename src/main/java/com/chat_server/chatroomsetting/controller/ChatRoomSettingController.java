@@ -50,4 +50,17 @@ public class ChatRoomSettingController {
         return ResponseEntity.ok(ApiResponse.success(200, message, response));
     }
 
+    @DeleteMapping("/{roomId}/settings/leave")
+    public ResponseEntity<ApiResponse<Void>> leaveRoom(
+            @PathVariable Long roomId,
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+    ){
+        log.info("leave room start");
+        Long userId = authenticatedUser.userId();
+
+        chatRoomSettingFacadeService.leaveRoom(roomId,userId);
+
+        return ResponseEntity.ok(ApiResponse.success(200, "채팅방을 나갔습니다.", null));
+    }
+
 }

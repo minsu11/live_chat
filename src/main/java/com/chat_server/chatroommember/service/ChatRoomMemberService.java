@@ -6,4 +6,6 @@ import com.chat_server.user.entity.User;
 
 public interface ChatRoomMemberService {
     void ensureMembership(Long userId, Long chatRoomId);
+
+    void leaveRoomMember(Long roomId, Long userId);
 }

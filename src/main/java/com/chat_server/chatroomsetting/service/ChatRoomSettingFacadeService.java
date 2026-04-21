@@ -9,4 +9,6 @@ public interface ChatRoomSettingFacadeService {
     ChatRoomNameUpdateResponse updateChatRoomName(Long userId, Long roomId, ChatRoomDisplayNameUpdateRequest request);
 
     ChatRoomNotificationUpdateResponse updateNotification(Long roomId, Long userId, ChatRoomNotificationUpdateRequest request);
+
+    void leaveRoom(Long roomId, Long userId);
 }

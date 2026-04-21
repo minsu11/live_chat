@@ -7,6 +7,8 @@ import com.chat_server.chatroommember.entity.ChatRoomMember;
 import com.chat_server.chatroommember.enums.RoomMemberRole;
 import com.chat_server.chatroommember.repository.ChatRoomMemberRepository;
 import com.chat_server.chatroommember.service.ChatRoomMemberService;
+import com.chat_server.error.enumulation.ErrorCode;
+import com.chat_server.error.exception.BusinessException;
 import com.chat_server.user.entity.User;
 import com.chat_server.user.repository.UserRepository;
 import jakarta.transaction.Transactional;
@@ -27,6 +29,14 @@ public class ChatRoomMemberServiceImpl implements ChatRoomMemberService {
     @Override
     public void ensureMembership(Long userId, Long chatRoomId) {
         chatRoomMemberRepository.upsertMembership(chatRoomId,userId,RoomMemberRole.MEMBER.name());
+    }
+
+    @Override
+    public void leaveRoomMember(Long roomId, Long userId) {
+        ChatRoomMember member = chatRoomMemberRepository.findByChatRoomIdAndUserId(roomId,userId)
+                .orElseThrow(()-> new BusinessException(ErrorCode.NOT_FOUND,"채팅방 멤버를 찾을 수 없습니다."));
+
+        member.leave();
     }
 
 }

@@ -2,6 +2,7 @@ package com.chat_server.chatlist.service.impl;
 
 import com.chat_server.chatlist.dto.response.ChatListItemResponse;
 import com.chat_server.chatlist.dto.response.ChatRoomListResponse;
+import com.chat_server.chatlist.dto.response.ChatRoomListRow;
 import com.chat_server.chatlist.dto.response.ChatUnreadCountRow;
 import com.chat_server.chatlist.entity.ChatList;
 import com.chat_server.chatlist.repository.ChatListRepository;
@@ -18,10 +19,9 @@ import jakarta.annotation.Nullable;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Slice;
@@ -261,6 +261,26 @@ public class ChatListServiceImpl implements ChatListService {
                 .orElseThrow(()-> new BusinessException(ErrorCode.NOT_FOUND,customProperties.getError().getMessage(ErrorCode.NOT_FOUND)));
         chatList.updateMuted(muted);
         return chatList;
+    }
+
+    @Override
+    public void leaveChatRoom(Long roomId, Long userId) {
+        chatListRepository.deleteByChatRoomIdAndUserIdDirectly(roomId, userId);
+
+        log.info("[Leave Room] User {} left Room {}", userId, roomId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<Long, ChatRoomListRow> getChatListItemsBulk(Long userId, Long roomId, List<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        List<ChatRoomListRow> items = chatListRepository.findChatListItemsBulk(roomId, userIds);
+
+        return items.stream()
+                .collect(Collectors.toMap(ChatRoomListRow::userId, item -> item));
     }
 
     @Override

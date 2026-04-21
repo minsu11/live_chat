@@ -4,13 +4,12 @@ import com.chat_server.chatmessage.enums.MessageType;
 import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.user.entity.User;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 
+@Slf4j
 @Getter
 @Entity
 @Table(
@@ -19,6 +18,7 @@ import java.time.LocalDateTime;
                 @UniqueConstraint(name = "uk_chat_message_client", columnNames = "client_message_id")
         }
 )
+
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ChatMessage {
 
@@ -76,6 +76,7 @@ public class ChatMessage {
 
     public static ChatMessage create(ChatRoom chatRoom, User user, String message, String messageType) {
         MessageType type = null;
+        log.info("message type: {}",messageType);
         if(messageType.equalsIgnoreCase("text")) {
             type = MessageType.TEXT;
         }else if(messageType.equalsIgnoreCase("image")) {
@@ -85,6 +86,8 @@ public class ChatMessage {
         }
         else if(messageType.equalsIgnoreCase("emoji")) {
             type = MessageType.EMOJI;
+        }else if(messageType.equalsIgnoreCase("SYSTEM_LEAVE")){
+            type=MessageType.SYSTEM_LEAVE;
         }
         else{
             type = MessageType.FILE;

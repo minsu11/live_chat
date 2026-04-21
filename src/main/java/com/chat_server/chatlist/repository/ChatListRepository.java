@@ -226,4 +226,16 @@ public interface ChatListRepository extends JpaRepository<ChatList, Long>,ChatLi
     Optional<ChatList> findByChatRoomIdAndUserId(Long roomId, Long userId);
 
     @Query("SELECT c.muted FROM ChatList c WHERE c.chatRoom.id = :roomId AND c.user.id = :userId")
-    Optional<Boolean> findMutedByChatRoomIdAndUserId(@Param("roomId") Long roomId, @Param("userId") Long userId);}
+    Optional<Boolean> findMutedByChatRoomIdAndUserId(@Param("roomId") Long roomId, @Param("userId") Long userId);
+
+    /**
+     * 나가기 했을 때 chat_list hard delete
+     * @param roomId 채팅방 ID
+     * @param userId 유저 ID
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("DELETE FROM ChatList c WHERE c.chatRoom.id = :roomId AND c.user.id = :userId")
+    void deleteByChatRoomIdAndUserIdDirectly(@Param("roomId") Long roomId, @Param("userId") Long userId);
+
+    boolean existsByChatRoomIdAndUserId(Long roomId, Long userId);
+}

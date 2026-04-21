@@ -45,10 +45,11 @@ public class ChatRoomController {
             @RequestParam(required = false) String cursor,
             @RequestParam(defaultValue = "50") int limit
     ) {
+        log.info("채팅방 입장");
         Long userId = authenticatedUser.userId();
         ChatRoomEnterResponse chatRoomEnterResponse = chatRoomFacadeService.enterChatRoom(roomId, userId, cursor, limit);
         ApiResponse<ChatRoomEnterResponse> response = ApiResponse.success(200, "채팅방 진입 정보 조회 성공", chatRoomEnterResponse);
-
+        log.info("채팅방 입장 컨트롤러 종료");
         return ResponseEntity.ok(response);
     }
 
@@ -96,16 +97,6 @@ public class ChatRoomController {
         log.info("api response {}", apiResponse);
 
         return ResponseEntity.ok(apiResponse);
-    }
-
-    /**
-     * 채팅방을 나간다(향후 soft delete 예정).
-     *
-     * @return 현재는 구현 전(null)
-     */
-    @DeleteMapping("remove")
-    public ResponseEntity<ApiResponse<Void>> removeChatRoom(){
-        return null;
     }
 
     @GetMapping("/{roomId}/messages")

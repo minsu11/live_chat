@@ -125,15 +125,28 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
 
         var slice = chatMessageService.getEnterMessagesByCursor(roomId, safeLimit, decoded);
 
+        List<ChatMessageItemResponse> messageItems = slice.getContent();
 
-        Map<Long, String> displayNameCache = new HashMap<>();
+        List<Long> senderIds = messageItems.stream()
+                .map(ChatMessageItemResponse::senderId)
+                .distinct().toList();
 
-        List<ChatMessageResponse> messages = slice.getContent().stream()
-                .map(item -> toChatMessageResponse(item, roomId, userId, displayNameCache))
+        Map<Long, String> displayNameCache = userDisplayNameService.resolveDisplayNamesBulk(
+                userId,
+                senderIds
+        );
+
+        List<ChatMessageResponse> messages = messageItems.stream()
+                .map(item -> {
+                    // Map에 커스텀 닉네임이 있으면 쓰고, 없으면 원래 닉네임(senderNickname) 사용
+                    String displayNickname = displayNameCache.getOrDefault(item.senderId(), item.senderNickname());
+                    return toChatMessageResponse(item, roomId, userId, displayNickname);
+                })
                 .sorted((a, b) -> a.createdAt().equals(b.createdAt())
                         ? Long.compare(a.messageId(), b.messageId())
                         : a.createdAt().compareTo(b.createdAt()))
                 .toList();
+
 
         String nextCursor = null;
         if (slice.hasNext() && !slice.getContent().isEmpty()) {
@@ -202,16 +215,29 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
         ChatMessageCursorKey decoded = ChatMessageCursorCodec.decode(cursor);
 
         var room = chatRoomQueryService.getRoomOrThrow(roomId);
+
         var slice = chatMessageService.getEnterMessagesByCursor(roomId, safeLimit, decoded);
+        List<ChatMessageItemResponse> messageItems = slice.getContent();
 
-        Map<Long, String> displayNameCache = new HashMap<>();
+        List<Long> senderIds = messageItems.stream()
+                .map(ChatMessageItemResponse::senderId)
+                .distinct().toList();
 
-        List<ChatMessageResponse> messages = slice.getContent().stream()
-                .map(item -> toChatMessageResponse(item, roomId, userId, displayNameCache))
+        Map<Long, String> customNameMap = userDisplayNameService.resolveDisplayNamesBulk(
+                userId, // 조회하는 사람 (나)
+                senderIds// 메세지를 보낸 사람들 목록
+        );
+
+        List<ChatMessageResponse> messages = messageItems.stream()
+                .map(item -> {
+                    String finalDisplayName = customNameMap.getOrDefault(item.senderId(), item.senderNickname());
+                    return toChatMessageResponse(item, roomId, userId, finalDisplayName);
+                })
                 .sorted((a, b) -> a.createdAt().equals(b.createdAt())
                         ? Long.compare(a.messageId(), b.messageId())
                         : a.createdAt().compareTo(b.createdAt()))
                 .toList();
+
 
         String nextCursor = null;
         if (slice.hasNext() && !slice.getContent().isEmpty()) {
@@ -326,10 +352,23 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
 
         var slice = chatMessageService.getMessagesAfter(roomId, afterMessageId, safeLimit);
 
-        Map<Long, String> displayNameCache = new HashMap<>();
+        List<ChatMessageItemResponse> messageItems = slice.getContent();
 
-        List<ChatMessageResponse> messages = slice.getContent().stream()
-                .map(item -> toChatMessageResponse(item, roomId, userId, displayNameCache))
+        List<Long> senderIds = messageItems.stream()
+                .map(ChatMessageItemResponse::senderId)
+                .distinct().toList();
+
+        Map<Long, String> displayNameCache = userDisplayNameService.resolveDisplayNamesBulk(
+                userId,
+                senderIds
+        );
+
+        List<ChatMessageResponse> messages = messageItems.stream()
+                .map(item -> {
+                    // Map에 커스텀 닉네임이 있으면 쓰고, 없으면 원래 닉네임(senderNickname) 사용
+                    String displayNickname = displayNameCache.getOrDefault(item.senderId(), item.senderNickname());
+                    return toChatMessageResponse(item, roomId, userId, displayNickname);
+                })
                 .sorted((a, b) -> a.createdAt().equals(b.createdAt())
                         ? Long.compare(a.messageId(), b.messageId())
                         : a.createdAt().compareTo(b.createdAt()))
@@ -362,21 +401,19 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
      * @param item             채팅방 진입 조회용 메시지 DTO
      * @param roomId           채팅방 ID
      * @param viewerUserId     현재 메시지를 조회 중인 사용자 ID
-     * @param displayNameCache 동일 요청 내 발신자별 표시 이름 재사용을 위한 임시 캐시
+     * @param displayNickname  화면에 나오는 이름
      * @return 프론트 공통 메시지 응답 DTO
      */
     private ChatMessageResponse toChatMessageResponse(
             ChatMessageItemResponse item,
             Long roomId,
             Long viewerUserId,
-            Map<Long, String> displayNameCache
+            String displayNickname
     ) {
-        String displayNickname = displayNameCache.computeIfAbsent(
-                item.senderId(),
-                senderId -> userDisplayNameService
-                        .resolveDisplayName(senderId, viewerUserId)
-                        .orElse(item.senderNickname())
-        );
+        String content = item.content();
+        if(item.messageType().equalsIgnoreCase("SYSTEM_LEAVE")){
+            content = displayNickname + content;
+        }
 
         return new ChatMessageResponse(
                 item.messageId(),
@@ -387,7 +424,7 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
                         displayNickname,
                         item.profileImageUrl()
                 ),
-                item.content(),
+                content,
                 item.createdAt(),
                 item.senderId().equals(viewerUserId),
                 item.unreadCount()

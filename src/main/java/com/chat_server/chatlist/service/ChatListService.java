@@ -2,6 +2,7 @@ package com.chat_server.chatlist.service;
 
 import com.chat_server.chatlist.dto.response.ChatListItemResponse;
 import com.chat_server.chatlist.dto.response.ChatRoomListResponse;
+import com.chat_server.chatlist.dto.response.ChatRoomListRow;
 import com.chat_server.chatlist.entity.ChatList;
 import com.chat_server.chatroomsetting.dto.response.ChatRoomNameUpdateResponse;
 import com.chat_server.friend.dto.response.CursorPageResponse;
@@ -134,5 +135,7 @@ public interface ChatListService {
 
     ChatList updateMutedStatus(Long roomId, Long userId, boolean muted);
 
+    void leaveChatRoom(Long roomId, Long userId);
 
+    Map<Long, ChatRoomListRow> getChatListItemsBulk(Long userId, Long roomId, List<Long> userIds);
 }
