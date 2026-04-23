@@ -32,7 +32,7 @@ public class ChatMessageRepositoryCustomImpl extends QuerydslRepositorySupport i
     private final QChatList qChatList = QChatList.chatList;
     private final QUserProfileImage qUserProfileImage = QUserProfileImage.userProfileImage;
     private final QChatRoomMember qChatRoomMember = QChatRoomMember.chatRoomMember;
-
+    private final QChatRoomMember myMember = new QChatRoomMember("myMember");
 
     public ChatMessageRepositoryCustomImpl() {
         super(QChatMessage.class);
@@ -41,12 +41,15 @@ public class ChatMessageRepositoryCustomImpl extends QuerydslRepositorySupport i
     @Override
     public Slice<ChatMessageItemResponse> getEnterMessagesByCursor(
             Long roomId,
+            Long userId,
             int limit,
             @Nullable ChatMessageCursorKey cursorKey
     ) {
         BooleanBuilder where = new BooleanBuilder()
                 .and(qChatMessage.chatRoom.id.eq(roomId))
-                .and(qChatMessage.deleted.isFalse());
+                .and(qChatMessage.deleted.isFalse()
+                        .and(qChatMessage.createdAt.goe(myMember.joinedAt)))
+                ;
 
         if (cursorKey != null) {
             LocalDateTime cursorAt = Instant.ofEpochMilli(cursorKey.lastMessageAtEpochMillis())
@@ -64,6 +67,10 @@ public class ChatMessageRepositoryCustomImpl extends QuerydslRepositorySupport i
 
         List<ChatMessageItemResponse> rows = from(qChatMessage)
                 .join(qChatMessage.sender)
+                .join(myMember).on(
+                        myMember.chatRoom.id.eq(roomId),
+                        myMember.user.id.eq(userId)
+                )
                 .leftJoin(qUserProfile).on(qUserProfile.user.id.eq(qChatMessage.sender.id))
                 .leftJoin(qUserProfileImage).on(
                         qUserProfileImage.userProfile.id.eq(qUserProfile.id)
@@ -168,7 +175,8 @@ public class ChatMessageRepositoryCustomImpl extends QuerydslRepositorySupport i
                             qChatMessage.sender.id.isNull()
                                     .or(qChatRoomMember.user.id.ne(qChatMessage.sender.id)),
                             qChatList.lastReadMessageId.isNull()
-                                    .or(qChatList.lastReadMessageId.lt(qChatMessage.id))
+                                    .or(qChatList.lastReadMessageId.lt(qChatMessage.id)),
+                            qChatRoomMember.joinedAt.loe(qChatMessage.createdAt)
                     );
     }
 }

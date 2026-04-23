@@ -134,7 +134,7 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
             chatReadFacadeService.markAsReadOnEnter(roomId, userId, room.getLastMessageId());
         }
 
-        var slice = chatMessageService.getEnterMessagesByCursor(roomId, safeLimit, decoded);
+        var slice = chatMessageService.getEnterMessagesByCursor(roomId, userId, safeLimit, decoded);
 
         List<ChatMessageItemResponse> messageItems = slice.getContent();
 
@@ -228,7 +228,7 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
 
         var room = chatRoomQueryService.getRoomOrThrow(roomId);
 
-        var slice = chatMessageService.getEnterMessagesByCursor(roomId, safeLimit, decoded);
+        var slice = chatMessageService.getEnterMessagesByCursor(roomId, userId, safeLimit, decoded);
         List<ChatMessageItemResponse> messageItems = slice.getContent();
 
         List<Long> senderIds = messageItems.stream()

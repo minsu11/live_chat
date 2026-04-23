@@ -37,9 +37,9 @@ public class ChatMessageServiceImpl implements ChatMessageService {
      */
     @Override
     @Transactional(readOnly = true)
-    public Slice<ChatMessageItemResponse> getEnterMessagesByCursor(Long roomId, int limit,
+    public Slice<ChatMessageItemResponse> getEnterMessagesByCursor(Long roomId, Long userId, int limit,
                                                                    @Nullable ChatMessageCursorKey cursorKey) {
-        return chatMessageRepository.getEnterMessagesByCursor(roomId, limit, cursorKey);
+        return chatMessageRepository.getEnterMessagesByCursor(roomId, userId, limit, cursorKey);
     }
     @Override
     @Transactional(readOnly = true)
