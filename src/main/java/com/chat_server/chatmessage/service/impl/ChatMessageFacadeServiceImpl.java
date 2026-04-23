@@ -17,6 +17,7 @@ import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.chatroom.resolver.ChatRoomDisplayResolver;
 import com.chat_server.chatroom.service.ChatRoomQueryService;
 import com.chat_server.chatroom.service.ChatRoomService;
+import com.chat_server.chatroommember.service.ChatRoomMemberService;
 import com.chat_server.common.mapper.ChatListUpsertEventMapper;
 import com.chat_server.common.mapper.ChatMessageResponseMapper;
 import com.chat_server.common.mapper.ChatNotificationEventMapper;
@@ -60,6 +61,7 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
     private final ChatListUpsertEventMapper chatListUpsertEventMapper;
     private final ObjectMapper objectMapper;
     private final ChatAttachmentService chatAttachmentService;
+    private final ChatRoomMemberService chatRoomMemberService;
     /**
      * 메시지 전송 전체 플로우를 오케스트레이션한다.
      *
@@ -94,8 +96,9 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         chatListService.increaseUnreadCount(roomId, userId);
         chatListService.markSenderAsReadOnSend(roomId,userId,chatMessage.getId());
 
-        List<Long> roomMemberUserIds = chatListService.getRoomMemberUserIds(roomId);
+        List<Long> roomMemberUserIds = chatRoomMemberService.getRoomMemberIdsByRoomId(roomId);
         log.debug("sendMessage roomMemberUserIds: {}", roomMemberUserIds);
+
         int messageUnreadCount = Math.max(roomMemberUserIds.size() - 1, 0);
         for (Long receiverUserId : roomMemberUserIds) {
 

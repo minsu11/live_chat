@@ -7,6 +7,9 @@ import com.chat_server.chatlist.dto.response.ChatUnreadCountRow;
 import com.chat_server.chatlist.entity.ChatList;
 import com.chat_server.chatlist.repository.ChatListRepository;
 import com.chat_server.chatlist.service.ChatListService;
+import com.chat_server.chatroom.entity.ChatRoom;
+import com.chat_server.chatroom.exception.ChatRoomNotFoundException;
+import com.chat_server.chatroom.repository.ChatRoomRepository;
 import com.chat_server.chatroom.resolver.ChatRoomDisplayResolver;
 import com.chat_server.chatroomsetting.dto.response.ChatRoomNameUpdateResponse;
 import com.chat_server.common.cursor.ChatListCursorCodec;
@@ -15,6 +18,8 @@ import com.chat_server.common.propertis.CustomProperties;
 import com.chat_server.error.enumulation.ErrorCode;
 import com.chat_server.error.exception.BusinessException;
 import com.chat_server.friend.dto.response.CursorPageResponse;
+import com.chat_server.user.entity.User;
+import com.chat_server.user.repository.UserRepository;
 import jakarta.annotation.Nullable;
 
 import java.time.LocalDateTime;
@@ -36,6 +41,8 @@ public class ChatListServiceImpl implements ChatListService {
     private final ChatListRepository chatListRepository;
     private final ChatRoomDisplayResolver chatRoomDisplayResolver;
     private final CustomProperties customProperties;
+    private final ChatRoomRepository chatRoomRepository;
+    private final UserRepository userRepository;
 
     /**
      * 커서 기반 채팅방 목록을 조회한다.
@@ -298,5 +305,28 @@ public class ChatListServiceImpl implements ChatListService {
                 item.lastMessageAt(),
                 item.orderAt()
         );
+    }
+
+    @Override
+    @Transactional
+    public void ensureMembershipsBulk(Long roomId, List<Long> userIds) {
+        // 1. 이미 해당 방의 ChatList를 가지고 있는 유저 ID 목록을 한 번에 조회 (In 쿼리)
+        List<Long> existingUserIds = chatListRepository.findUserIdsByRoomIdAndUserIdIn(roomId, userIds);
+        ChatRoom chatRoom = chatRoomRepository.findById(roomId)
+                .orElseThrow(ChatRoomNotFoundException::new);
+        // 2. 전달받은 유저들 중 DB에 없는 유저들만 필터링
+        List<ChatList> newChatLists = userIds.stream()
+                .filter(id -> !existingUserIds.contains(id))
+                .map(id -> {
+                    // facade service user id 정합성 검사 했으므로, proxy 객체 생성해서 save
+                    User userProxy = userRepository.getReferenceById(id);
+                    return ChatList.create(chatRoom, userProxy);
+                }) // 엔티티 생성 정적 팩토리 메서드 가정
+                .toList();
+
+        // 3. 존재하지 않는 유저들에 대해서만 벌크 인서트 (saveAll)
+        if (!newChatLists.isEmpty()) {
+            chatListRepository.saveAll(newChatLists);
+        }
     }
 }

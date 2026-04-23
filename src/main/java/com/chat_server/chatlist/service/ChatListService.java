@@ -138,4 +138,7 @@ public interface ChatListService {
     void leaveChatRoom(Long roomId, Long userId);
 
     Map<Long, ChatRoomListRow> getChatListItemsBulk(Long userId, Long roomId, List<Long> userIds);
+
+    void ensureMembershipsBulk(Long roomId, List<Long> userIds);
+
 }

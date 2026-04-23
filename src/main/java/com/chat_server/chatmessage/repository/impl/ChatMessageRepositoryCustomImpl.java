@@ -5,6 +5,7 @@ import com.chat_server.chatmessage.dto.response.ChatMessageItemResponse;
 import com.chat_server.chatmessage.entity.QChatMessage;
 import com.chat_server.chatmessage.repository.ChatMessageRepositoryCustom;
 import com.chat_server.chatread.dto.event.UpdatedMessageUnreadCount;
+import com.chat_server.chatroommember.entity.QChatRoomMember;
 import com.chat_server.common.cursor.ChatMessageCursorKey;
 import com.chat_server.userprofile.enrtity.QUserProfile;
 import com.chat_server.userprofileImage.entity.QUserProfileImage;
@@ -30,6 +31,7 @@ public class ChatMessageRepositoryCustomImpl extends QuerydslRepositorySupport i
     private final QUserProfile qUserProfile = QUserProfile.userProfile;
     private final QChatList qChatList = QChatList.chatList;
     private final QUserProfileImage qUserProfileImage = QUserProfileImage.userProfileImage;
+    private final QChatRoomMember qChatRoomMember = QChatRoomMember.chatRoomMember;
 
 
     public ChatMessageRepositoryCustomImpl() {
@@ -58,16 +60,7 @@ public class ChatMessageRepositoryCustomImpl extends QuerydslRepositorySupport i
             );
         }
 
-        JPQLQuery<Integer> unreadCountExpr =
-                JPAExpressions
-                        .select(qChatList.count().intValue())
-                        .from(qChatList)
-                        .where(
-                                qChatList.chatRoom.id.eq(qChatMessage.chatRoom.id),
-                                qChatList.user.id.ne(qChatMessage.sender.id),
-                                qChatList.lastReadMessageId.isNull()
-                                        .or(qChatList.lastReadMessageId.lt(qChatMessage.id))
-                        );
+        JPQLQuery<Integer> unreadCountExpr = getUnreadCountExpr();
 
         List<ChatMessageItemResponse> rows = from(qChatMessage)
                 .join(qChatMessage.sender)
@@ -103,16 +96,7 @@ public class ChatMessageRepositoryCustomImpl extends QuerydslRepositorySupport i
 
     @Override
     public List<UpdatedMessageUnreadCount> findUpdatedUnreadCounts(Long roomId, Long lastReadMessageId) {
-        JPQLQuery<Integer> unreadCountExpr =
-                JPAExpressions
-                        .select(qChatList.count().intValue())
-                        .from(qChatList)
-                        .where(
-                                qChatList.chatRoom.id.eq(qChatMessage.chatRoom.id),
-                                qChatList.user.id.ne(qChatMessage.sender.id),
-                                qChatList.lastReadMessageId.isNull()
-                                        .or(qChatList.lastReadMessageId.lt(qChatMessage.id))
-                        );
+        JPQLQuery<Integer> unreadCountExpr = getUnreadCountExpr();
 
         return from(qChatMessage)
                 .where(
@@ -131,16 +115,7 @@ public class ChatMessageRepositoryCustomImpl extends QuerydslRepositorySupport i
 
     @Override
     public Slice<ChatMessageItemResponse> getMessagesAfter(Long roomId, Long afterMessageId, int limit) {
-        JPQLQuery<Integer> unreadCountExpr =
-                JPAExpressions
-                        .select(qChatList.count().intValue())
-                        .from(qChatList)
-                        .where(
-                                qChatList.chatRoom.id.eq(qChatMessage.chatRoom.id),
-                                qChatList.user.id.ne(qChatMessage.sender.id),
-                                qChatList.lastReadMessageId.isNull()
-                                        .or(qChatList.lastReadMessageId.lt(qChatMessage.id))
-                        );
+
 
         List<ChatMessageItemResponse> rows = from(qChatMessage)
                 .join(qChatMessage.sender)
@@ -166,7 +141,7 @@ public class ChatMessageRepositoryCustomImpl extends QuerydslRepositorySupport i
                         qChatMessage.messageType.stringValue(),
                         qChatMessage.messageContent,
                         qChatMessage.createdAt,
-                        unreadCountExpr
+                        getUnreadCountExpr()
                 ))
                 .fetch();
 
@@ -176,5 +151,24 @@ public class ChatMessageRepositoryCustomImpl extends QuerydslRepositorySupport i
         }
 
         return new SliceImpl<>(rows, PageRequest.of(0, limit), hasNext);
+    }
+
+    private  JPQLQuery<Integer> getUnreadCountExpr(){
+
+    return JPAExpressions
+                    .select(qChatRoomMember.count().intValue())
+                    .from(qChatRoomMember)
+                    .leftJoin(qChatList).on(
+                            qChatList.user.id.eq(qChatRoomMember.user.id)
+                                    .and(qChatList.chatRoom.id.eq(qChatRoomMember.chatRoom.id))
+                    )
+                    .where(
+                            qChatRoomMember.chatRoom.id.eq(qChatMessage.chatRoom.id),
+                            qChatRoomMember.active.isTrue(),
+                            qChatMessage.sender.id.isNull()
+                                    .or(qChatRoomMember.user.id.ne(qChatMessage.sender.id)),
+                            qChatList.lastReadMessageId.isNull()
+                                    .or(qChatList.lastReadMessageId.lt(qChatMessage.id))
+                    );
     }
 }

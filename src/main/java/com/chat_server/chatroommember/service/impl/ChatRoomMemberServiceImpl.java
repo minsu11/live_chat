@@ -52,19 +52,24 @@ public class ChatRoomMemberServiceImpl implements ChatRoomMemberService {
 
     // 멤버 추가
     @Override
-    public void addMembers(Long roomId, List<String> inviteeUuid) {
-        ChatRoom room = chatRoomRepository.findById(roomId).orElseThrow(ChatRoomNotFoundException::new);
+    public void addMembers(Long roomId, List<String> inviteeUuid, ChatRoom chatRoom) {
         for(String uuid : inviteeUuid) {
             User user = userRepository.findByUuid(uuid).orElseThrow(UserNotFoundException::new);
             ChatRoomMember chatRoomMember = ChatRoomMember.builder()
-                    .chatRoom(room)
+                    .chatRoom(chatRoom)
                     .user(user)
                     .role(RoomMemberRole.MEMBER)
                     .joinedAt(LocalDateTime.now())
                     .build();
             chatRoomMemberRepository.save(chatRoomMember);
-            room.incrementParticipantCount();
+            chatRoom.incrementParticipantCount();
         }
+    }
+
+    @Override
+    public List<Long> getRoomMemberIdsByRoomId(Long roomId) {
+
+        return chatRoomMemberRepository.findRoomMemberIdsByRoomId(roomId);
     }
 
 }

@@ -40,6 +40,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -427,9 +428,16 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
         chatRoomQueryService.validateMemberOrThrow(roomId, inviterId);
         ChatRoom chatRoom = chatRoomQueryService.getRoomOrThrow(roomId);
 
-        chatRoomMemberService.addMembers(roomId,inviteeUuids);
+        chatRoomMemberService.addMembers(roomId,inviteeUuids, chatRoom);
+
+
 
         List<User> invitees = userService.getUserIdByUserUuids(inviteeUuids);
+
+        for(User u : invitees){
+            chatListService.ensureMembership(roomId,u.getId());
+        }
+
         User inviter = userService.getUserById(inviterId);
 
 

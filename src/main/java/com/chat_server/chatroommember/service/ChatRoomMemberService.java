@@ -14,5 +14,8 @@ public interface ChatRoomMemberService {
     void leaveRoomMember(Long roomId, Long userId);
 
     List<ChatRoomMemberInfoDto> getChatRoomMemberIds(Long roomId);
-    void addMembers(Long roomId, List<String> inviteeUuid);
+    void addMembers(Long roomId, List<String> inviteeUuid, ChatRoom chatRoom);
+
+    List<Long> getRoomMemberIdsByRoomId(Long roomId);
+
 }

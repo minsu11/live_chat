@@ -238,4 +238,10 @@ public interface ChatListRepository extends JpaRepository<ChatList, Long>,ChatLi
     void deleteByChatRoomIdAndUserIdDirectly(@Param("roomId") Long roomId, @Param("userId") Long userId);
 
     boolean existsByChatRoomIdAndUserId(Long roomId, Long userId);
+
+    @Query("SELECT c.user.id FROM ChatList c WHERE c.chatRoom.id = :roomId AND c.user.id IN :userIds")
+    List<Long> findUserIdsByRoomIdAndUserIdIn(
+            @Param("roomId") Long roomId,
+            @Param("userIds") List<Long> userIds
+    );
 }
