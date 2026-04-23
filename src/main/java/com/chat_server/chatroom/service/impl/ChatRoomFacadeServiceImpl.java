@@ -151,6 +151,7 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
                 .map(item -> {
                     // Map에 커스텀 닉네임이 있으면 쓰고, 없으면 원래 닉네임(senderNickname) 사용
                     String displayNickname = displayNameCache.getOrDefault(item.senderId(), item.senderNickname());
+                    log.info("item id: {}, item type: {}",item.messageId(), item.messageType());
                     return toChatMessageResponse(item, roomId, userId, displayNickname);
                 })
                 .sorted((a, b) -> a.createdAt().equals(b.createdAt())
@@ -430,13 +431,10 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
 
         chatRoomMemberService.addMembers(roomId,inviteeUuids, chatRoom);
 
-
-
         List<User> invitees = userService.getUserIdByUserUuids(inviteeUuids);
+        List<Long> inviteeIds = invitees.stream().map(User::getId).toList();
 
-        for(User u : invitees){
-            chatListService.ensureMembership(roomId,u.getId());
-        }
+        chatListService.ensureMembershipsBulk(roomId,inviteeIds);
 
         User inviter = userService.getUserById(inviterId);
 
