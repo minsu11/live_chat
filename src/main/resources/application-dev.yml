@@ -27,12 +27,12 @@ auth:
 
 file:
   upload:
-#    profile-dir: C:\project_file\live_chat\src\main\resources\image\profile
-#    chat-image-dir: C:\project_file\live_chat\src\main\resources\image\chat
-#    chat-file-dir: C:\project_file\live_chat\src\main\resources\image\file
-    profile-dir: ${CHAT_UPLOAD_ROOT}/image/profile
-    chat-image-dir: ${CHAT_UPLOAD_ROOT}/image/chat
-    chat-file-dir: ${CHAT_UPLOAD_ROOT}/image/file
+    profile-dir: C:\project_file\live_chat\src\main\resources\image\profile
+    chat-image-dir: C:\project_file\live_chat\src\main\resources\image\chat
+    chat-file-dir: C:\project_file\live_chat\src\main\resources\image\file
+#    profile-dir: ${CHAT_UPLOAD_ROOT}/image/profile
+#    chat-image-dir: ${CHAT_UPLOAD_ROOT}/image/chat
+#    chat-file-dir: ${CHAT_UPLOAD_ROOT}/image/file
     chat-file-max-size: 5MB
     chat-file-allowed-extensions:
       - pdf
