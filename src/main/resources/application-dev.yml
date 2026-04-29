@@ -51,19 +51,28 @@ file:
       - png
 
 logging:
+  file:
+    name: ./logs/chat-server.log
+  logback:
+    rolling policy:
+      max-file-size: 10MB
+      max-history: 7
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n" # 파일용 시간 포맷
   level:
-    com.chat_server: debug
-    org.springframework.security: info
-    org.hibernate.SQL: debug
-    io.netty: info
-    reactor.netty: info
+    com.chat_server: info
+    org.springframework.security: warn
+    org.hibernate.SQL: warn
+    io.netty: warn
+    reactor.netty: warn
     org.apache.http: info
     org.springframework: debug
     sun.rmi: info
     javax.management: info
-    org.springframework.messaging: debug
-    org.springframework.web.socket.messaging: debug
-    org.springframework.messaging.simp.annotation.support.SimpAnnotationMethodMessageHandler: debug
-    org.springframework.messaging.handler.annotation.support: debug
-    org.springframework.messaging.converter: debug
-    org.springframework.messaging.support.ExecutorSubscribableChannel: debug
+    org.springframework.messaging: warn
+    org.springframework.web.socket.messaging: warn
+    org.springframework.messaging.simp.annotation.support.SimpAnnotationMethodMessageHandler: warn
+    org.springframework.messaging.handler.annotation.support: warn
+    org.springframework.messaging.converter: warn
+    org.springframework.messaging.support.ExecutorSubscribableChannel: warn
