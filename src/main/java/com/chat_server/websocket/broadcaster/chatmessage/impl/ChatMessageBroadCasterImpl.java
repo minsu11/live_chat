@@ -1,6 +1,7 @@
 package com.chat_server.websocket.broadcaster.chatmessage.impl;
 
 import com.chat_server.chatmessage.dto.response.ChatMessageResponse;
+import com.chat_server.redis.service.RedisPublisher;
 import com.chat_server.websocket.broadcaster.chatmessage.ChatMessageBroadCaster;
 import com.chat_server.websocket.properties.WebSocketProperties;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class ChatMessageBroadCasterImpl implements ChatMessageBroadCaster {
-    private final SimpMessagingTemplate messagingTemplate;
+    private final RedisPublisher redisPublisher;
     private final WebSocketProperties webSocketProperties;
 
 
@@ -34,9 +35,9 @@ public class ChatMessageBroadCasterImpl implements ChatMessageBroadCaster {
                 + webSocketProperties.getChat().getRoomPath()
                 + "/" + response.roomId();
         log.debug("userDestination: {}", userDestination);
-
-        messagingTemplate.convertAndSendToUser(String.valueOf(receiverUserId), userDestination, response);
-        log.debug("broadcastMessage 완료 - userDestination: {}", userDestination);
+        String destination = "/user/"+receiverUserId+ userDestination;
+        redisPublisher.publish(destination,response);
+        log.debug("broadcastMessage 완료 - userDestination: {}", destination);
     }
 
     /**
@@ -53,7 +54,7 @@ public class ChatMessageBroadCasterImpl implements ChatMessageBroadCaster {
                 + webSocketProperties.getChat().getRoomPath()
                 + "/" + response.roomId();
 
-        messagingTemplate.convertAndSend(roomDestination, response);
+        redisPublisher.publish(roomDestination, response);
         log.debug("relayRoomBroadcast 완료 - roomDestination: {}", roomDestination);
     }
 

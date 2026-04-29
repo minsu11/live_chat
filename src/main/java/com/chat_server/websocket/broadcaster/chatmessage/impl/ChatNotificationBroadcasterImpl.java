@@ -1,6 +1,7 @@
 package com.chat_server.websocket.broadcaster.chatmessage.impl;
 
 import com.chat_server.chatnotification.dto.event.ChatNotificationEvent;
+import com.chat_server.redis.service.RedisPublisher;
 import com.chat_server.websocket.broadcaster.chatmessage.ChatNotificationBroadcaster;
 import com.chat_server.websocket.properties.WebSocketProperties;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class ChatNotificationBroadcasterImpl implements ChatNotificationBroadcaster {
-    private final SimpMessagingTemplate messagingTemplate;
+    private final RedisPublisher redisPublisher;
     private final WebSocketProperties webSocketProperties;
 
     @Override
@@ -21,11 +22,9 @@ public class ChatNotificationBroadcasterImpl implements ChatNotificationBroadcas
         String userDestination =
                 webSocketProperties.getSubPrefix()
                 +webSocketProperties.getChat().getChatNotification();
+        String destination = "/user/"+userId+userDestination;
 
-        messagingTemplate.convertAndSendToUser(
-                String.valueOf(userId),
-                userDestination,
-                event
-        );
+        redisPublisher.publish(destination,event);
+
     }
 }

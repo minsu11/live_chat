@@ -21,6 +21,7 @@ public class RedisSubscriber {
      */
     public void sendMessage(String publishMessage) {
         try {
+            log.info("redis subscriber 호출");
             // 1. 넘어온 JSON 문자열을 우리가 만든 DTO로 변환(역직렬화)
             RedisBroadcastMessage message = objectMapper.readValue(publishMessage, RedisBroadcastMessage.class);
 

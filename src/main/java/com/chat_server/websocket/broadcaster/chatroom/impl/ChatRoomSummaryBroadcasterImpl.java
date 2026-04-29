@@ -1,6 +1,7 @@
 package com.chat_server.websocket.broadcaster.chatroom.impl;
 
 import com.chat_server.chatroom.dto.event.ChatRoomSummaryEvent;
+import com.chat_server.redis.service.RedisPublisher;
 import com.chat_server.websocket.broadcaster.chatroom.ChatRoomSummaryBroadcaster;
 import com.chat_server.websocket.properties.WebSocketProperties;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class ChatRoomSummaryBroadcasterImpl implements ChatRoomSummaryBroadcaster {
-    private final SimpMessagingTemplate messagingTemplate;
+    private final RedisPublisher redisPublisher;
     private final WebSocketProperties webSocketProperties;
 
 
@@ -20,11 +21,7 @@ public class ChatRoomSummaryBroadcasterImpl implements ChatRoomSummaryBroadcaste
     public void broadcastToUser(Long userId, ChatRoomSummaryEvent event) {
         String userDestination = webSocketProperties.getSubPrefix()
                 + webSocketProperties.getChat().getSummaryEventPath();
-
-        messagingTemplate.convertAndSendToUser(
-                String.valueOf(userId),
-                userDestination,
-                event
-        );
+        String destination = "/user/"+userId+userDestination;
+        redisPublisher.publish(destination, event);
     }
 }

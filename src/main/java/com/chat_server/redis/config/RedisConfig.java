@@ -1,6 +1,7 @@
 package com.chat_server.redis.config;
 
 import com.chat_server.redis.propertie.RedisCustomProperties;
+import com.chat_server.redis.service.RedisSubscriber;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.lettuce.core.resource.DefaultClientResources;
 import lombok.RequiredArgsConstructor;
