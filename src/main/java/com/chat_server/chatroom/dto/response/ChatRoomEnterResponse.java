@@ -10,6 +10,7 @@ public record ChatRoomEnterResponse(
     String roomType,
     String title,
     List<ChatMessageResponse> messages,
-    String nextCursor
+    String nextCursor,
+    boolean muted
 ) {
 }

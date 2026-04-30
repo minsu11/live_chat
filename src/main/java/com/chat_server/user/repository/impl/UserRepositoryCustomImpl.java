@@ -75,20 +75,25 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
     }
 
     @Override
-    public SearchUserResponse getSearchUserByUserId(String userId) {
+    public SearchUserResponse getSearchUserByUserId(Long userId, String searchUserId) {
         return
             from(qUser)
                 .select(Projections.constructor(
                     SearchUserResponse.class,
                     qUser.uuid,
                     qUser.name,
-                        qUserProfileImage.imageUrl
+                        qUserProfileImage.imageUrl,
+                        qFriend.id.isNotNull()
                 ))
-                .innerJoin(qUserProfile).on(qUserProfile.user.eq(qUser))
-                .leftJoin(qUserProfileImage).on(qUserProfileImage.userProfile.eq(qUserProfile).and(qUserProfileImage.current.isTrue()))
-                .where(qUser.inputId.eq(userId)
-                    .and(qUser.status.eq(UserStatus.ACTIVE))
-                )
+                    .innerJoin(qUserProfile).on(qUserProfile.user.eq(qUser))
+                    .leftJoin(qUserProfileImage).on(qUserProfileImage.userProfile.eq(qUserProfile).and(qUserProfileImage.current.isTrue()))
+                    .leftJoin(qFriend).on(
+                            qFriend.user.id.eq(userId)
+                                    .and(qFriend.friendUser.inputId.eq(searchUserId))
+                    )
+                .where(qUser.inputId.eq(searchUserId)
+                    .and(qUser.status.eq(UserStatus.ACTIVE)
+                    ))
                 .fetchOne();
     }
 

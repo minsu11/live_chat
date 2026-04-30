@@ -48,6 +48,9 @@ public class ChatRoom {
     @Column(name = "dm_key", length = 100)
     private String dmKey;
 
+    @Column(name="participant_count" , nullable = false)
+    private int participantCount;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "created_by", nullable = false, foreignKey = @ForeignKey(name = "fk_chat_room_created_by"))
     private User createdBy;
@@ -81,5 +84,13 @@ public class ChatRoom {
         this.lastMessageAt = createdAt;
         this.lastMessagePreview = preview;
 
+    }
+
+    public void incrementParticipantCount() {
+        this.participantCount++;
+    }
+
+    public void decrementParticipantCount() {
+        this.participantCount = Math.max(0, this.participantCount - 1);
     }
 }

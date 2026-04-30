@@ -1,11 +1,14 @@
 package com.chat_server.chatroom.service.impl;
 
 import com.chat_server.chatlist.dto.response.ChatListItemResponse;
+import com.chat_server.chatlist.entity.ChatList;
 import com.chat_server.chatlist.service.ChatListService;
 import com.chat_server.chatmessage.dto.response.ChatMessageCatchUpResponse;
 import com.chat_server.chatmessage.dto.response.ChatMessageItemResponse;
 import com.chat_server.chatmessage.dto.response.ChatMessageResponse;
 import com.chat_server.chatmessage.dto.response.ChatMessageSenderResponse;
+import com.chat_server.chatmessage.enums.MessageType;
+import com.chat_server.chatmessage.service.ChatMessageFacadeService;
 import com.chat_server.chatmessage.service.ChatMessageService;
 import com.chat_server.chatread.service.ChatReadFacadeService;
 import com.chat_server.chatlist.dto.event.ChatListUpsertEvent;
@@ -19,10 +22,13 @@ import com.chat_server.chatroom.resolver.ChatRoomDisplayResolver;
 import com.chat_server.chatroom.service.ChatRoomFacadeService;
 import com.chat_server.chatroom.service.ChatRoomQueryService;
 import com.chat_server.chatroom.service.ChatRoomService;
+import com.chat_server.chatroommember.dto.response.ChatRoomMemberInfoDto;
+import com.chat_server.chatroommember.dto.response.ChatRoomMemberResponse;
 import com.chat_server.chatroommember.service.ChatRoomMemberService;
 import com.chat_server.common.cursor.ChatMessageCursorCodec;
 import com.chat_server.common.cursor.ChatMessageCursorKey;
 import com.chat_server.common.mapper.ChatListUpsertEventMapper;
+import com.chat_server.user.entity.User;
 import com.chat_server.user.service.UserDisplayNameService;
 import com.chat_server.user.service.UserService;
 import com.chat_server.websocket.broadcaster.chatmessage.ChatListEventBroadcaster;
@@ -30,8 +36,11 @@ import com.chat_server.websocket.broadcaster.chatmessage.ChatListEventBroadcaste
 import java.time.ZoneOffset;
 import java.util.*;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,6 +61,9 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
     private final ChatListEventBroadcaster chatListEventBroadcaster;
     private final ChatRoomDisplayResolver chatRoomDisplayResolver;
     private final ChatListUpsertEventMapper chatListUpsertEventMapper;
+    private final ChatMessageFacadeService chatMessageFacadeService;
+    private final ObjectMapper objectMapper;
+
 
     /**
      * 채팅방 summary 정보를 조회한다.
@@ -122,17 +134,31 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
             chatReadFacadeService.markAsReadOnEnter(roomId, userId, room.getLastMessageId());
         }
 
-        var slice = chatMessageService.getEnterMessagesByCursor(roomId, safeLimit, decoded);
+        var slice = chatMessageService.getEnterMessagesByCursor(roomId, userId, safeLimit, decoded);
 
+        List<ChatMessageItemResponse> messageItems = slice.getContent();
 
-        Map<Long, String> displayNameCache = new HashMap<>();
+        List<Long> senderIds = messageItems.stream()
+                .map(ChatMessageItemResponse::senderId)
+                .distinct().toList();
 
-        List<ChatMessageResponse> messages = slice.getContent().stream()
-                .map(item -> toChatMessageResponse(item, roomId, userId, displayNameCache))
+        Map<Long, String> displayNameCache = userDisplayNameService.resolveDisplayNamesBulk(
+                userId,
+                senderIds
+        );
+
+        List<ChatMessageResponse> messages = messageItems.stream()
+                .map(item -> {
+                    // Map에 커스텀 닉네임이 있으면 쓰고, 없으면 원래 닉네임(senderNickname) 사용
+                    String displayNickname = displayNameCache.getOrDefault(item.senderId(), item.senderNickname());
+                    log.info("item id: {}, item type: {}",item.messageId(), item.messageType());
+                    return toChatMessageResponse(item, roomId, userId, displayNickname);
+                })
                 .sorted((a, b) -> a.createdAt().equals(b.createdAt())
                         ? Long.compare(a.messageId(), b.messageId())
                         : a.createdAt().compareTo(b.createdAt()))
                 .toList();
+
 
         String nextCursor = null;
         if (slice.hasNext() && !slice.getContent().isEmpty()) {
@@ -146,12 +172,14 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
 
         String title = chatRoomDisplayResolver.resolveTitle(roomId, userId, room);
 
+
         return new ChatRoomEnterResponse(
                 room.getId(),
                 room.getRoomType().name(),
                 title,
                 messages,
-                nextCursor
+                nextCursor,
+                chatListService.getMuted(roomId,userId)
         );
     }
 
@@ -199,16 +227,29 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
         ChatMessageCursorKey decoded = ChatMessageCursorCodec.decode(cursor);
 
         var room = chatRoomQueryService.getRoomOrThrow(roomId);
-        var slice = chatMessageService.getEnterMessagesByCursor(roomId, safeLimit, decoded);
 
-        Map<Long, String> displayNameCache = new HashMap<>();
+        var slice = chatMessageService.getEnterMessagesByCursor(roomId, userId, safeLimit, decoded);
+        List<ChatMessageItemResponse> messageItems = slice.getContent();
 
-        List<ChatMessageResponse> messages = slice.getContent().stream()
-                .map(item -> toChatMessageResponse(item, roomId, userId, displayNameCache))
+        List<Long> senderIds = messageItems.stream()
+                .map(ChatMessageItemResponse::senderId)
+                .distinct().toList();
+
+        Map<Long, String> customNameMap = userDisplayNameService.resolveDisplayNamesBulk(
+                userId, // 조회하는 사람 (나)
+                senderIds// 메세지를 보낸 사람들 목록
+        );
+
+        List<ChatMessageResponse> messages = messageItems.stream()
+                .map(item -> {
+                    String finalDisplayName = customNameMap.getOrDefault(item.senderId(), item.senderNickname());
+                    return toChatMessageResponse(item, roomId, userId, finalDisplayName);
+                })
                 .sorted((a, b) -> a.createdAt().equals(b.createdAt())
                         ? Long.compare(a.messageId(), b.messageId())
                         : a.createdAt().compareTo(b.createdAt()))
                 .toList();
+
 
         String nextCursor = null;
         if (slice.hasNext() && !slice.getContent().isEmpty()) {
@@ -227,7 +268,8 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
                 room.getRoomType().name(),
                 title,
                 messages,
-                nextCursor
+                nextCursor,
+                chatListService.getMuted(roomId,userId)
         );
     }
 
@@ -322,10 +364,23 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
 
         var slice = chatMessageService.getMessagesAfter(roomId, afterMessageId, safeLimit);
 
-        Map<Long, String> displayNameCache = new HashMap<>();
+        List<ChatMessageItemResponse> messageItems = slice.getContent();
 
-        List<ChatMessageResponse> messages = slice.getContent().stream()
-                .map(item -> toChatMessageResponse(item, roomId, userId, displayNameCache))
+        List<Long> senderIds = messageItems.stream()
+                .map(ChatMessageItemResponse::senderId)
+                .distinct().toList();
+
+        Map<Long, String> displayNameCache = userDisplayNameService.resolveDisplayNamesBulk(
+                userId,
+                senderIds
+        );
+
+        List<ChatMessageResponse> messages = messageItems.stream()
+                .map(item -> {
+                    // Map에 커스텀 닉네임이 있으면 쓰고, 없으면 원래 닉네임(senderNickname) 사용
+                    String displayNickname = displayNameCache.getOrDefault(item.senderId(), item.senderNickname());
+                    return toChatMessageResponse(item, roomId, userId, displayNickname);
+                })
                 .sorted((a, b) -> a.createdAt().equals(b.createdAt())
                         ? Long.compare(a.messageId(), b.messageId())
                         : a.createdAt().compareTo(b.createdAt()))
@@ -343,6 +398,75 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
         );
     }
 
+    @Override
+    public List<ChatRoomMemberResponse> getChatroomMembers(Long roomId, Long userId) {
+        chatRoomQueryService.validateMemberOrThrow(roomId,userId);
+
+        List<ChatRoomMemberInfoDto> memberInfos = chatRoomMemberService.getChatRoomMemberIds(roomId);
+
+        List<Long> memberUserIds = memberInfos.stream()
+                .map(ChatRoomMemberInfoDto::userId)
+                .toList();
+
+        Map<Long, String> displayNameCache = userDisplayNameService.resolveDisplayNamesBulk(userId, memberUserIds);
+
+        return memberInfos.stream()
+                .map(info -> {
+                    // 커스텀 닉네임이 있으면 쓰고, 없으면 DTO에 있는 원래 닉네임 사용
+                    String finalName = displayNameCache.getOrDefault(info.userId(), info.nickname());
+
+                    return new ChatRoomMemberResponse(
+                            info.uuid(),
+                            finalName,
+                            info.profileUrl(),
+                            info.userId().equals(userId) // isMe 판단
+                    );
+                })
+                .toList();
+    }
+
+    @Override
+    public void inviteMembers(Long roomId, Long inviterId, List<String> inviteeUuids) {
+        chatRoomQueryService.validateMemberOrThrow(roomId, inviterId);
+        ChatRoom chatRoom = chatRoomQueryService.getRoomOrThrow(roomId);
+
+        chatRoomMemberService.addMembers(roomId,inviteeUuids, chatRoom);
+
+        List<User> invitees = userService.getUserIdByUserUuids(inviteeUuids);
+        List<Long> inviteeIds = invitees.stream().map(User::getId).toList();
+
+        chatListService.ensureMembershipsBulk(roomId,inviteeIds);
+
+        User inviter = userService.getUserById(inviterId);
+
+
+        Map<String, Object> payload = new HashMap<>();
+
+        payload.put("inviter", Map.of(
+                "uuid",inviter.getUuid(),
+                "name", inviter.getNickname()
+        ) );
+
+        // 2-2. 피초대자들 정보 리스트 (UUID + 원래 닉네임)
+        List<Map<String, String>> inviteeInfos = invitees.stream()
+                .map(u -> Map.of("uuid", u.getUuid(), "name", u.getNickname()))
+                .toList();
+        payload.put("invitees", inviteeInfos);
+
+        // 3. JSON 문자열로 직렬화 (ObjectMapper 활용)
+        String content = "";
+        try {
+            // 💡 클래스 상단에 private final ObjectMapper objectMapper; 주입 필요
+            content = objectMapper.writeValueAsString(payload);
+        } catch (JsonProcessingException e) {
+            log.error("시스템 초대 메시지 JSON 변환 실패", e);
+            // 에러 발생 시 Fallback으로 단순 문자열 저장
+            content = String.format("{\"fallback\": \"%s님이 %d명을 초대했습니다.\"}", inviter.getNickname(), invitees.size());
+        }
+        chatMessageFacadeService.saveAndBroadcastSystemMessage(roomId, inviterId, MessageType.SYSTEM_INVITE, content);
+    }
+
+
     /**
      * 채팅방 진입 조회용 메시지 DTO를 프론트 공통 메시지 응답 DTO로 변환한다.
      *
@@ -358,21 +482,19 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
      * @param item             채팅방 진입 조회용 메시지 DTO
      * @param roomId           채팅방 ID
      * @param viewerUserId     현재 메시지를 조회 중인 사용자 ID
-     * @param displayNameCache 동일 요청 내 발신자별 표시 이름 재사용을 위한 임시 캐시
+     * @param displayNickname  화면에 나오는 이름
      * @return 프론트 공통 메시지 응답 DTO
      */
     private ChatMessageResponse toChatMessageResponse(
             ChatMessageItemResponse item,
             Long roomId,
             Long viewerUserId,
-            Map<Long, String> displayNameCache
+            String displayNickname
     ) {
-        String displayNickname = displayNameCache.computeIfAbsent(
-                item.senderId(),
-                senderId -> userDisplayNameService
-                        .resolveDisplayName(senderId, viewerUserId)
-                        .orElse(item.senderNickname())
-        );
+        String content = item.content();
+        if(item.messageType().equalsIgnoreCase("SYSTEM_LEAVE")){
+            content = displayNickname + content;
+        }
 
         return new ChatMessageResponse(
                 item.messageId(),
@@ -383,7 +505,7 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
                         displayNickname,
                         item.profileImageUrl()
                 ),
-                item.content(),
+                content,
                 item.createdAt(),
                 item.senderId().equals(viewerUserId),
                 item.unreadCount()

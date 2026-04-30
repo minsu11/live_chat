@@ -2,21 +2,31 @@ package com.chat_server.chatlist.service.impl;
 
 import com.chat_server.chatlist.dto.response.ChatListItemResponse;
 import com.chat_server.chatlist.dto.response.ChatRoomListResponse;
+import com.chat_server.chatlist.dto.response.ChatRoomListRow;
 import com.chat_server.chatlist.dto.response.ChatUnreadCountRow;
+import com.chat_server.chatlist.entity.ChatList;
 import com.chat_server.chatlist.repository.ChatListRepository;
 import com.chat_server.chatlist.service.ChatListService;
+import com.chat_server.chatroom.entity.ChatRoom;
+import com.chat_server.chatroom.exception.ChatRoomNotFoundException;
+import com.chat_server.chatroom.repository.ChatRoomRepository;
 import com.chat_server.chatroom.resolver.ChatRoomDisplayResolver;
+import com.chat_server.chatroomsetting.dto.response.ChatRoomNameUpdateResponse;
 import com.chat_server.common.cursor.ChatListCursorCodec;
 import com.chat_server.common.cursor.ChatListCursorKey;
+import com.chat_server.common.propertis.CustomProperties;
+import com.chat_server.error.enumulation.ErrorCode;
+import com.chat_server.error.exception.BusinessException;
 import com.chat_server.friend.dto.response.CursorPageResponse;
+import com.chat_server.user.entity.User;
+import com.chat_server.user.repository.UserRepository;
 import jakarta.annotation.Nullable;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Slice;
@@ -30,9 +40,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class ChatListServiceImpl implements ChatListService {
     private final ChatListRepository chatListRepository;
     private final ChatRoomDisplayResolver chatRoomDisplayResolver;
+    private final CustomProperties customProperties;
+    private final ChatRoomRepository chatRoomRepository;
+    private final UserRepository userRepository;
 
-    @Override
-    @Transactional(readOnly = true)
     /**
      * 커서 기반 채팅방 목록을 조회한다.
      *
@@ -48,6 +59,8 @@ public class ChatListServiceImpl implements ChatListService {
      * @param cursor 현재 페이지 커서(없으면 첫 페이지)
      * @return 커서 페이지 응답
      */
+    @Override
+    @Transactional(readOnly = true)
     public CursorPageResponse<ChatRoomListResponse> getChatRoomListsByCursor(Long userId, int limit,
         @Nullable String cursor) {
         // 1) 커서 디코드 (없거나 깨졌으면 null 반환되어 첫 페이지로 처리됨)
@@ -64,7 +77,8 @@ public class ChatListServiceImpl implements ChatListService {
                         item.unreadCount(),
                         item.lastMessagePreview(),
                         item.lastMessageAt(),
-                        item.orderAt()
+                        item.orderAt(),
+                        item.muted()
                 ))
                 .toList();
         // 3) next 커서 생성
@@ -231,6 +245,51 @@ public class ChatListServiceImpl implements ChatListService {
 
         return result;
     }
+
+    @Override
+    public boolean getMuted(Long roomId, Long userId) {
+        return chatListRepository.findMutedByChatRoomIdAndUserId(roomId,userId)
+                .orElseThrow(()-> new BusinessException(ErrorCode.NOT_FOUND,customProperties.getError().getMessage(ErrorCode.NOT_FOUND)));
+
+    }
+
+    @Override
+    public ChatList updateCustomRoomName(Long userId, Long roomId, String newName) {
+        ChatList chatList = chatListRepository.findByChatRoomIdAndUserId(roomId,userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, customProperties.getError().getMessage(ErrorCode.NOT_FOUND)));
+        chatList.updateCustomName(newName);
+        log.info("update end");
+        return chatList;
+    }
+
+    @Override
+    public ChatList updateMutedStatus(Long roomId, Long userId, boolean muted) {
+        ChatList chatList = chatListRepository.findByChatRoomIdAndUserId(roomId,userId)
+                .orElseThrow(()-> new BusinessException(ErrorCode.NOT_FOUND,customProperties.getError().getMessage(ErrorCode.NOT_FOUND)));
+        chatList.updateMuted(muted);
+        return chatList;
+    }
+
+    @Override
+    public void leaveChatRoom(Long roomId, Long userId) {
+        chatListRepository.deleteByChatRoomIdAndUserIdDirectly(roomId, userId);
+
+        log.info("[Leave Room] User {} left Room {}", userId, roomId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<Long, ChatRoomListRow> getChatListItemsBulk(Long userId, Long roomId, List<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        List<ChatRoomListRow> items = chatListRepository.findChatListItemsBulk(roomId, userIds);
+
+        return items.stream()
+                .collect(Collectors.toMap(ChatRoomListRow::userId, item -> item));
+    }
+
     @Override
     @Transactional(readOnly = true)
     public ChatListItemResponse getChatListItem(Long roomId, Long userId) {
@@ -246,5 +305,28 @@ public class ChatListServiceImpl implements ChatListService {
                 item.lastMessageAt(),
                 item.orderAt()
         );
+    }
+
+    @Override
+    @Transactional
+    public void ensureMembershipsBulk(Long roomId, List<Long> userIds) {
+        // 1. 이미 해당 방의 ChatList를 가지고 있는 유저 ID 목록을 한 번에 조회 (In 쿼리)
+        List<Long> existingUserIds = chatListRepository.findUserIdsByRoomIdAndUserIdIn(roomId, userIds);
+        ChatRoom chatRoom = chatRoomRepository.findById(roomId)
+                .orElseThrow(ChatRoomNotFoundException::new);
+        // 2. 전달받은 유저들 중 DB에 없는 유저들만 필터링
+        List<ChatList> newChatLists = userIds.stream()
+                .filter(id -> !existingUserIds.contains(id))
+                .map(id -> {
+                    // facade service user id 정합성 검사 했으므로, proxy 객체 생성해서 save
+                    User userProxy = userRepository.getReferenceById(id);
+                    return ChatList.create(chatRoom, userProxy);
+                }) // 엔티티 생성 정적 팩토리 메서드 가정
+                .toList();
+
+        // 3. 존재하지 않는 유저들에 대해서만 벌크 인서트 (saveAll)
+        if (!newChatLists.isEmpty()) {
+            chatListRepository.saveAll(newChatLists);
+        }
     }
 }

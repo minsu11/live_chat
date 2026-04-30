@@ -36,7 +36,9 @@ public interface ChatMessageService {
      * @param cursorKey 커서 키(없으면 첫 페이지)
      * @return 메시지 Slice(다음 페이지 존재 여부 포함)
      */
-    Slice<ChatMessageItemResponse> getEnterMessagesByCursor(Long roomId, int limit,
+    Slice<ChatMessageItemResponse> getEnterMessagesByCursor(Long roomId,
+                                                            Long userId,
+                                                            int limit,
                                                             @Nullable ChatMessageCursorKey cursorKey);
 
     List<UpdatedMessageUnreadCount> findUpdatedUnreadCounts(Long roomId, Long lastReadMessageId);

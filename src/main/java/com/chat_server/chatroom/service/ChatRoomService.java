@@ -18,5 +18,5 @@ public interface ChatRoomService {
 
     void updateLastMessageInfo(ChatRoom chatRoom, ChatMessage chatMessage);
     ChatRoom createGroupChatRoom(String title, Long createdBy);
-
+    void decrementParticipantCount(Long roomId);
 }

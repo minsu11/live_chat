@@ -23,6 +23,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -83,6 +84,15 @@ public class UserServiceImpl implements UserService {
         user.updateNickname(name);
     }
 
+    @Override
+    public List<User> getUserIdByUserUuids(List<String> uuids) {
+        if (uuids == null || uuids.isEmpty()) {
+            return List.of();
+        }
+
+        return userRepository.findAllByUuidIn(uuids);
+    }
+
     // uuid로 user id 찾는 메서드
     @Override
     public Long getUserIdByUserUuid(String userUuid) {
@@ -97,6 +107,11 @@ public class UserServiceImpl implements UserService {
     public String getUuidByUserId(Long userId) {
         return userRepository.findUuidById(userId)
                 .orElseThrow(UserNotFoundException::new);
+    }
+
+    @Override
+    public User getUserById(Long userId) {
+        return userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
     }
 
 

@@ -6,6 +6,9 @@ import com.chat_server.chatroom.dto.response.ChatRoomEnterResponse;
 import com.chat_server.chatroom.dto.response.ChatRoomResult;
 import com.chat_server.chatroom.dto.response.ChatRoomSummaryResponse;
 import com.chat_server.chatroom.dto.response.CreateChatRoomResponse;
+import com.chat_server.chatroommember.dto.response.ChatRoomMemberResponse;
+
+import java.util.List;
 
 public interface ChatRoomFacadeService {
 
@@ -43,4 +46,8 @@ public interface ChatRoomFacadeService {
     CreateChatRoomResponse createGroupChatRoom(Long requesterUserId, CreateGroupChatRoomRequest request);
 
     ChatMessageCatchUpResponse getMessagesAfter(Long roomId, Long userId, Long afterMessageId, int limit);
+
+    List<ChatRoomMemberResponse> getChatroomMembers(Long roomId, Long userId);
+
+    void inviteMembers(Long roomId, Long inviterId, List<String> inviteeUuids);
 }

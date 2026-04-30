@@ -9,7 +9,9 @@ public enum MessageType {
     EMOJI,
     IMAGE,
     FILE,
-    SYSTEM;
+    SYSTEM,
+    SYSTEM_LEAVE,
+    SYSTEM_INVITE;
 
     @JsonCreator
     public static MessageType from(String value) {

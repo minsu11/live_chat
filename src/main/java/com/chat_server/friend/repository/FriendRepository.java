@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface FriendRepository extends JpaRepository<Friend, Long>, FriendRepositoryCustom {
@@ -24,4 +25,16 @@ public interface FriendRepository extends JpaRepository<Friend, Long>, FriendRep
           and f.customNickname <> ''
         """)
     Optional<String> findCustomNickname(@Param("userId") Long userId, @Param("friendUserId") Long friendUserId);
+
+    @Query("SELECT f FROM Friend f WHERE f.user.id IN :receiverIds AND f.friendUser.id = :senderId")
+    List<Friend> findFriendsByReceiverIdsAndSenderId(
+            @Param("receiverIds") List<Long> receiverIds,
+            @Param("senderId") Long senderId
+    );
+
+    @Query("SELECT f FROM Friend f WHERE f.user.id = :userId AND f.friendUser.id IN :friendUserIds")
+    List<Friend> findFriendsByUserIdAndFriendUserIds(
+            @Param("userId") Long userId,
+            @Param("friendUserIds") List<Long> friendUserIds
+    );
 }

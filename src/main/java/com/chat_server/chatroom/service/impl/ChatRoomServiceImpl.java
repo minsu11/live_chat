@@ -102,4 +102,10 @@ public class ChatRoomServiceImpl implements ChatRoomService {
         return chatRoomRepository.save(chatRoom);
     }
 
+    @Override
+    public void decrementParticipantCount(Long roomId) {
+
+        chatRoomRepository.decrementParticipantCount(roomId);
+    }
+
 }

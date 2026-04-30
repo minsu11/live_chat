@@ -48,4 +48,10 @@ public class ChatRoomMember {
 
     @Column(name = "last_delivered_message_id")
     private Long lastDeliveredMessageId;
+
+    public void leave(){
+        this.active = false;
+        this.leftAt = LocalDateTime.now();
+
+    }
 }

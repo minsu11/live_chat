@@ -4,11 +4,14 @@ import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 
+@Slf4j
 @Getter
 @Entity
 @Table(
@@ -58,4 +61,38 @@ public class ChatList {
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    public void updateCustomName(String customName) {
+        if (customName != null && customName.trim().isEmpty()) {
+            this.customName = null;
+        }else{
+            log.info("이름 변경");
+            this.customName = customName;
+        }
+    }
+
+    public void updateMuted(boolean muted){
+        this.muted = muted;
+    }
+
+    @Builder
+    private ChatList(ChatRoom chatRoom, User user, Integer unreadCount) {
+        this.chatRoom = chatRoom;
+        this.user = user;
+        this.unreadCount = unreadCount != null ? unreadCount : 0;
+        this.pinned = false;
+        this.muted = false;
+        this.archived = false;
+        this.createdAt = LocalDateTime.now();
+    }
+
+    // 🎯 핵심: 외부에서 객체를 생성할 때 사용하는 정적 팩토리 메서드
+    public static ChatList create(ChatRoom chatRoom, User user) {
+        return ChatList.builder()
+                .chatRoom(chatRoom)
+                .user(user)
+                .unreadCount(0) // 초기 방 생성/초대 시 안읽음 카운트는 0
+                .build();
+    }
+
 }

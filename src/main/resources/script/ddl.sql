@@ -194,7 +194,7 @@ CREATE TABLE `chat_room` (
                              `dm_key`                  VARCHAR(50) NULL, -- DM일 때만 사용. 예: 3:10
                              `created_by`              BIGINT NOT NULL,
                              `created_at`              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
+                            `participant_count`         INT NOT NULL DEFAULT 1 COMMENT '현재 참여 인원 수',
                              `last_message_id`         BIGINT NULL,
                              `last_message_at`         DATETIME NULL,
                              `last_message_preview`    VARCHAR(120) NULL,
