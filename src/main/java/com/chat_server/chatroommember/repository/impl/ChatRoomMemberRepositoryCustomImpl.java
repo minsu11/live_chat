@@ -35,7 +35,9 @@ public class ChatRoomMemberRepositoryCustomImpl extends QuerydslRepositorySuppor
                         userProfileImage.imageUrl
 
                 ))
-                .where(qChatRoomMember.chatRoom.id.eq(roomId))
+                .where(qChatRoomMember.chatRoom.id.eq(roomId)
+                        .and(qChatRoomMember.active.isTrue())
+                        .and(qChatRoomMember.leftAt.isNull()))
                 .fetch();
     }
 }
