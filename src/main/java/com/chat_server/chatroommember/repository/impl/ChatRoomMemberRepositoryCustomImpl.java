@@ -29,7 +29,7 @@ public class ChatRoomMemberRepositoryCustomImpl extends QuerydslRepositorySuppor
                 .innerJoin(qChatRoomMember.user, user)
                 .select(Projections.constructor(
                         ChatRoomMemberInfoDto.class,
-                        qChatRoomMember.id,
+                        qChatRoomMember.user.id,
                         qChatRoomMember.user.uuid,
                         qChatRoomMember.user.nickname,
                         userProfileImage.imageUrl
