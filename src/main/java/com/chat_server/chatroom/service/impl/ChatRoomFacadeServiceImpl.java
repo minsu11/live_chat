@@ -400,6 +400,7 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
 
     @Override
     public List<ChatRoomMemberResponse> getChatroomMembers(Long roomId, Long userId) {
+        chatRoomQueryService.validateMemberOrThrow(roomId,userId);
 
         List<ChatRoomMemberInfoDto> memberInfos = chatRoomMemberService.getChatRoomMemberIds(roomId);
 
