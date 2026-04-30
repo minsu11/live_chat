@@ -87,7 +87,10 @@ public class ChatMessage {
         else if(messageType.equalsIgnoreCase("emoji")) {
             type = MessageType.EMOJI;
         }else if(messageType.equalsIgnoreCase("SYSTEM_LEAVE")){
-            type=MessageType.SYSTEM_LEAVE;
+            type = MessageType.SYSTEM_LEAVE;
+        }
+        else if(messageType.equalsIgnoreCase("SYSTEM_INVITE")){
+            type = MessageType.SYSTEM_INVITE;
         }
         else{
             type = MessageType.FILE;
