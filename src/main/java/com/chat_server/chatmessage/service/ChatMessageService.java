@@ -9,6 +9,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.lang.Nullable;
 
 import java.util.List;
+import java.util.Map;
 
 public interface ChatMessageService {
 
@@ -44,4 +45,11 @@ public interface ChatMessageService {
     List<UpdatedMessageUnreadCount> findUpdatedUnreadCounts(Long roomId, Long lastReadMessageId);
 
     Slice<ChatMessageItemResponse> getMessagesAfter(Long roomId, Long afterMessageId, int limit);
+
+    List<UpdatedMessageUnreadCount> calculateUnreadCountsWithRedis(
+            Long roomId,
+            Long lastReadMessageId,
+            Map<Long, Long> memberReadMap,
+            int totalMemberCount
+    );
 }

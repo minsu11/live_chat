@@ -28,6 +28,7 @@ import com.chat_server.chatroommember.service.ChatRoomMemberService;
 import com.chat_server.common.cursor.ChatMessageCursorCodec;
 import com.chat_server.common.cursor.ChatMessageCursorKey;
 import com.chat_server.common.mapper.ChatListUpsertEventMapper;
+import com.chat_server.redis.service.ChatMetadataRedisService;
 import com.chat_server.user.entity.User;
 import com.chat_server.user.service.UserDisplayNameService;
 import com.chat_server.user.service.UserService;
@@ -62,6 +63,7 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
     private final ChatRoomDisplayResolver chatRoomDisplayResolver;
     private final ChatListUpsertEventMapper chatListUpsertEventMapper;
     private final ChatMessageFacadeService chatMessageFacadeService;
+    private final ChatMetadataRedisService chatMetadataRedisService;
     private final ObjectMapper objectMapper;
 
 
@@ -124,14 +126,16 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
     @Override
     public ChatRoomEnterResponse enterChatRoom(Long roomId, Long userId, String cursor, int limit) {
         chatRoomQueryService.validateMemberOrThrow(roomId, userId);
+        var room = chatRoomQueryService.getRoomOrThrow(roomId);
+
         boolean isInitialEnter = (cursor == null || cursor.isBlank());
         int safeLimit = Math.min(Math.max(limit, 1), 100);
         ChatMessageCursorKey decoded = ChatMessageCursorCodec.decode(cursor);
-
-        var room = chatRoomQueryService.getRoomOrThrow(roomId);
+        Long realLatestId = chatMetadataRedisService.getLatestMessageId(roomId, room.getLastMessageId());
+        
         // 읽음 처리
         if (isInitialEnter) {
-            chatReadFacadeService.markAsReadOnEnter(roomId, userId, room.getLastMessageId());
+            chatReadFacadeService.markAsReadOnEnter(roomId, userId, realLatestId);
         }
 
         var slice = chatMessageService.getEnterMessagesByCursor(roomId, userId, safeLimit, decoded);
@@ -141,6 +145,9 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
         List<Long> senderIds = messageItems.stream()
                 .map(ChatMessageItemResponse::senderId)
                 .distinct().toList();
+
+        List<Long> memberIds = chatRoomMemberService.getRoomMemberIdsByRoomId(roomId);
+        Map<Long, Long> memberReadMap = chatMetadataRedisService.getAllMembersLastReadId(roomId, memberIds);
 
         Map<Long, String> displayNameCache = userDisplayNameService.resolveDisplayNamesBulk(
                 userId,
@@ -152,7 +159,11 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
                     // Map에 커스텀 닉네임이 있으면 쓰고, 없으면 원래 닉네임(senderNickname) 사용
                     String displayNickname = displayNameCache.getOrDefault(item.senderId(), item.senderNickname());
                     log.info("item id: {}, item type: {}",item.messageId(), item.messageType());
-                    return toChatMessageResponse(item, roomId, userId, displayNickname);
+                    long readCount = memberReadMap.values().stream()
+                            .filter(lastReadId -> lastReadId >= item.messageId())
+                            .count();
+                    int realUnread = Math.max(0, memberIds.size() - (int)readCount);
+                    return toChatMessageResponse(item, roomId, userId, displayNickname, realUnread);
                 })
                 .sorted((a, b) -> a.createdAt().equals(b.createdAt())
                         ? Long.compare(a.messageId(), b.messageId())
@@ -491,6 +502,15 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
             Long viewerUserId,
             String displayNickname
     ) {
+        return toChatMessageResponse(item, roomId, viewerUserId, displayNickname, item.unreadCount());
+    }
+    private ChatMessageResponse toChatMessageResponse(
+            ChatMessageItemResponse item,
+            Long roomId,
+            Long viewerUserId,
+            String displayNickname,
+            int realUnread
+    ) {
         String content = item.content();
         if(item.messageType().equalsIgnoreCase("SYSTEM_LEAVE")){
             content = displayNickname + content;
@@ -508,10 +528,9 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
                 content,
                 item.createdAt(),
                 item.senderId().equals(viewerUserId),
-                item.unreadCount()
+                realUnread
         );
     }
-
     private void broadcastChatListUpsertEvents(Long roomId, Set<Long> participantUserIds) {
         for (Long participantUserId : participantUserIds) {
             ChatListItemResponse item = chatListService.getChatListItem(roomId, participantUserId);

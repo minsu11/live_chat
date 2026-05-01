@@ -95,6 +95,7 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
 
         validateSendPermission(room, userId);
         ChatMessage chatMessage = chatMessageService.createChatMessage(room, userId, messageType, message);
+        chatMetadataRedisService.markAsRead(roomId, userId, chatMessage.getId(), LocalDateTime.now());
 
         connectAttachmentIfNeeded(request, chatMessage, userId);
 
@@ -104,9 +105,13 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         chatMetadataRedisService.markAsRead(roomId, userId, chatMessage.getId(), LocalDateTime.now());
 
         List<Long> roomMemberUserIds = chatRoomMemberService.getRoomMemberIdsByRoomId(roomId);
-        log.debug("sendMessage roomMemberUserIds: {}", roomMemberUserIds);
+        Map<Long, Long> currentReadMap = chatMetadataRedisService.getAllMembersLastReadId(roomId, roomMemberUserIds);
 
-        int messageUnreadCount = Math.max(roomMemberUserIds.size() - 1, 0);
+        long initialReadCount = currentReadMap.values().stream()
+                .filter(lastReadId -> lastReadId >= chatMessage.getId())
+                .count();
+        int messageUnreadCount = Math.max(0, roomMemberUserIds.size() - (int)initialReadCount);
+
         for (Long receiverUserId : roomMemberUserIds) {
 
             if (!userId.equals(receiverUserId) &&
@@ -119,8 +124,6 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
                 chatMetadataRedisService.incrementUnreadCount(roomId, receiverUserId);
             }
 
-            int realUnreadCount = chatMetadataRedisService.getUnreadCount(roomId, receiverUserId);
-
             ChatMessageResponse response = createResponseForReceiver(
                     chatMessage,
                     roomId,
@@ -129,17 +132,8 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
                     memberProfileUrl,
                     messageUnreadCount
             );
-            chatMessageBroadCaster.broadcastMessage(receiverUserId, response);
 
-//            ChatMessageResponse response = createResponseForReceiver(
-//                    chatMessage,
-//                    roomId,
-//                    userId,
-//                    receiverUserId,
-//                    memberProfileUrl,
-//                    messageUnreadCount);
-            log.info("broadcast room message. roomId={}, messageId={}", roomId, chatMessage.getId());
-//            chatMessageBroadCaster.broadcastMessage(receiverUserId, response);
+            chatMessageBroadCaster.broadcastMessage(receiverUserId, response);
 
             ChatListItemResponse chatListItem = chatListService.getChatListItem(roomId, receiverUserId);
             ChatListUpsertEvent chatListEvent =

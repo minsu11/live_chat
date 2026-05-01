@@ -9,6 +9,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -17,6 +19,14 @@ import java.util.Map;
 public class ChatMetadataRedisService {
     private final RedisTemplate<String, String> redisTemplate;
     private final ChatListRepository chatListRepository;
+
+    public Long getLatestMessageId(Long roomId, Long entityLastId) {
+        String key = "chat:room:" + roomId + ":meta";
+        Object redisId = redisTemplate.opsForHash().get(key, "lastMessageId");
+        return redisId != null ? Long.valueOf(redisId.toString()) : entityLastId;
+    }
+
+
 
     // 방 전체의 마지막 메시지 정보 업데이트
     public void updateRoomMeta(Long roomId, Long messageId, String preview, LocalDateTime createdAt){
@@ -38,6 +48,7 @@ public class ChatMetadataRedisService {
         if (Boolean.FALSE.equals(redisTemplate.hasKey(key))) {
             getUnreadCount(roomId, userId);
         }
+
         redisTemplate.opsForHash().increment(key, "unreadCount", 1);
         redisTemplate.opsForSet().add("chat:user:dirty", roomId + ":" + userId);
     }
@@ -64,7 +75,6 @@ public class ChatMetadataRedisService {
             return Integer.parseInt(cachedObj.toString());
         }
 
-        // Redis에 없으면 DB에서 조회해서 세팅 (Cache Warming)
         ChatList chatList = chatListRepository.findByChatRoomIdAndUserId(roomId, userId).orElse(null);
         int dbUnread = (chatList != null && chatList.getUnreadCount() != null) ? chatList.getUnreadCount() : 0;
 
@@ -74,9 +84,7 @@ public class ChatMetadataRedisService {
 
     public ChatRoomMetaDto getRoomMeta(Long roomId) {
         String key = "chat:room:" + roomId + ":meta";
-        // redis map get
         Map<Object, Object> entries = redisTemplate.opsForHash().entries(key);
-
         if (entries.isEmpty()) return null;
 
         return new ChatRoomMetaDto(
@@ -84,6 +92,47 @@ public class ChatMetadataRedisService {
                 entries.get("lastPreview").toString(),
                 LocalDateTime.parse(entries.get("lastMessageAt").toString())
         );
+    }
+
+    public Map<Long, Long> getAllMembersLastReadId(Long roomId, List<Long> memberIds) {
+        Map<Long, Long> memberReadMap = new HashMap<>();
+        for (Long userId : memberIds) {
+            String key = "chat:room:" + roomId + ":user:" + userId + ":meta";
+            Object lastReadIdObj = redisTemplate.opsForHash().get(key, "lastReadMessageId");
+
+            if (lastReadIdObj != null) {
+                memberReadMap.put(userId, Long.valueOf(lastReadIdObj.toString()));
+            } else {
+                // Redis에 없으면 DB에서 가져와서 채워넣음 (Warming)
+                ChatList chatList = chatListRepository.findByChatRoomIdAndUserId(roomId, userId).orElse(null);
+                Long dbLastReadId = (chatList != null && chatList.getLastReadMessageId() != null)
+                        ? chatList.getLastReadMessageId() : 0L;
+                memberReadMap.put(userId, dbLastReadId);
+                // 캐시 보정
+                redisTemplate.opsForHash().put(key, "lastReadMessageId", String.valueOf(dbLastReadId));
+            }
+        }
+        return memberReadMap;
+    }
+
+
+    private void initUserMeta(Long roomId, Long userId) {
+        String key = "chat:room:" + roomId + ":user:" + userId + ":meta";
+        ChatList chatList = chatListRepository.findByChatRoomIdAndUserId(roomId, userId).orElse(null);
+
+        // DB 값이 null이거나 unreadCount가 null인 경우 0으로 세팅
+        String dbCount = (chatList != null && chatList.getUnreadCount() != null)
+                ? String.valueOf(chatList.getUnreadCount()) : "0";
+        String dbLastMsgId = (chatList != null && chatList.getLastReadMessageId() != null)
+                ? String.valueOf(chatList.getLastReadMessageId()) : "0";
+
+        Map<String, String> initialMeta = Map.of(
+                "unreadCount", dbCount,
+                "lastReadMessageId", dbLastMsgId,
+                "lastOpenedAt", LocalDateTime.now().toString()
+        );
+        // putAll을 사용하여 원자적으로 초기값 세팅
+        redisTemplate.opsForHash().putAll(key, initialMeta);
     }
 
 

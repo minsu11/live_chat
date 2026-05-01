@@ -10,8 +10,10 @@ import com.chat_server.chatread.dto.request.ChatReadRequest;
 import com.chat_server.chatread.service.ChatReadFacadeService;
 import com.chat_server.chatread.service.ChatReadService;
 import com.chat_server.chatroom.service.ChatRoomQueryService;
+import com.chat_server.chatroommember.service.ChatRoomMemberQueryService;
 import com.chat_server.common.mapper.ChatListUpsertEventMapper;
 import com.chat_server.common.mapper.ChatReadUpdatedEventMapper;
+import com.chat_server.redis.service.ChatMetadataRedisService;
 import com.chat_server.user.service.UserService;
 import com.chat_server.websocket.broadcaster.chatmessage.ChatListEventBroadcaster;
 import com.chat_server.websocket.broadcaster.chatmessage.ChatMessageReadBroadcaster;
@@ -21,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -36,6 +39,8 @@ public class ChatReadFacadeServiceImpl implements ChatReadFacadeService {
     private final ChatListEventBroadcaster chatListEventBroadcaster;
     private final ChatReadUpdatedEventMapper chatReadUpdatedEventMapper;
     private final ChatListUpsertEventMapper chatListUpsertEventMapper;
+    private final ChatMetadataRedisService chatMetadataRedisService;
+    private final ChatRoomMemberQueryService chatRoomMemberQueryService;
 
     @Override
     public void read(ChatReadRequest request, Long userId) {
@@ -55,12 +60,10 @@ public class ChatReadFacadeServiceImpl implements ChatReadFacadeService {
         chatRoomQueryService.validateMemberOrThrow(roomId, userId);
         chatReadService.markAsReadOnEnter(roomId, userId, latestMessageId);
 
-        if (latestMessageId == null) {
-            return;
-        }
-
-        broadcastMessageReadUpdatedEvent(roomId, userId, latestMessageId);
         broadcastChatListUpsertEvent(roomId, userId);
+        if (latestMessageId != null && latestMessageId > 0) {
+            broadcastMessageReadUpdatedEvent(roomId, userId, latestMessageId);
+        }
     }
 
     /**
@@ -76,8 +79,17 @@ public class ChatReadFacadeServiceImpl implements ChatReadFacadeService {
     private void broadcastMessageReadUpdatedEvent(Long roomId, Long userId, Long messageId) {
         String readerUserUuid = userService.getUuidByUserId(userId);
 
+        List<Long> memberUserIds = chatRoomMemberQueryService.getMemberUserIds(roomId);
+
+        Map<Long, Long> memberReadMap = chatMetadataRedisService.getAllMembersLastReadId(roomId, memberUserIds);
+
         List<UpdatedMessageUnreadCount> updatedMessageUnreadCounts =
-                chatMessageService.findUpdatedUnreadCounts(roomId, messageId);
+                chatMessageService.calculateUnreadCountsWithRedis( // 🎯 방금 만든 메서드 호출!
+                        roomId,
+                        messageId,
+                        memberReadMap,
+                        memberUserIds.size()
+                );
 
         ChatReadUpdatedEvent event = chatReadUpdatedEventMapper.toChatReadUpdatedEvent(
                 roomId,
