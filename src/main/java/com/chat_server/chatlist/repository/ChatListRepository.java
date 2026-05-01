@@ -49,7 +49,18 @@ public interface ChatListRepository extends JpaRepository<ChatList, Long>,ChatLi
         long roomId,
         long senderId
     );
-
+    @Modifying(clearAutomatically = true)
+    @Query(value = """
+        UPDATE chat_list
+        SET unread_count = unread_count + :delta
+        WHERE chat_room_id = :roomId
+          AND user_id = :userId
+    """, nativeQuery = true)
+    void addUnreadCountBatch(
+            @Param("roomId") Long roomId,
+            @Param("userId") Long userId,
+            @Param("delta") int delta
+    );
     /**
      * 채팅방에 속한 사용자 ID 목록을 조회한다.
      *
@@ -243,5 +254,23 @@ public interface ChatListRepository extends JpaRepository<ChatList, Long>,ChatLi
     List<Long> findUserIdsByRoomIdAndUserIdIn(
             @Param("roomId") Long roomId,
             @Param("userIds") List<Long> userIds
+    );
+
+
+    @Modifying(clearAutomatically = true)
+    @Query(value = """
+    UPDATE chat_list
+    SET unread_count = :unreadCount,
+        last_read_message_id = :lastReadMsgId,
+        last_opened_at = :lastOpenedAt
+    WHERE chat_room_id = :roomId
+      AND user_id = :userId
+""", nativeQuery = true)
+    void syncUserMetaFromRedis(
+            @Param("roomId") Long roomId,
+            @Param("userId") Long userId,
+            @Param("unreadCount") int unreadCount,
+            @Param("lastReadMsgId") Long lastReadMsgId,
+            @Param("lastOpenedAt") LocalDateTime lastOpenedAt
     );
 }

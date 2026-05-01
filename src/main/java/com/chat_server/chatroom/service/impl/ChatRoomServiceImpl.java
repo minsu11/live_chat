@@ -61,6 +61,7 @@ public class ChatRoomServiceImpl implements ChatRoomService {
                     .dmKey(dmKey)
                     .createdBy(creator)
                     .maxPerson(2)
+                    .participantCount(2)
                     .build();
 
             ChatRoom savedRoom = chatRoomRepository.save(newChatRoom);

@@ -39,10 +39,10 @@ public class ChatList {
     private Long lastReadMessageId;
 
     @Column(name = "unread_count", nullable = false)
-    private int unreadCount;
+    private Integer unreadCount;
 
     @Column(name = "pinned", nullable = false)
-    private boolean pinned;
+    private Boolean pinned;
 
     @Column(name = "muted", nullable = false)
     private boolean muted;
