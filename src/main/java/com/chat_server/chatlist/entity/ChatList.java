@@ -84,6 +84,7 @@ public class ChatList {
         this.muted = false;
         this.archived = false;
         this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
     // 🎯 핵심: 외부에서 객체를 생성할 때 사용하는 정적 팩토리 메서드

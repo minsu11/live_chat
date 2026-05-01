@@ -34,6 +34,7 @@ import com.chat_server.user.service.UserDisplayNameService;
 import com.chat_server.user.service.UserService;
 import com.chat_server.websocket.broadcaster.chatmessage.ChatListEventBroadcaster;
 
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
 
@@ -436,47 +437,107 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
                 .toList();
     }
 
+//    @Override
+//    public void inviteMembers(Long roomId, Long inviterId, List<String> inviteeUuids) {
+//        chatRoomQueryService.validateMemberOrThrow(roomId, inviterId);
+//        ChatRoom chatRoom = chatRoomQueryService.getRoomOrThrow(roomId);
+//
+//        chatRoomMemberService.addMembers(roomId,inviteeUuids, chatRoom);
+//
+//        List<User> invitees = userService.getUserIdByUserUuids(inviteeUuids);
+//        List<Long> inviteeIds = invitees.stream().map(User::getId).toList();
+//
+//        chatListService.ensureMembershipsBulk(roomId,inviteeIds);
+//
+//        User inviter = userService.getUserById(inviterId);
+//
+//
+//        Map<String, Object> payload = new HashMap<>();
+//
+//        payload.put("inviter", Map.of(
+//                "uuid",inviter.getUuid(),
+//                "name", inviter.getNickname()
+//        ) );
+//
+//        // 2-2. 피초대자들 정보 리스트 (UUID + 원래 닉네임)
+//        List<Map<String, String>> inviteeInfos = invitees.stream()
+//                .map(u -> Map.of("uuid", u.getUuid(), "name", u.getNickname()))
+//                .toList();
+//        payload.put("invitees", inviteeInfos);
+//
+//        // 3. JSON 문자열로 직렬화 (ObjectMapper 활용)
+//        String content = "";
+//        try {
+//            // 💡 클래스 상단에 private final ObjectMapper objectMapper; 주입 필요
+//            content = objectMapper.writeValueAsString(payload);
+//        } catch (JsonProcessingException e) {
+//            log.error("시스템 초대 메시지 JSON 변환 실패", e);
+//            // 에러 발생 시 Fallback으로 단순 문자열 저장
+//            content = String.format("{\"fallback\": \"%s님이 %d명을 초대했습니다.\"}", inviter.getNickname(), invitees.size());
+//        }
+//        chatMessageFacadeService.saveAndBroadcastSystemMessage(roomId, inviterId, MessageType.SYSTEM_INVITE, content);
+//    }
     @Override
     public void inviteMembers(Long roomId, Long inviterId, List<String> inviteeUuids) {
+        // 1. 초대자 권한 검증 및 방 정보 조회
         chatRoomQueryService.validateMemberOrThrow(roomId, inviterId);
         ChatRoom chatRoom = chatRoomQueryService.getRoomOrThrow(roomId);
 
-        chatRoomMemberService.addMembers(roomId,inviteeUuids, chatRoom);
+        // 2. 초대할 유저 객체들 조회
+        List<User> allTargetUsers = userService.getUserIdByUserUuids(inviteeUuids);
 
-        List<User> invitees = userService.getUserIdByUserUuids(inviteeUuids);
-        List<Long> inviteeIds = invitees.stream().map(User::getId).toList();
+        // 3. 🎯 [중복 방지] 이미 방에 있는 멤버는 제외 (SQL 에러 방지)
+        List<Long> existingMemberIds = chatRoomMemberService.getRoomMemberIdsByRoomId(roomId);
+        List<User> actualInvitees = allTargetUsers.stream()
+                .filter(u -> !existingMemberIds.contains(u.getId()))
+                .toList();
 
-        chatListService.ensureMembershipsBulk(roomId,inviteeIds);
+        // 초대할 새 멤버가 없다면 조기 종료
+        if (actualInvitees.isEmpty()) {
+            return;
+        }
 
+        List<Long> actualInviteeIds = actualInvitees.stream().map(User::getId).toList();
+        List<String> actualInviteeUuids = actualInvitees.stream().map(User::getUuid).toList();
+
+        // 4. DB 저장 (Member 테이블 & ChatList 테이블)
+        chatRoomMemberService.addMembers(roomId, actualInviteeUuids, chatRoom);
+        chatListService.ensureMembershipsBulk(roomId, actualInviteeIds);
+
+        // 5. 🎯 [지각생 버그 해결] Redis 상태 초기화
+        // 현재 방의 진짜 최신 메시지 ID를 가져와서, 새 멤버들이 과거 메시지를 '읽은 상태'로 간주하게 함
+        Long currentLatestId = chatMetadataRedisService.getLatestMessageId(roomId, chatRoom.getLastMessageId());
+        for (Long newMemberId : actualInviteeIds) {
+            chatMetadataRedisService.markAsRead(roomId, newMemberId, currentLatestId, LocalDateTime.now());
+        }
+
+        // 6. 시스템 메시지 생성을 위한 초대자 정보
         User inviter = userService.getUserById(inviterId);
 
-
+        // 7. 시스템 메시지 페이로드 구성 (세인님 기존 로직 유지)
         Map<String, Object> payload = new HashMap<>();
-
         payload.put("inviter", Map.of(
-                "uuid",inviter.getUuid(),
+                "uuid", inviter.getUuid(),
                 "name", inviter.getNickname()
-        ) );
+        ));
 
-        // 2-2. 피초대자들 정보 리스트 (UUID + 원래 닉네임)
-        List<Map<String, String>> inviteeInfos = invitees.stream()
+        List<Map<String, String>> inviteeInfos = actualInvitees.stream()
                 .map(u -> Map.of("uuid", u.getUuid(), "name", u.getNickname()))
                 .toList();
         payload.put("invitees", inviteeInfos);
 
-        // 3. JSON 문자열로 직렬화 (ObjectMapper 활용)
         String content = "";
         try {
-            // 💡 클래스 상단에 private final ObjectMapper objectMapper; 주입 필요
             content = objectMapper.writeValueAsString(payload);
         } catch (JsonProcessingException e) {
             log.error("시스템 초대 메시지 JSON 변환 실패", e);
-            // 에러 발생 시 Fallback으로 단순 문자열 저장
-            content = String.format("{\"fallback\": \"%s님이 %d명을 초대했습니다.\"}", inviter.getNickname(), invitees.size());
+            content = String.format("{\"fallback\": \"%s님이 %d명을 초대했습니다.\"}",
+                    inviter.getNickname(), actualInvitees.size());
         }
+
+        // 8. 시스템 메시지 발송 및 브로드캐스트
         chatMessageFacadeService.saveAndBroadcastSystemMessage(roomId, inviterId, MessageType.SYSTEM_INVITE, content);
     }
-
 
     /**
      * 채팅방 진입 조회용 메시지 DTO를 프론트 공통 메시지 응답 DTO로 변환한다.

@@ -73,38 +73,54 @@ public class ChatListServiceImpl implements ChatListService {
         Slice<ChatRoomListResponse> slice =
             chatListRepository.getChatRoomListByCursor(userId, limit, decoded);
 
-        List<ChatRoomListResponse> content = slice.getContent().stream()
-                .map(item -> new ChatRoomListResponse(
-                        item.roomId(),
-                        chatRoomDisplayResolver.resolveTitle(item.roomId(), userId),
-                        item.unreadCount(),
-                        item.lastMessagePreview(),
-                        item.lastMessageAt(),
-                        item.orderAt(),
-                        item.muted()
-                ))
+        List<ChatRoomListResponse> mergedContent = slice.getContent().stream()
+                .map(item -> {
+                    int realUnreadCount = chatMetadataRedisService.getUnreadCount(item.roomId(), userId);
+                    ChatRoomMetaDto roomMeta = chatMetadataRedisService.getRoomMeta(item.roomId());
+
+                    LocalDateTime finalLastMessageAt = roomMeta != null ? roomMeta.lastMessageAt() : item.lastMessageAt();
+                    String finalPreview = roomMeta != null ? roomMeta.lastPreview() : item.lastMessagePreview();
+
+                    // 정렬 기준시간(orderAt) 최신화
+                    LocalDateTime finalOrderAt = item.orderAt();
+                    if (roomMeta != null && roomMeta.lastMessageAt() != null) {
+                        if (finalOrderAt == null || roomMeta.lastMessageAt().isAfter(finalOrderAt)) {
+                            finalOrderAt = roomMeta.lastMessageAt();
+                        }
+                    }
+
+                    return new ChatRoomListResponse(
+                            item.roomId(),
+                            chatRoomDisplayResolver.resolveTitle(item.roomId(), userId),
+                            realUnreadCount,
+                            finalPreview,
+                            finalLastMessageAt,
+                            finalOrderAt, // 최신 정렬 시간
+                            item.muted()
+                    );
+                })
+                // 🎯 Redis 반영으로 순서가 역전되었을 수 있으므로 메모리에서 다시 내림차순 정렬!
+                .sorted(Comparator.comparing(ChatRoomListResponse::orderAt, Comparator.nullsLast(Comparator.naturalOrder())).reversed())
                 .toList();
         // 3) next 커서 생성
         String next = null;
         log.info("chat list : {}", slice.toString());
-        if (slice.hasNext() && !content.isEmpty()) {
-            ChatRoomListResponse last = content.get(content.size() - 1);
+        if (slice.hasNext() && !mergedContent.isEmpty()) {
+            // 정렬이 완료된 mergedContent의 마지막 요소를 기준으로 커서 생성
+            ChatRoomListResponse last = mergedContent.get(mergedContent.size() - 1);
             LocalDateTime cursorBase = last.orderAt();
+
             if (cursorBase == null) {
-                throw new IllegalStateException(
-                    "chat list next cursor 생성 실패: orderAt is null. roomId=" + last.roomId()
-                );
+                throw new IllegalStateException("chat list next cursor 생성 실패: orderAt is null. roomId=" + last.roomId());
             }
             long lastAtEpochMillis = cursorBase
-                .atOffset(ZoneOffset.UTC)   // DB를 UTC 기준 LocalDateTime으로 본다는 가정
-                .toInstant()
-                .toEpochMilli();
-
+                    .atOffset(ZoneOffset.UTC)
+                    .toInstant()
+                    .toEpochMilli();
             next = ChatListCursorCodec.encode(lastAtEpochMillis, last.roomId());
         }
 
-        // 4) 공통 응답 래핑
-        return new CursorPageResponse<>(content, next, slice.hasNext());
+        return new CursorPageResponse<>(mergedContent, next, slice.hasNext());
     }
 
     @Override
@@ -282,14 +298,24 @@ public class ChatListServiceImpl implements ChatListService {
 
         int unreadCount = chatMetadataRedisService.getUnreadCount(roomId, userId);
         ChatRoomMetaDto roomMeta = chatMetadataRedisService.getRoomMeta(roomId);
+
+        LocalDateTime finalLastMessageAt = roomMeta != null ? roomMeta.lastMessageAt() : item.lastMessageAt();
+        String finalPreview = roomMeta != null ? roomMeta.lastPreview() : item.lastMessagePreview();
+        LocalDateTime finalOrderAt = item.orderAt();
+        if (roomMeta != null && roomMeta.lastMessageAt() != null) {
+            // Redis의 마지막 메시지 시간이 기존 orderAt보다 나중(미래)이면 덮어씌움
+            if (finalOrderAt == null || roomMeta.lastMessageAt().isAfter(finalOrderAt)) {
+                finalOrderAt = roomMeta.lastMessageAt();
+            }
+        }
         log.info("chat list unread count: {}", unreadCount);
         return new ChatListItemResponse(
                 item.roomId(),
                 chatRoomDisplayResolver.resolveTitle(item.roomId(), userId),
                 unreadCount,
-                roomMeta != null ? roomMeta.lastPreview() : item.lastMessagePreview(),
-                roomMeta != null ? roomMeta.lastMessageAt() : item.lastMessageAt(),
-                item.orderAt()
+                finalPreview,
+                finalLastMessageAt,
+                finalOrderAt
         );
     }
 
