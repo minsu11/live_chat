@@ -69,7 +69,7 @@ public class ChatMetadataBatchScheduler {
                 }
 
                 if (!batchArgs.isEmpty()) {
-                    String sql = "UPDATE chat_list SET unread_count = ?, last_read_message_id = ?, last_opened_at = ? WHERE room_id = ? AND user_id = ?";
+                    String sql = "UPDATE chat_list SET unread_count = ?, last_read_message_id = ?, last_opened_at = ? WHERE chat_room_id = ? AND user_id = ?";
                     jdbcTemplate.batchUpdate(sql, batchArgs);
 
                     redisTemplate.opsForSet().remove("chat:user:dirty", successKeys.toArray());
