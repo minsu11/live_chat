@@ -24,17 +24,16 @@ public class ChatMetadataRedisService {
     private final ChatListRepository chatListRepository;
     private final ChatRoomRepository chatRoomRepository;
 
+    @CircuitBreaker(name = "redisCircuitBreaker", fallbackMethod = "getLatestMessageIdFallback")
     public Long getLatestMessageId(Long roomId, Long entityLastId) {
-        try{
-
-            String key = "chat:room:" + roomId + ":meta";
-            Object redisId = redisTemplate.opsForHash().get(key, "lastMessageId");
-            return redisId != null ? Long.valueOf(redisId.toString()) : entityLastId;
-        }catch (Exception e){
-            return entityLastId;
-        }
+        String key = "chat:room:" + roomId + ":meta";
+        Object redisId = redisTemplate.opsForHash().get(key, "lastMessageId");
+        return redisId != null ? Long.valueOf(redisId.toString()) : entityLastId;
     }
 
+    private Long getLatestMessageIdFallback(Long roomId, Long entityLastId, Throwable t) {
+        return entityLastId;
+    }
 
 
     // 방 전체의 마지막 메시지 정보 업데이트
@@ -99,27 +98,28 @@ public class ChatMetadataRedisService {
     }
 
 
+    @CircuitBreaker(name = "redisCircuitBreaker", fallbackMethod = "getUnreadCountFallback")
     public int getUnreadCount(Long roomId, Long userId) {
         String key = "chat:room:" + roomId + ":user:" + userId + ":meta";
-        try {
-            Object cachedObj = redisTemplate.opsForHash().get(key, "unreadCount");
-            if (cachedObj != null) {
-                return Integer.parseInt(cachedObj.toString());
-            }
-        } catch (Exception e) {
-            log.error("⚠️ Redis 접근 실패. DB에서 UnreadCount를 조회합니다.");
+        Object cachedObj = redisTemplate.opsForHash().get(key, "unreadCount");
+        if (cachedObj != null) {
+            return Integer.parseInt(cachedObj.toString());
         }
 
-        // Redis 접근에 실패했거나 데이터가 없을 때 DB에서 조회
         ChatList chatList = chatListRepository.findByChatRoomIdAndUserId(roomId, userId).orElse(null);
         int dbUnread = (chatList != null && chatList.getUnreadCount() != null) ? chatList.getUnreadCount() : 0;
 
-        try {
-            redisTemplate.opsForHash().put(key, "unreadCount", String.valueOf(dbUnread));
-        } catch (Exception ignored) { } // 복구 중 쓸 수 없어도 무시
-
+        // 캐시 워밍
+        redisTemplate.opsForHash().put(key, "unreadCount", String.valueOf(dbUnread));
         return dbUnread;
     }
+
+    private int getUnreadCountFallback(Long roomId, Long userId, Throwable t) {
+        log.warn("🚨 [CircuitBreaker] Redis 대기 생략! 유저({}, 방:{}) 안읽음 카운트 DB 고속 조회", userId, roomId);
+        ChatList chatList = chatListRepository.findByChatRoomIdAndUserId(roomId, userId).orElse(null);
+        return (chatList != null && chatList.getUnreadCount() != null) ? chatList.getUnreadCount() : 0;
+    }
+
 
     public ChatRoomMetaDto getRoomMeta(Long roomId) {
         try {
@@ -137,30 +137,38 @@ public class ChatMetadataRedisService {
         }
     }
 
+    @CircuitBreaker(name = "redisCircuitBreaker", fallbackMethod = "getAllMembersLastReadIdFallback")
     public Map<Long, Long> getAllMembersLastReadId(Long roomId, List<Long> memberIds) {
         Map<Long, Long> memberReadMap = new HashMap<>();
         for (Long userId : memberIds) {
-            Long dbLastReadId = 0L;
-            try {
-                String key = "chat:room:" + roomId + ":user:" + userId + ":meta";
-                Object lastReadIdObj = redisTemplate.opsForHash().get(key, "lastReadMessageId");
+            String key = "chat:room:" + roomId + ":user:" + userId + ":meta";
+            Object lastReadIdObj = redisTemplate.opsForHash().get(key, "lastReadMessageId");
 
-                if (lastReadIdObj != null) {
-                    memberReadMap.put(userId, Long.valueOf(lastReadIdObj.toString()));
-                    continue; // 성공 시 다음 유저로
-                }
-            } catch (Exception ignored) { }
+            if (lastReadIdObj != null) {
+                memberReadMap.put(userId, Long.valueOf(lastReadIdObj.toString()));
+            } else {
+                ChatList chatList = chatListRepository.findByChatRoomIdAndUserId(roomId, userId).orElse(null);
+                Long dbLastReadId = (chatList != null && chatList.getLastReadMessageId() != null) ? chatList.getLastReadMessageId() : 0L;
+                memberReadMap.put(userId, dbLastReadId);
 
-            // DB에서 가져옴
-            ChatList chatList = chatListRepository.findByChatRoomIdAndUserId(roomId, userId).orElse(null);
-            dbLastReadId = (chatList != null && chatList.getLastReadMessageId() != null) ? chatList.getLastReadMessageId() : 0L;
-            memberReadMap.put(userId, dbLastReadId);
-
-            // 🚨 캐시에 채워넣는 부분도 반드시 try-catch로 감싸야 함!
-            try {
-                String key = "chat:room:" + roomId + ":user:" + userId + ":meta";
+                // 캐시 워밍
                 redisTemplate.opsForHash().put(key, "lastReadMessageId", String.valueOf(dbLastReadId));
-            } catch (Exception ignored) { }
+            }
+        }
+        return memberReadMap;
+    }
+
+    /**
+     * 🚨 Redis 장애 시 (차단기 OPEN 상태):
+     * 1초도 기다리지 않고, Redis 캐시 워밍(put) 시도조차 하지 않으며, 오직 순수하게 DB만 빠르게 조회해서 리턴합니다.
+     */
+    public Map<Long, Long> getAllMembersLastReadIdFallback(Long roomId, List<Long> memberIds, Throwable t) {
+        log.warn("🚨 [CircuitBreaker] Redis 대기 생략! 채팅방({}) 멤버 전체 읽음 상태를 DB에서 고속 직접 조회합니다.", roomId);
+        Map<Long, Long> memberReadMap = new HashMap<>();
+        for (Long userId : memberIds) {
+            ChatList chatList = chatListRepository.findByChatRoomIdAndUserId(roomId, userId).orElse(null);
+            Long dbLastReadId = (chatList != null && chatList.getLastReadMessageId() != null) ? chatList.getLastReadMessageId() : 0L;
+            memberReadMap.put(userId, dbLastReadId);
         }
         return memberReadMap;
     }
