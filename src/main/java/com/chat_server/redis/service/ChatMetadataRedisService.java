@@ -25,9 +25,14 @@ public class ChatMetadataRedisService {
     private final ChatRoomRepository chatRoomRepository;
 
     public Long getLatestMessageId(Long roomId, Long entityLastId) {
-        String key = "chat:room:" + roomId + ":meta";
-        Object redisId = redisTemplate.opsForHash().get(key, "lastMessageId");
-        return redisId != null ? Long.valueOf(redisId.toString()) : entityLastId;
+        try{
+
+            String key = "chat:room:" + roomId + ":meta";
+            Object redisId = redisTemplate.opsForHash().get(key, "lastMessageId");
+            return redisId != null ? Long.valueOf(redisId.toString()) : entityLastId;
+        }catch (Exception e){
+            return entityLastId;
+        }
     }
 
 
@@ -135,6 +140,7 @@ public class ChatMetadataRedisService {
     public Map<Long, Long> getAllMembersLastReadId(Long roomId, List<Long> memberIds) {
         Map<Long, Long> memberReadMap = new HashMap<>();
         for (Long userId : memberIds) {
+            Long dbLastReadId = 0L;
             try {
                 String key = "chat:room:" + roomId + ":user:" + userId + ":meta";
                 Object lastReadIdObj = redisTemplate.opsForHash().get(key, "lastReadMessageId");
@@ -143,13 +149,18 @@ public class ChatMetadataRedisService {
                     memberReadMap.put(userId, Long.valueOf(lastReadIdObj.toString()));
                     continue; // 성공 시 다음 유저로
                 }
-            } catch (Exception e) {
-                // Redis 에러 발생 시 로그 생략하고 바로 DB 조회로 넘어감
-            }
+            } catch (Exception ignored) { }
 
+            // DB에서 가져옴
             ChatList chatList = chatListRepository.findByChatRoomIdAndUserId(roomId, userId).orElse(null);
-            Long dbLastReadId = (chatList != null && chatList.getLastReadMessageId() != null) ? chatList.getLastReadMessageId() : 0L;
+            dbLastReadId = (chatList != null && chatList.getLastReadMessageId() != null) ? chatList.getLastReadMessageId() : 0L;
             memberReadMap.put(userId, dbLastReadId);
+
+            // 🚨 캐시에 채워넣는 부분도 반드시 try-catch로 감싸야 함!
+            try {
+                String key = "chat:room:" + roomId + ":user:" + userId + ":meta";
+                redisTemplate.opsForHash().put(key, "lastReadMessageId", String.valueOf(dbLastReadId));
+            } catch (Exception ignored) { }
         }
         return memberReadMap;
     }

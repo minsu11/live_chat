@@ -100,7 +100,6 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         connectAttachmentIfNeeded(request, chatMessage, userId);
 
         String preview = ChatMessagePreviewResolver.resolve(chatMessage.getMessageType(), chatMessage.getMessageContent());
-        chatMetadataRedisService.updateRoomMeta(roomId, chatMessage.getId(), preview, chatMessage.getCreatedAt());
 
         chatMetadataRedisService.markAsRead(roomId, userId, chatMessage.getId(), LocalDateTime.now());
 

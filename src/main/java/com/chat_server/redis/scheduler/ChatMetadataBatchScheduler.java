@@ -49,8 +49,8 @@ public class ChatMetadataBatchScheduler {
                 String[] parts = member.split(":");
                 if (parts.length != 2) continue;
 
-                Long roomId = Long.valueOf(parts[0]);
-                Long userId = Long.valueOf(parts[1]);
+                long roomId = Long.parseLong(parts[0]);
+                long userId = Long.parseLong(parts[1]);
                 String key = "chat:room:" + roomId + ":user:" + userId + ":meta";
 
                 Object unread = redisTemplate.opsForHash().get(key, "unreadCount");
@@ -68,14 +68,13 @@ public class ChatMetadataBatchScheduler {
                     successKeys.add(member);
                 }
 
-                if (!batchArgs.isEmpty()) {
-                    String sql = "UPDATE chat_list SET unread_count = ?, last_read_message_id = ?, last_opened_at = ? WHERE chat_room_id = ? AND user_id = ?";
-                    jdbcTemplate.batchUpdate(sql, batchArgs);
+            }
+            if (!batchArgs.isEmpty()) {
+                String sql = "UPDATE chat_list SET unread_count = ?, last_read_message_id = ?, last_opened_at = ? WHERE chat_room_id = ? AND user_id = ?";
+                jdbcTemplate.batchUpdate(sql, batchArgs);
 
-                    redisTemplate.opsForSet().remove("chat:user:dirty", successKeys.toArray());
-                    log.info("✅ 유저 메타데이터 {}건 Bulk Update 완료", batchArgs.size());
-                }
-
+                redisTemplate.opsForSet().remove("chat:user:dirty", successKeys.toArray());
+                log.info("✅ 유저 메타데이터 {}건 Bulk Update 완료", batchArgs.size());
             }
         }catch (Exception e){
             // redis 복구
