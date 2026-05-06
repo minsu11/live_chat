@@ -101,7 +101,7 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
 
         String preview = ChatMessagePreviewResolver.resolve(chatMessage.getMessageType(), chatMessage.getMessageContent());
 
-        chatMetadataRedisService.markAsRead(roomId, userId, chatMessage.getId(), LocalDateTime.now());
+        chatMetadataRedisService.updateRoomMeta(roomId, chatMessage.getId(), preview, chatMessage.getCreatedAt());
 
         List<Long> roomMemberUserIds = chatRoomMemberService.getRoomMemberIdsByRoomId(roomId);
         Map<Long, Long> currentReadMap = chatMetadataRedisService.getAllMembersLastReadId(roomId, roomMemberUserIds);

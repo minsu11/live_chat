@@ -300,8 +300,10 @@ public class ChatListServiceImpl implements ChatListService {
         ChatRoomMetaDto roomMeta = chatMetadataRedisService.getRoomMeta(roomId);
 
         LocalDateTime finalLastMessageAt = roomMeta != null ? roomMeta.lastMessageAt() : item.lastMessageAt();
+
         String finalPreview = roomMeta != null ? roomMeta.lastPreview() : item.lastMessagePreview();
         LocalDateTime finalOrderAt = item.orderAt();
+
         if (roomMeta != null && roomMeta.lastMessageAt() != null) {
             // Redis의 마지막 메시지 시간이 기존 orderAt보다 나중(미래)이면 덮어씌움
             if (finalOrderAt == null || roomMeta.lastMessageAt().isAfter(finalOrderAt)) {

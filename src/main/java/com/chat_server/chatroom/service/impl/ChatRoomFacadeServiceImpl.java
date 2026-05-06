@@ -150,6 +150,10 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
         List<Long> memberIds = chatRoomMemberService.getRoomMemberIdsByRoomId(roomId);
         Map<Long, Long> memberReadMap = chatMetadataRedisService.getAllMembersLastReadId(roomId, memberIds);
 
+        if (isInitialEnter && realLatestId != null) {
+            memberReadMap.put(userId, realLatestId);
+        }
+
         Map<Long, String> displayNameCache = userDisplayNameService.resolveDisplayNamesBulk(
                 userId,
                 senderIds
@@ -246,16 +250,29 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
         List<Long> senderIds = messageItems.stream()
                 .map(ChatMessageItemResponse::senderId)
                 .distinct().toList();
+        List<Long> memberIds = chatRoomMemberService.getRoomMemberIdsByRoomId(roomId);
+
+        Long realLatestId = chatMetadataRedisService.getLatestMessageId(roomId, room.getLastMessageId());
+        Map<Long, Long> memberReadMap = chatMetadataRedisService.getAllMembersLastReadId(roomId, memberIds);
 
         Map<Long, String> customNameMap = userDisplayNameService.resolveDisplayNamesBulk(
                 userId, // 조회하는 사람 (나)
                 senderIds// 메세지를 보낸 사람들 목록
         );
+        if (realLatestId != null && realLatestId > 0) {
+            memberReadMap.put(userId, realLatestId);
+        }
 
         List<ChatMessageResponse> messages = messageItems.stream()
                 .map(item -> {
-                    String finalDisplayName = customNameMap.getOrDefault(item.senderId(), item.senderNickname());
-                    return toChatMessageResponse(item, roomId, userId, finalDisplayName);
+                    // Map에 커스텀 닉네임이 있으면 쓰고, 없으면 원래 닉네임(senderNickname) 사용
+                    String displayNickname = customNameMap.getOrDefault(item.senderId(), item.senderNickname());
+                    log.info("item id: {}, item type: {}",item.messageId(), item.messageType());
+                    long readCount = memberReadMap.values().stream()
+                            .filter(lastReadId -> lastReadId >= item.messageId())
+                            .count();
+                    int realUnread = Math.max(0, senderIds.size() - (int)readCount);
+                    return toChatMessageResponse(item, roomId, userId, displayNickname, realUnread);
                 })
                 .sorted((a, b) -> a.createdAt().equals(b.createdAt())
                         ? Long.compare(a.messageId(), b.messageId())

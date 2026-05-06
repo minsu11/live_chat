@@ -42,7 +42,7 @@ public class ChatMetadataRedisService {
         String key = "chat:room:" + roomId + ":meta";
         Map<String, String> meta = Map.of(
                 "lastMessageId", String.valueOf(messageId),
-                "lastPreview", preview,
+                "lastMessagePreview", preview,
                 "lastMessageAt", createdAt.toString()
         );
         redisTemplate.opsForHash().putAll(key, meta);
@@ -129,7 +129,7 @@ public class ChatMetadataRedisService {
 
             return new ChatRoomMetaDto(
                     Long.valueOf(entries.get("lastMessageId").toString()),
-                    entries.get("lastPreview").toString(),
+                    entries.get("lastMessagePreview").toString(),
                     LocalDateTime.parse(entries.get("lastMessageAt").toString())
             );
         } catch (Exception e) {
@@ -145,8 +145,10 @@ public class ChatMetadataRedisService {
             Object lastReadIdObj = redisTemplate.opsForHash().get(key, "lastReadMessageId");
 
             if (lastReadIdObj != null) {
+                log.info("if문 안으로 들어옴");
                 memberReadMap.put(userId, Long.valueOf(lastReadIdObj.toString()));
             } else {
+                log.info("else문");
                 ChatList chatList = chatListRepository.findByChatRoomIdAndUserId(roomId, userId).orElse(null);
                 Long dbLastReadId = (chatList != null && chatList.getLastReadMessageId() != null) ? chatList.getLastReadMessageId() : 0L;
                 memberReadMap.put(userId, dbLastReadId);
