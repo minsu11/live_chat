@@ -1,0 +1,62 @@
+### =========================================================================
+### 세인님의 채팅 프로젝트 API 테스트 스크립트 (IntelliJ / VS Code REST Client)
+### =========================================================================
+
+### 환경 변수 설정 (세인님의 로컬 환경에 맞게 포트와 계정 정보를 수정해 주세요)
+@auth_server = http://localhost:9090
+@api_server = http://localhost:7070
+@email = test1234
+@password = test1234
+@roomId = 1
+@keyword = 390
+
+### 1. 로그인 및 토큰 발급
+# @name loginRequest
+POST {{api_server}}/api/v1/users/login
+Content-Type: application/json
+
+{
+  "userId": "{{email}}",
+  "password": "{{password}}"
+}
+
+> {%
+    // 💡 로그인 응답에서 토큰을 추출하여 환경변수에 자동 저장하는 스크립트입니다.
+
+    // 경우 1: JSON Body 응답에 토큰이 있는 경우
+    console.log(response.body.data.accessToken);
+    if (response.body.data.accessToken) {
+        client.global.set("access_token", response.body.data.accessToken);
+    }
+    // 경우 2: Header (Authorization)에 토큰이 있는 경우
+    else if (response.headers.valueOf("Authorization")) {
+        let token = response.headers.valueOf("Authorization").replace("Bearer ", "");
+        client.global.set("access_token", token);
+    }
+    // 경우 3: Cookie (Set-Cookie)로 발급되는 경우
+    else if (response.headers.valueOf("Set-Cookie")) {
+        // 복잡한 쿠키 파싱 로직 없이, 쿠키 값 전체를 그대로 저장
+        client.global.set("access_cookie", response.headers.valueOf("Set-Cookie"));
+    }
+
+    client.test("로그인 성공 및 토큰 저장 완료", function() {
+        client.assert(response.status === 200 || response.status === 201, "로그인 실패");
+    });
+%}
+
+
+### 2. 채팅 메시지 Full-Text Search (N-gram) 테스트
+GET {{api_server}}/api/v1/chat-room/{{roomId}}/messages/search?keyword={{keyword}}&limit=50
+Content-Type: application/json
+# WebSocket STOMP 연결 시 사용하셨던 Bearer 방식이라면 아래 헤더를 사용합니다.
+Authorization: Bearer {{access_token}}
+
+# 💡 만약 API 서버가 헤더 대신 쿠키를 읽어서 인증한다면,
+# 위 Authorization 헤더를 주석(#) 처리하고 아래 Cookie 헤더의 주석을 해제하세요.
+# Cookie: {{access_cookie}}
+
+> {%
+    client.test("메시지 검색 성공", function() {
+        client.assert(response.status === 200, "검색 API 호출 실패");
+    });
+%}

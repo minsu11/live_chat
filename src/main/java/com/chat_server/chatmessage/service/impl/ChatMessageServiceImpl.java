@@ -18,6 +18,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -77,6 +78,8 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         return chatMessageRepository.save(chatMessage);
     }
 
+    @Transactional(readOnly = true)
+    @Override
     public List<UpdatedMessageUnreadCount> calculateUnreadCountsWithRedis(
             Long roomId,
             Long currentMessageId,
@@ -105,5 +108,26 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
             return new UpdatedMessageUnreadCount(msgId, unreadCount);
         }).toList();
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<ChatMessage> getContextMessages(Long roomId, Long targetMessageId, int halfLimit) {
+        // 1. 과거 메시지 (타겟 포함)
+        List<ChatMessage> olderMessages = chatMessageRepository.findOlderMessagesWithTarget(roomId, targetMessageId, halfLimit);
+
+        // 2. 미래 메시지 (타겟 미포함)
+        List<ChatMessage> newerMessages = chatMessageRepository.findNewerMessages(roomId, targetMessageId, halfLimit);
+
+        // 3. olderMessages는 내림차순(DESC)으로 가져왔으므로, 합치기 전에 오름차순(ASC)으로 뒤집어줍니다.
+        List<ChatMessage> combined = new ArrayList<>();
+        for (int i = olderMessages.size() - 1; i >= 0; i--) {
+            combined.add(olderMessages.get(i));
+        }
+
+        // 4. 미래 메시지 추가 (이미 ASC 정렬됨)
+        combined.addAll(newerMessages);
+
+        return combined;
     }
 }

@@ -52,4 +52,6 @@ public interface ChatMessageService {
             Map<Long, Long> memberReadMap,
             int totalMemberCount
     );
+
+    List<ChatMessage> getContextMessages(Long roomId, Long targetMessageId, int halfLimit);
 }
