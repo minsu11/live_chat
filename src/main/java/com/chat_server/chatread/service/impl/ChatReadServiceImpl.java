@@ -51,19 +51,12 @@ public class ChatReadServiceImpl implements ChatReadService {
      */
     @Override
     public void markAsReadOnEnter(Long roomId, Long userId, Long latestMessageId) {
-        int updatedRows;
+        Long safeMessageId = (latestMessageId != null) ? latestMessageId : 0L;
 
-        if(latestMessageId == null){
-            updatedRows = chatListService.clearUnreadCountOnEnter(roomId, userId);
-        }else{
-            updatedRows = chatListService.markAsReadOnEnter(roomId, userId, latestMessageId);
-        }
+        int updateRows = chatListService.markAsRead(roomId,userId,safeMessageId);
 
-        if (updatedRows == 0) {
-            throw new IllegalStateException(
-                    "chat_list 멤버십이 없어 입장 읽음 처리를 할 수 없습니다. roomId="
-                            + roomId + ", userId=" + userId
-            );
+        if(updateRows == 0){
+            throw new IllegalArgumentException("멤버쉽 없음");
         }
     }
 }

@@ -10,6 +10,7 @@ import com.chat_server.chatmessage.dto.response.ChatMessageResponse;
 import com.chat_server.chatmessage.dto.response.ChatMessageSenderResponse;
 import com.chat_server.chatmessage.entity.ChatMessage;
 import com.chat_server.chatmessage.enums.MessageType;
+import com.chat_server.chatmessage.resolver.ChatMessagePreviewResolver;
 import com.chat_server.chatmessage.service.ChatMessageFacadeService;
 import com.chat_server.chatmessage.service.ChatMessageService;
 import com.chat_server.chatnotification.dto.event.ChatNotificationEvent;
@@ -21,12 +22,14 @@ import com.chat_server.chatroommember.service.ChatRoomMemberService;
 import com.chat_server.common.mapper.ChatListUpsertEventMapper;
 import com.chat_server.common.mapper.ChatMessageResponseMapper;
 import com.chat_server.common.mapper.ChatNotificationEventMapper;
+import com.chat_server.redis.service.ChatMetadataRedisService;
 import com.chat_server.user.service.UserDisplayNameService;
 import com.chat_server.userblock.service.UserBlockService;
 import com.chat_server.userprofileImage.service.UserProfileImageService;
 import com.chat_server.websocket.broadcaster.chatmessage.ChatListEventBroadcaster;
 import com.chat_server.websocket.broadcaster.chatmessage.ChatMessageBroadCaster;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -62,6 +65,8 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
     private final ObjectMapper objectMapper;
     private final ChatAttachmentService chatAttachmentService;
     private final ChatRoomMemberService chatRoomMemberService;
+    private final ChatMetadataRedisService chatMetadataRedisService;
+
     /**
      * 메시지 전송 전체 플로우를 오케스트레이션한다.
      *
@@ -90,16 +95,22 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
 
         validateSendPermission(room, userId);
         ChatMessage chatMessage = chatMessageService.createChatMessage(room, userId, messageType, message);
+        chatMetadataRedisService.markAsRead(roomId, userId, chatMessage.getId(), LocalDateTime.now());
 
         connectAttachmentIfNeeded(request, chatMessage, userId);
-        updateRoomAndChatListOnSend(room, chatMessage);
-        chatListService.increaseUnreadCount(roomId, userId);
-        chatListService.markSenderAsReadOnSend(roomId,userId,chatMessage.getId());
+
+        String preview = ChatMessagePreviewResolver.resolve(chatMessage.getMessageType(), chatMessage.getMessageContent());
+
+        chatMetadataRedisService.updateRoomMeta(roomId, chatMessage.getId(), preview, chatMessage.getCreatedAt());
 
         List<Long> roomMemberUserIds = chatRoomMemberService.getRoomMemberIdsByRoomId(roomId);
-        log.debug("sendMessage roomMemberUserIds: {}", roomMemberUserIds);
+        Map<Long, Long> currentReadMap = chatMetadataRedisService.getAllMembersLastReadId(roomId, roomMemberUserIds);
 
-        int messageUnreadCount = Math.max(roomMemberUserIds.size() - 1, 0);
+        long initialReadCount = currentReadMap.values().stream()
+                .filter(lastReadId -> lastReadId >= chatMessage.getId())
+                .count();
+        int messageUnreadCount = Math.max(0, roomMemberUserIds.size() - (int)initialReadCount);
+
         for (Long receiverUserId : roomMemberUserIds) {
 
             if (!userId.equals(receiverUserId) &&
@@ -108,14 +119,19 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
                 continue;
             }
 
+            if(!userId.equals(receiverUserId)){
+                chatMetadataRedisService.incrementUnreadCount(roomId, receiverUserId);
+            }
+
             ChatMessageResponse response = createResponseForReceiver(
                     chatMessage,
                     roomId,
                     userId,
                     receiverUserId,
                     memberProfileUrl,
-                    messageUnreadCount);
-            log.info("broadcast room message. roomId={}, messageId={}", roomId, chatMessage.getId());
+                    messageUnreadCount
+            );
+
             chatMessageBroadCaster.broadcastMessage(receiverUserId, response);
 
             ChatListItemResponse chatListItem = chatListService.getChatListItem(roomId, receiverUserId);
@@ -125,6 +141,7 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
             chatListEventBroadcaster.broadcastUpsertToUser(receiverUserId, chatListEvent);
 
             if (!userId.equals(receiverUserId) ) {
+
                 String title = chatRoomDisplayResolver.resolveTitle(roomId, receiverUserId, room);
 
                 ChatNotificationEvent notificationEvent =
@@ -184,16 +201,6 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
             // event 객체에 플래그를 담거나, 프론트엔드에서 타입을 보고 판단하게 합니다.
             chatListEventBroadcaster.broadcastUpsertToUser(receiverUserId, chatListEvent);
 
-            // 6. [중요] 알림 처리 분기 (민수님 제안 로직)
-            // 나 자신이 아니고 && 시스템 퇴장 메시지가 아닐 때만 '외부 알림' 발송
-//            if (!userId.equals(receiverUserId) && !MessageType.SYSTEM_LEAVE.equals(chatMessage.getMessageType())) {
-//                log.info("시스템 알람이 간다.");
-//                String title = chatRoomDisplayResolver.resolveTitle(roomId, receiverUserId, chatRoom);
-//                ChatNotificationEvent notificationEvent = chatNotificationEventMapper.toChatNotificationEvent(
-//                        roomId, title, personalizedContent, chatMessage.getCreatedAt()
-//                );
-//                chatNotificationBroadcaster.broadcastToUser(receiverUserId, notificationEvent);
-//            }
         }
     }
 

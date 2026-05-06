@@ -18,6 +18,8 @@ import com.chat_server.common.propertis.CustomProperties;
 import com.chat_server.error.enumulation.ErrorCode;
 import com.chat_server.error.exception.BusinessException;
 import com.chat_server.friend.dto.response.CursorPageResponse;
+import com.chat_server.redis.dto.ChatRoomMetaDto;
+import com.chat_server.redis.service.ChatMetadataRedisService;
 import com.chat_server.user.entity.User;
 import com.chat_server.user.repository.UserRepository;
 import jakarta.annotation.Nullable;
@@ -43,6 +45,7 @@ public class ChatListServiceImpl implements ChatListService {
     private final CustomProperties customProperties;
     private final ChatRoomRepository chatRoomRepository;
     private final UserRepository userRepository;
+    private final ChatMetadataRedisService chatMetadataRedisService;
 
     /**
      * 커서 기반 채팅방 목록을 조회한다.
@@ -70,38 +73,54 @@ public class ChatListServiceImpl implements ChatListService {
         Slice<ChatRoomListResponse> slice =
             chatListRepository.getChatRoomListByCursor(userId, limit, decoded);
 
-        List<ChatRoomListResponse> content = slice.getContent().stream()
-                .map(item -> new ChatRoomListResponse(
-                        item.roomId(),
-                        chatRoomDisplayResolver.resolveTitle(item.roomId(), userId),
-                        item.unreadCount(),
-                        item.lastMessagePreview(),
-                        item.lastMessageAt(),
-                        item.orderAt(),
-                        item.muted()
-                ))
+        List<ChatRoomListResponse> mergedContent = slice.getContent().stream()
+                .map(item -> {
+                    int realUnreadCount = chatMetadataRedisService.getUnreadCount(item.roomId(), userId);
+                    ChatRoomMetaDto roomMeta = chatMetadataRedisService.getRoomMeta(item.roomId());
+
+                    LocalDateTime finalLastMessageAt = roomMeta != null ? roomMeta.lastMessageAt() : item.lastMessageAt();
+                    String finalPreview = roomMeta != null ? roomMeta.lastPreview() : item.lastMessagePreview();
+
+                    // 정렬 기준시간(orderAt) 최신화
+                    LocalDateTime finalOrderAt = item.orderAt();
+                    if (roomMeta != null && roomMeta.lastMessageAt() != null) {
+                        if (finalOrderAt == null || roomMeta.lastMessageAt().isAfter(finalOrderAt)) {
+                            finalOrderAt = roomMeta.lastMessageAt();
+                        }
+                    }
+
+                    return new ChatRoomListResponse(
+                            item.roomId(),
+                            chatRoomDisplayResolver.resolveTitle(item.roomId(), userId),
+                            realUnreadCount,
+                            finalPreview,
+                            finalLastMessageAt,
+                            finalOrderAt, // 최신 정렬 시간
+                            item.muted()
+                    );
+                })
+                // 🎯 Redis 반영으로 순서가 역전되었을 수 있으므로 메모리에서 다시 내림차순 정렬!
+                .sorted(Comparator.comparing(ChatRoomListResponse::orderAt, Comparator.nullsLast(Comparator.naturalOrder())).reversed())
                 .toList();
         // 3) next 커서 생성
         String next = null;
         log.info("chat list : {}", slice.toString());
-        if (slice.hasNext() && !content.isEmpty()) {
-            ChatRoomListResponse last = content.get(content.size() - 1);
+        if (slice.hasNext() && !mergedContent.isEmpty()) {
+            // 정렬이 완료된 mergedContent의 마지막 요소를 기준으로 커서 생성
+            ChatRoomListResponse last = mergedContent.get(mergedContent.size() - 1);
             LocalDateTime cursorBase = last.orderAt();
+
             if (cursorBase == null) {
-                throw new IllegalStateException(
-                    "chat list next cursor 생성 실패: orderAt is null. roomId=" + last.roomId()
-                );
+                throw new IllegalStateException("chat list next cursor 생성 실패: orderAt is null. roomId=" + last.roomId());
             }
             long lastAtEpochMillis = cursorBase
-                .atOffset(ZoneOffset.UTC)   // DB를 UTC 기준 LocalDateTime으로 본다는 가정
-                .toInstant()
-                .toEpochMilli();
-
+                    .atOffset(ZoneOffset.UTC)
+                    .toInstant()
+                    .toEpochMilli();
             next = ChatListCursorCodec.encode(lastAtEpochMillis, last.roomId());
         }
 
-        // 4) 공통 응답 래핑
-        return new CursorPageResponse<>(content, next, slice.hasNext());
+        return new CursorPageResponse<>(mergedContent, next, slice.hasNext());
     }
 
     @Override
@@ -147,11 +166,6 @@ public class ChatListServiceImpl implements ChatListService {
         return userIds;
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public Optional<String> getCustomRoomName(Long roomId, Long userId) {
-        return chatListRepository.findCustomNameByUserIdAndRoomId(roomId, userId);
-    }
 
     /**
      * 채팅방 입장 시 last_read_message_id와 unread_count를 갱신한다.
@@ -187,32 +201,16 @@ public class ChatListServiceImpl implements ChatListService {
         );
     }
 
-    /**
-     * 메시지 전송 시 발신자 본인의 chat_list를 읽은 상태로 맞춘다.
-     *
-     * @param roomId 채팅방 ID
-     * @param senderId 발신자 ID
-     * @param messageId 저장된 메시지 ID
-     * @return 업데이트된 row 수
-     */
-    @Override
-    public int markSenderAsReadOnSend(Long roomId, Long senderId, Long messageId) {
-        return chatListRepository.markSenderAsReadOnSend(
-                roomId,
-                senderId,
-                messageId,
-                LocalDateTime.now()
-        );
-    }
+
     @Override
     public int markAsRead(Long roomId, Long userId, Long messageId) {
         log.debug("markAsRead start");
-        return chatListRepository.markAsRead(
-            roomId,
-            userId,
-            messageId,
-            LocalDateTime.now()
-        );
+        if (!chatListRepository.existsByChatRoomIdAndUserId(roomId, userId)) {
+            return 0; // 멤버가 아니면 0 반환 -> Facade에서 예외 발생
+        }
+        chatMetadataRedisService.markAsRead(roomId, userId, messageId, LocalDateTime.now());
+
+        return 1;
     }
 
     /**
@@ -297,13 +295,29 @@ public class ChatListServiceImpl implements ChatListService {
                 .orElseThrow(() -> new IllegalArgumentException(
                         "채팅방 목록 row를 찾을 수 없습니다. roomId=" + roomId + ", userId=" + userId
                 ));
+
+        int unreadCount = chatMetadataRedisService.getUnreadCount(roomId, userId);
+        ChatRoomMetaDto roomMeta = chatMetadataRedisService.getRoomMeta(roomId);
+
+        LocalDateTime finalLastMessageAt = roomMeta != null ? roomMeta.lastMessageAt() : item.lastMessageAt();
+
+        String finalPreview = roomMeta != null ? roomMeta.lastPreview() : item.lastMessagePreview();
+        LocalDateTime finalOrderAt = item.orderAt();
+
+        if (roomMeta != null && roomMeta.lastMessageAt() != null) {
+            // Redis의 마지막 메시지 시간이 기존 orderAt보다 나중(미래)이면 덮어씌움
+            if (finalOrderAt == null || roomMeta.lastMessageAt().isAfter(finalOrderAt)) {
+                finalOrderAt = roomMeta.lastMessageAt();
+            }
+        }
+        log.info("chat list unread count: {}", unreadCount);
         return new ChatListItemResponse(
                 item.roomId(),
                 chatRoomDisplayResolver.resolveTitle(item.roomId(), userId),
-                item.unreadCount(),
-                item.lastMessagePreview(),
-                item.lastMessageAt(),
-                item.orderAt()
+                unreadCount,
+                finalPreview,
+                finalLastMessageAt,
+                finalOrderAt
         );
     }
 

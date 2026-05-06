@@ -17,7 +17,19 @@ spring:
       host: localhost
       port: 6379
       database: 0
+      timeout: 1000
 
+resilience4j.circuitbreaker:
+  instances:
+    redisCircuitBreaker:
+      # 1. 3번만 요청해보고 판단할게! (민감도 극대화)
+      slidingWindowSize: 3
+      # 2. 그 3번 중 50% (즉 2번) 이상 실패하면 바로 차단기(OPEN) 내림!
+      failureRateThreshold: 50
+      # 3. 차단기가 내려가면 10초 동안은 레디스 쳐다보지도 않고 무조건 0.001초만에 폴백(DB)으로 직행!
+      waitDurationInOpenState: 10000
+      # 4. 10초 뒤에 복구됐는지 2번만 찔러볼게.
+      permittedNumberOfCallsInHalfOpenState: 2
 
 auth:
   server:
@@ -27,12 +39,12 @@ auth:
 
 file:
   upload:
-    profile-dir: C:\project_file\live_chat\src\main\resources\image\profile
-    chat-image-dir: C:\project_file\live_chat\src\main\resources\image\chat
-    chat-file-dir: C:\project_file\live_chat\src\main\resources\image\file
-#    profile-dir: ${CHAT_UPLOAD_ROOT}/image/profile
-#    chat-image-dir: ${CHAT_UPLOAD_ROOT}/image/chat
-#    chat-file-dir: ${CHAT_UPLOAD_ROOT}/image/file
+#    profile-dir: C:\project_file\live_chat\src\main\resources\image\profile
+#    chat-image-dir: C:\project_file\live_chat\src\main\resources\image\chat
+#    chat-file-dir: C:\project_file\live_chat\src\main\resources\image\file
+    profile-dir: ${CHAT_UPLOAD_ROOT}/image/profile
+    chat-image-dir: ${CHAT_UPLOAD_ROOT}/image/chat
+    chat-file-dir: ${CHAT_UPLOAD_ROOT}/image/file
     chat-file-max-size: 5MB
     chat-file-allowed-extensions:
       - pdf

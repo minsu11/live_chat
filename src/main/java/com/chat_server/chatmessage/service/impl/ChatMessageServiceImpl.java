@@ -12,12 +12,14 @@ import com.chat_server.user.exception.UserNotFoundException;
 import com.chat_server.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -73,5 +75,35 @@ public class ChatMessageServiceImpl implements ChatMessageService {
                 .orElseThrow(UserNotFoundException::new);
         ChatMessage chatMessage = ChatMessage.create(chatRoom, user, text, messageType);
         return chatMessageRepository.save(chatMessage);
+    }
+
+    public List<UpdatedMessageUnreadCount> calculateUnreadCountsWithRedis(
+            Long roomId,
+            Long currentMessageId,
+            Map<Long, Long> memberReadMap,
+            int totalMemberCount
+    ) {
+        // 1. 화면에 보일 만한 최근 메시지 50개만 조회 (성능 최적화)
+        // 50개면 한 화면의 말풍선 숫자를 모두 갱신하기에 충분합니다.
+        List<ChatMessage> recentMessages = chatMessageRepository.findRecentMessages(
+                roomId,
+                currentMessageId,
+                PageRequest.of(0, 50)
+        );
+
+        // 2. 각 메시지마다 안읽은 사람 수를 계산합니다.
+        return recentMessages.stream().map(msg -> {
+            Long msgId = msg.getId();
+
+            // memberReadMap의 value(마지막 읽은 ID)가 이 메시지 ID(msgId)보다 크거나 같으면 읽은 사람!
+            long readCount = memberReadMap.values().stream()
+                    .filter(lastReadId -> lastReadId >= msgId)
+                    .count();
+
+            // 안읽은 사람 수 = (전체 인원 - 1(본인 제외)) - 읽은 사람 수
+            int unreadCount = (int) Math.max(0, totalMemberCount - readCount);
+
+            return new UpdatedMessageUnreadCount(msgId, unreadCount);
+        }).toList();
     }
 }

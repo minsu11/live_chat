@@ -59,6 +59,7 @@ public class ChatRoomMemberServiceImpl implements ChatRoomMemberService {
                     .chatRoom(chatRoom)
                     .user(user)
                     .role(RoomMemberRole.MEMBER)
+                    .active(true)
                     .joinedAt(LocalDateTime.now())
                     .build();
             chatRoomMemberRepository.save(chatRoomMember);
