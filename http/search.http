@@ -9,6 +9,7 @@
 @password = test1234
 @roomId = 1
 @keyword = 390
+@targetMessageId = 73371
 
 ### 1. 로그인 및 토큰 발급
 # @name loginRequest
@@ -49,6 +50,10 @@ Content-Type: application/json
 GET {{api_server}}/api/v1/chat-room/{{roomId}}/messages/search?keyword={{keyword}}&limit=50
 Content-Type: application/json
 # WebSocket STOMP 연결 시 사용하셨던 Bearer 방식이라면 아래 헤더를 사용합니다.
+Authorization: Bearer {{access_token}}
+
+### 3. [NEW] 특정 메시지 기준 문맥 조회 (Context Fetch / 메시지 점프)
+GET {{api_server}}/api/v1/chat-room/{{roomId}}/messages/{{targetMessageId}}/context?limit=50
 Authorization: Bearer {{access_token}}
 
 # 💡 만약 API 서버가 헤더 대신 쿠키를 읽어서 인증한다면,
