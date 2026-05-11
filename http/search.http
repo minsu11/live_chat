@@ -8,7 +8,7 @@
 @email = test1234
 @password = test1234
 @roomId = 1
-@keyword = 390
+@keyword = banana
 @targetMessageId = 73371
 
 ### 1. 로그인 및 토큰 발급
