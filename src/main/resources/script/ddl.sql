@@ -199,7 +199,7 @@ create index idx_chat_attachment_message
     on chat_attachment (chat_message_id);
 
 create index idx_chat_attachment_room_id
-    on chat_attachment (chat_message_id);
+    on chat_attachment (room_id);
 
 create index idx_chat_attachment_uploader_id
     on chat_attachment (uploader_id);
