@@ -408,9 +408,9 @@ docker run -d \
 ```yaml
 file:
   upload:
-    profile-dir: C:\project_file\live_chat\src\main\resources\image\profile
-    chat-image-dir: C:\project_file\live_chat\src\main\resources\image\chat
-    chat-file-dir: C:\project_file\live_chat\src\main\resources\image\file
+    profile-dir: C:\chat-server-uploads\image\profile
+    chat-image-dir: C:\chat-server-uploads\image\chat
+    chat-file-dir: C:\chat-server-uploads\image\file
     chat-file-max-size: 5MB
     chat-file-allowed-extensions:
       - pdf
