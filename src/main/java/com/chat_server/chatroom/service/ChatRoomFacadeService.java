@@ -1,6 +1,7 @@
 package com.chat_server.chatroom.service;
 
 import com.chat_server.chatmessage.dto.response.ChatMessageCatchUpResponse;
+import com.chat_server.chatmessage.dto.response.ChatMessageContextResponse;
 import com.chat_server.chatroom.dto.request.CreateGroupChatRoomRequest;
 import com.chat_server.chatroom.dto.response.ChatRoomEnterResponse;
 import com.chat_server.chatroom.dto.response.ChatRoomResult;
@@ -50,4 +51,6 @@ public interface ChatRoomFacadeService {
     List<ChatRoomMemberResponse> getChatroomMembers(Long roomId, Long userId);
 
     void inviteMembers(Long roomId, Long inviterId, List<String> inviteeUuids);
+
+    ChatMessageContextResponse getMessageContext(Long roomId, Long userId, Long targetMessageId, int limit);
 }

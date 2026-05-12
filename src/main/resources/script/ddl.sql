@@ -1,399 +1,415 @@
--- =========================================
--- 1. GENDER
--- =========================================
-CREATE TABLE `gender` (
-                          `id`                INT AUTO_INCREMENT PRIMARY KEY,
-                          `name`              VARCHAR(10) NOT NULL,
-                          `created_at`        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                          CONSTRAINT `uk_gender_name` UNIQUE (`name`)
+create table if not exists admin
+(
+    id            bigint auto_increment
+        primary key,
+    login_id      varchar(30)                           not null,
+    password      varchar(100)                          not null,
+    name          varchar(30)                           not null,
+    role          varchar(20)                           not null,
+    status        varchar(20) default 'ACTIVE'          not null,
+    last_login_at datetime                              null,
+    created_at    datetime    default CURRENT_TIMESTAMP not null,
+    constraint uk_admin_login_id
+        unique (login_id)
 );
 
-CREATE INDEX `idx_gender_name` ON `gender`(`name`);
+create index idx_admin_role
+    on admin (role);
 
+create index idx_admin_status
+    on admin (status);
 
--- =========================================
--- 2. USER (일반 사용자 전용)
--- =========================================
-CREATE TABLE `user` (
-                        `id`                BIGINT AUTO_INCREMENT PRIMARY KEY,
-                        `gender_id`         INT NOT NULL,
-                        `input_id`          VARCHAR(30) NOT NULL,
-                        `input_password`    VARCHAR(100) NOT NULL,
-                        `age`               INT         NOT NULL,
-                        `name`              VARCHAR(30) NOT NULL,
-                        `nickname`          VARCHAR(30) NOT NULL,
-                        `uuid`              VARCHAR(36) NOT NULL,
-                        `status`            VARCHAR(20) NOT NULL DEFAULT 'ACTIVE', -- ACTIVE, BLOCKED, DELETED
-                        `created_at`        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                        `login_lasted_at`   DATETIME NULL,
-
-                        CONSTRAINT `uk_user_input_id` UNIQUE (`input_id`),
-                        CONSTRAINT `uk_user_uuid` UNIQUE (`uuid`),
-                        CONSTRAINT `fk_user_gender`
-                            FOREIGN KEY (`gender_id`) REFERENCES `gender`(`id`)
+create table if not exists admin_action_log
+(
+    id          bigint auto_increment
+        primary key,
+    admin_id    bigint                             not null,
+    action_type varchar(50)                        not null,
+    target_type varchar(50)                        null,
+    target_id   bigint                             null,
+    description text                               null,
+    created_at  datetime default CURRENT_TIMESTAMP not null,
+    constraint fk_admin_action_log_admin
+        foreign key (admin_id) references admin (id)
+            on delete cascade
 );
 
-CREATE INDEX `idx_user_gender` ON `user`(`gender_id`);
-CREATE INDEX `idx_user_status` ON `user`(`status`);
+create index idx_admin_action_log_admin
+    on admin_action_log (admin_id asc, created_at desc);
 
+create index idx_admin_action_log_target
+    on admin_action_log (target_type, target_id);
 
--- =========================================
--- 3. USER PROFILE
--- =========================================
-CREATE TABLE `user_profile` (
-                                `id`                BIGINT AUTO_INCREMENT PRIMARY KEY,
-                                `user_id`           BIGINT NOT NULL,
-                                `state_message`     VARCHAR(60) NULL,
-                                `created_at`        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                `updated_at`        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
-                                CONSTRAINT `uk_user_profile_user` UNIQUE (`user_id`),
-                                CONSTRAINT `fk_user_profile_user`
-                                    FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE
+create table if not exists admin_login_history
+(
+    id          bigint auto_increment
+        primary key,
+    admin_id    bigint                             not null,
+    login_at    datetime default CURRENT_TIMESTAMP not null,
+    ip_address  varchar(45)                        null,
+    user_agent  varchar(255)                       null,
+    success     tinyint(1)                         not null,
+    fail_reason varchar(255)                       null,
+    constraint fk_admin_login_history_admin
+        foreign key (admin_id) references admin (id)
+            on delete cascade
 );
 
+create index idx_admin_login_history_admin
+    on admin_login_history (admin_id asc, login_at desc);
 
--- =========================================
--- 4. USER PROFILE IMAGE
--- 기존 user_profile_url 역할
--- =========================================
-CREATE TABLE `user_profile_image` (
-                                      `id`                BIGINT AUTO_INCREMENT PRIMARY KEY,
-                                      `user_profile_id`   BIGINT NOT NULL,
-                                      `image_url`         VARCHAR(255) NOT NULL,
-                                      `is_current`        TINYINT(1) NOT NULL DEFAULT 0,
-                                      `uploaded_at`       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-                                      CONSTRAINT `fk_user_profile_image_profile`
-                                          FOREIGN KEY (`user_profile_id`) REFERENCES `user_profile`(`id`) ON DELETE CASCADE
+create table if not exists gender
+(
+    id         int auto_increment
+        primary key,
+    name       varchar(10)                        not null,
+    created_at datetime default CURRENT_TIMESTAMP not null,
+    constraint uk_gender_name
+        unique (name)
 );
 
-CREATE INDEX `idx_user_profile_image_current`
-    ON `user_profile_image`(`user_profile_id`, `is_current`);
+create index idx_gender_name
+    on gender (name);
 
-
--- =========================================
--- 5. FRIEND
--- is_blocked 제거, 차단은 user_block으로 분리
--- =========================================
-CREATE TABLE `friend` (
-                          `id`                BIGINT AUTO_INCREMENT PRIMARY KEY,
-                          `user_id`           BIGINT NOT NULL,
-                          `friend_user_id`    BIGINT NOT NULL,
-                          `custom_nickname`   VARCHAR(30) NULL,
-                          `created_at`        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-                          CONSTRAINT `uk_friend` UNIQUE (`user_id`, `friend_user_id`),
-                          CONSTRAINT `fk_friend_user`
-                              FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
-                          CONSTRAINT `fk_friend_target`
-                              FOREIGN KEY (`friend_user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE
+create table if not exists user
+(
+    id              bigint auto_increment
+        primary key,
+    gender_id       int                                   not null,
+    input_id        varchar(30)                           not null,
+    input_password  varchar(100)                          not null,
+    age             int                                   not null,
+    name            varchar(30)                           not null,
+    nickname        varchar(30)                           not null,
+    uuid            varchar(36)                           not null,
+    status          varchar(20) default 'ACTIVE'          not null,
+    created_at      datetime    default CURRENT_TIMESTAMP not null,
+    login_lasted_at datetime                              null,
+    constraint uk_user_input_id
+        unique (input_id),
+    constraint uk_user_uuid
+        unique (uuid),
+    constraint fk_user_gender
+        foreign key (gender_id) references gender (id)
 );
 
-CREATE INDEX `idx_friend_target` ON `friend`(`friend_user_id`);
-
-
--- =========================================
--- 6. USER BLOCK
--- =========================================
-CREATE TABLE `user_block` (
-                              `id`                BIGINT AUTO_INCREMENT PRIMARY KEY,
-                              `blocker_id`        BIGINT NOT NULL,
-                              `blocked_id`        BIGINT NOT NULL,
-                              `reason`            VARCHAR(255) NULL,
-                              `expires_at`        DATETIME NULL,
-                              `created_at`        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-                              CONSTRAINT `uk_user_block` UNIQUE (`blocker_id`, `blocked_id`),
-                              CONSTRAINT `fk_user_block_blocker`
-                                  FOREIGN KEY (`blocker_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
-                              CONSTRAINT `fk_user_block_blocked`
-                                  FOREIGN KEY (`blocked_id`) REFERENCES `user`(`id`) ON DELETE CASCADE
+create table if not exists chat_message
+(
+    id                bigint auto_increment
+        primary key,
+    chat_room_id      bigint                               not null,
+    sender_id         bigint                               not null,
+    message_type      varchar(20)                          not null,
+    message_content   text                                 null,
+    parent_message_id bigint                               null,
+    created_at        datetime   default CURRENT_TIMESTAMP not null,
+    edited_at         datetime                             null,
+    expires_at        datetime                             null,
+    deleted_at        datetime                             null,
+    is_deleted        tinyint(1) default 0                 not null,
+    client_message_id varchar(100)                         null,
+    constraint uk_chat_message_client
+        unique (client_message_id),
+    constraint fk_chat_message_parent
+        foreign key (parent_message_id) references chat_message (id)
+            on delete set null,
+    constraint fk_chat_message_sender
+        foreign key (sender_id) references user (id)
+            on delete cascade,
+    constraint ck_chat_message_type
+        check (`message_type` in ('TEXT','EMOJI','IMAGE','FILE','SYSTEM_LEAVE','SYSTEM_INVITE','SYSTEM'))
 );
 
-CREATE INDEX `idx_user_block_blocker` ON `user_block`(`blocker_id`);
-CREATE INDEX `idx_user_block_blocked` ON `user_block`(`blocked_id`);
+create fulltext index fx_chat_content
+    on chat_message (message_content);
 
+create index idx_chat_message_parent
+    on chat_message (parent_message_id);
 
--- =========================================
--- 7. ADMIN
--- 일반 user와 완전 분리
--- =========================================
-CREATE TABLE `admin` (
-                         `id`                BIGINT AUTO_INCREMENT PRIMARY KEY,
-                         `login_id`          VARCHAR(30) NOT NULL,
-                         `password`          VARCHAR(100) NOT NULL,
-                         `name`              VARCHAR(30) NOT NULL,
-                         `role`              VARCHAR(20) NOT NULL, -- SUPER_ADMIN, MODERATOR, AUDITOR
-                         `status`            VARCHAR(20) NOT NULL DEFAULT 'ACTIVE', -- ACTIVE, LOCKED, DELETED
-                         `last_login_at`     DATETIME NULL,
-                         `created_at`        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+create index idx_chat_message_room_created
+    on chat_message (chat_room_id asc, created_at desc);
 
-                         CONSTRAINT `uk_admin_login_id` UNIQUE (`login_id`)
+create index idx_chat_message_room_id
+    on chat_message (chat_room_id, id);
+
+create index idx_chat_message_sender
+    on chat_message (sender_id);
+
+create table if not exists chat_room
+(
+    id                     bigint auto_increment
+        primary key,
+    room_type              varchar(20)                          not null,
+    name                   varchar(50)                          null,
+    description            text                                 null,
+    max_person             int                                  null,
+    is_private             tinyint(1) default 0                 not null,
+    invite_code            varchar(50)                          null,
+    dm_key                 varchar(100)                         null,
+    created_by             bigint                               not null,
+    created_at             datetime   default CURRENT_TIMESTAMP not null,
+    last_message_id        bigint                               null,
+    last_message_at        datetime                             null,
+    last_message_preview   varchar(120)                         null,
+    last_message_sender_id bigint                               null,
+    pinned_message_id      bigint                               null,
+    order_at               datetime as (coalesce(`last_message_at`, `created_at`)) stored,
+    participant_count      int        default 1                 not null comment '현재 참여 인원수',
+    constraint uk_chat_room_dm_key
+        unique (dm_key),
+    constraint fk_chat_room_created_by
+        foreign key (created_by) references user (id),
+    constraint fk_chat_room_last_message
+        foreign key (last_message_id) references chat_message (id)
+            on delete set null,
+    constraint fk_chat_room_last_sender
+        foreign key (last_message_sender_id) references user (id),
+    constraint fk_chat_room_pinned_message
+        foreign key (pinned_message_id) references chat_message (id)
+            on delete set null,
+    constraint ck_chat_room_type
+        check (`room_type` in ('DM','GROUP','OPEN'))
 );
 
-CREATE INDEX `idx_admin_role` ON `admin`(`role`);
-CREATE INDEX `idx_admin_status` ON `admin`(`status`);
-
-
--- =========================================
--- 8. ADMIN LOGIN HISTORY
--- =========================================
-CREATE TABLE `admin_login_history` (
-                                       `id`                BIGINT AUTO_INCREMENT PRIMARY KEY,
-                                       `admin_id`          BIGINT NOT NULL,
-                                       `login_at`          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                       `ip_address`        VARCHAR(45) NULL,
-                                       `user_agent`        VARCHAR(255) NULL,
-                                       `success`           TINYINT(1) NOT NULL,
-                                       `fail_reason`       VARCHAR(255) NULL,
-
-                                       CONSTRAINT `fk_admin_login_history_admin`
-                                           FOREIGN KEY (`admin_id`) REFERENCES `admin`(`id`) ON DELETE CASCADE
+create table if not exists chat_attachment
+(
+    id                 bigint auto_increment
+        primary key,
+    room_id            bigint                             not null,
+    uploader_id        bigint                             not null,
+    chat_message_id    bigint                             null,
+    file_url           varchar(255)                       not null,
+    original_file_name varchar(255)                       not null,
+    stored_file_name   varchar(255)                       null,
+    content_type       varchar(100)                       null,
+    file_size          bigint                             null,
+    created_at         datetime default CURRENT_TIMESTAMP not null,
+    constraint fk_chat_attachment_message
+        foreign key (chat_message_id) references chat_message (id)
+            on delete cascade,
+    constraint fk_chat_attachment_room
+        foreign key (room_id) references chat_room (id)
+            on delete cascade,
+    constraint fk_chat_attachment_uploader
+        foreign key (uploader_id) references user (id)
+            on delete cascade
 );
 
-CREATE INDEX `idx_admin_login_history_admin`
-    ON `admin_login_history`(`admin_id`, `login_at` DESC);
+create index idx_chat_attachment_message
+    on chat_attachment (chat_message_id);
 
+create index idx_chat_attachment_room_id
+    on chat_attachment (room_id);
 
--- =========================================
--- 9. ADMIN ACTION LOG
--- =========================================
-CREATE TABLE `admin_action_log` (
-                                    `id`                BIGINT AUTO_INCREMENT PRIMARY KEY,
-                                    `admin_id`          BIGINT NOT NULL,
-                                    `action_type`       VARCHAR(50) NOT NULL, -- DELETE_MESSAGE, BLOCK_USER, KICK_MEMBER ...
-                                    `target_type`       VARCHAR(50) NULL,     -- USER, ROOM, MESSAGE ...
-                                    `target_id`         BIGINT NULL,
-                                    `description`       TEXT NULL,
-                                    `created_at`        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+create index idx_chat_attachment_uploader_id
+    on chat_attachment (uploader_id);
 
-                                    CONSTRAINT `fk_admin_action_log_admin`
-                                        FOREIGN KEY (`admin_id`) REFERENCES `admin`(`id`) ON DELETE CASCADE
+create table if not exists chat_list
+(
+    id                   bigint auto_increment
+        primary key,
+    user_id              bigint                               not null,
+    chat_room_id         bigint                               not null,
+    last_read_message_id bigint                               null,
+    unread_count         int        default 0                 not null,
+    pinned               tinyint(1) default 0                 not null,
+    muted                tinyint(1) default 0                 not null,
+    archived             tinyint(1) default 0                 not null,
+    custom_name          varchar(50)                          null,
+    last_opened_at       datetime                             null,
+    created_at           datetime   default CURRENT_TIMESTAMP not null,
+    updated_at           datetime   default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP,
+    constraint uk_chat_list_user_room
+        unique (user_id, chat_room_id),
+    constraint fk_chat_list_room
+        foreign key (chat_room_id) references chat_room (id)
+            on delete cascade,
+    constraint fk_chat_list_user
+        foreign key (user_id) references user (id)
+            on delete cascade
 );
 
-CREATE INDEX `idx_admin_action_log_admin`
-    ON `admin_action_log`(`admin_id`, `created_at` DESC);
-CREATE INDEX `idx_admin_action_log_target`
-    ON `admin_action_log`(`target_type`, `target_id`);
+create index idx_chat_list_room
+    on chat_list (chat_room_id);
 
+create index idx_chat_list_user
+    on chat_list (user_id);
 
--- =========================================
--- 10. CHAT ROOM
--- participants_hash 제거
--- dm_key 도입 (DM 전용)
--- =========================================
-CREATE TABLE `chat_room` (
-                             `id`                      BIGINT AUTO_INCREMENT PRIMARY KEY,
-                             `room_type`               VARCHAR(20) NOT NULL, -- DM, GROUP, OPEN
-                             `name`                    VARCHAR(50) NULL,
-                             `description`             TEXT NULL,
-                             `max_person`              INT NULL,
-                             `is_private`              TINYINT(1) NOT NULL DEFAULT 0,
-                             `invite_code`             VARCHAR(50) NULL,
-                             `dm_key`                  VARCHAR(50) NULL, -- DM일 때만 사용. 예: 3:10
-                             `created_by`              BIGINT NOT NULL,
-                             `created_at`              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                            `participant_count`         INT NOT NULL DEFAULT 1 COMMENT '현재 참여 인원 수',
-                             `last_message_id`         BIGINT NULL,
-                             `last_message_at`         DATETIME NULL,
-                             `last_message_preview`    VARCHAR(120) NULL,
-                             `last_message_sender_id`  BIGINT NULL,
+alter table chat_message
+    add constraint fk_chat_message_room
+        foreign key (chat_room_id) references chat_room (id)
+            on delete cascade;
 
-                             `pinned_message_id`       BIGINT NULL,
-
-                             `order_at`                DATETIME AS (COALESCE(`last_message_at`, `created_at`)) STORED,
-
-                             CONSTRAINT `ck_chat_room_type` CHECK (`room_type` IN ('DM', 'GROUP', 'OPEN')),
-                             CONSTRAINT `uk_chat_room_dm_key` UNIQUE (`dm_key`),
-                             CONSTRAINT `fk_chat_room_created_by`
-                                 FOREIGN KEY (`created_by`) REFERENCES `user`(`id`),
-                             CONSTRAINT `fk_chat_room_last_sender`
-                                 FOREIGN KEY (`last_message_sender_id`) REFERENCES `user`(`id`)
+create table if not exists chat_notification
+(
+    id                bigint auto_increment
+        primary key,
+    user_id           bigint                               not null,
+    chat_room_id      bigint                               not null,
+    chat_message_id   bigint                               null,
+    notification_type varchar(30)                          not null,
+    content           text                                 not null,
+    is_read           tinyint(1) default 0                 not null,
+    created_at        datetime   default CURRENT_TIMESTAMP not null,
+    read_at           datetime                             null,
+    constraint fk_chat_notification_message
+        foreign key (chat_message_id) references chat_message (id)
+            on delete cascade,
+    constraint fk_chat_notification_room
+        foreign key (chat_room_id) references chat_room (id)
+            on delete cascade,
+    constraint fk_chat_notification_user
+        foreign key (user_id) references user (id)
+            on delete cascade
 );
 
-CREATE INDEX `idx_chat_room_type` ON `chat_room`(`room_type`);
-CREATE INDEX `idx_chat_room_last` ON `chat_room`(`last_message_at` DESC, `id` DESC);
-CREATE INDEX `idx_chat_room_order` ON `chat_room`(`order_at` DESC, `id` DESC);
+create index idx_chat_notification_message
+    on chat_notification (chat_message_id);
 
+create index idx_chat_notification_room
+    on chat_notification (chat_room_id);
 
--- =========================================
--- 11. CHAT ROOM MEMBER
--- 핵심
--- =========================================
-CREATE TABLE `chat_room_member` (
-                                    `id`                         BIGINT AUTO_INCREMENT PRIMARY KEY,
-                                    `chat_room_id`               BIGINT NOT NULL,
-                                    `user_id`                    BIGINT NOT NULL,
-                                    `role`                       VARCHAR(20) NOT NULL DEFAULT 'MEMBER', -- OWNER, ADMIN, MEMBER
-                                    `joined_at`                  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                    `left_at`                    DATETIME NULL,
-                                    `is_active`                  TINYINT(1) NOT NULL DEFAULT 1,
-                                    `last_delivered_message_id`  BIGINT NULL,
+create index idx_chat_notification_user
+    on chat_notification (user_id asc, is_read asc, created_at desc);
 
-                                    CONSTRAINT `uk_chat_room_member` UNIQUE (`chat_room_id`, `user_id`),
-                                    CONSTRAINT `ck_chat_room_member_role` CHECK (`role` IN ('OWNER', 'ADMIN', 'MEMBER')),
-                                    CONSTRAINT `fk_chat_room_member_room`
-                                        FOREIGN KEY (`chat_room_id`) REFERENCES `chat_room`(`id`) ON DELETE CASCADE,
-                                    CONSTRAINT `fk_chat_room_member_user`
-                                        FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE
+create index idx_chat_room_last
+    on chat_room (last_message_at desc, id desc);
+
+create index idx_chat_room_order
+    on chat_room (order_at desc, id desc);
+
+create index idx_chat_room_type
+    on chat_room (room_type);
+
+create table if not exists chat_room_member
+(
+    id                        bigint auto_increment
+        primary key,
+    chat_room_id              bigint                                not null,
+    user_id                   bigint                                not null,
+    role                      varchar(20) default 'MEMBER'          not null,
+    joined_at                 datetime    default CURRENT_TIMESTAMP not null,
+    left_at                   datetime                              null,
+    is_active                 tinyint(1)  default 1                 not null,
+    last_delivered_message_id bigint                                null,
+    constraint uk_chat_room_member
+        unique (chat_room_id, user_id),
+    constraint fk_chat_room_member_room
+        foreign key (chat_room_id) references chat_room (id)
+            on delete cascade,
+    constraint fk_chat_room_member_user
+        foreign key (user_id) references user (id)
+            on delete cascade,
+    constraint ck_chat_room_member_role
+        check (`role` in ('OWNER','ADMIN','MEMBER'))
 );
 
-CREATE INDEX `idx_chat_room_member_room` ON `chat_room_member`(`chat_room_id`);
-CREATE INDEX `idx_chat_room_member_user` ON `chat_room_member`(`user_id`);
+create index idx_chat_room_member_room
+    on chat_room_member (chat_room_id);
 
+create index idx_chat_room_member_user
+    on chat_room_member (user_id);
 
--- =========================================
--- 12. CHAT LIST
--- 읽음은 last_read_message_id 기반
--- =========================================
-CREATE TABLE `chat_list` (
-                             `id`                   BIGINT AUTO_INCREMENT PRIMARY KEY,
-                             `user_id`              BIGINT NOT NULL,
-                             `chat_room_id`         BIGINT NOT NULL,
-                             `last_read_message_id` BIGINT NULL,
-                             `unread_count`         INT NOT NULL DEFAULT 0,
-                             `pinned`               TINYINT(1) NOT NULL DEFAULT 0,
-                             `muted`                TINYINT(1) NOT NULL DEFAULT 0,
-                             `archived`             TINYINT(1) NOT NULL DEFAULT 0,
-                             `custom_name`          VARCHAR(50) NULL,
-                             `last_opened_at`       DATETIME NULL,
-                             `created_at`           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                             `updated_at`           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
-                             CONSTRAINT `uk_chat_list_user_room` UNIQUE (`user_id`, `chat_room_id`),
-                             CONSTRAINT `fk_chat_list_user`
-                                 FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
-                             CONSTRAINT `fk_chat_list_room`
-                                 FOREIGN KEY (`chat_room_id`) REFERENCES `chat_room`(`id`) ON DELETE CASCADE
+create table if not exists chat_room_setting
+(
+    id                          bigint auto_increment
+        primary key,
+    chat_room_id                bigint                               not null,
+    allow_file_upload           tinyint(1) default 1                 not null,
+    allow_self_destruct_message tinyint(1) default 0                 not null,
+    allow_thread                tinyint(1) default 1                 not null,
+    message_edit_time_limit     int                                  null,
+    message_delete_time_limit   int                                  null,
+    default_notification_on     tinyint(1) default 1                 not null,
+    created_at                  datetime   default CURRENT_TIMESTAMP not null,
+    updated_at                  datetime   default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP,
+    constraint uk_chat_room_setting_room
+        unique (chat_room_id),
+    constraint fk_chat_room_setting_room
+        foreign key (chat_room_id) references chat_room (id)
+            on delete cascade
 );
 
-CREATE INDEX `idx_chat_list_user` ON `chat_list`(`user_id`);
-CREATE INDEX `idx_chat_list_room` ON `chat_list`(`chat_room_id`);
-
-
--- =========================================
--- 13. CHAT MESSAGE
--- thread/edit/self-destruct/delete/client id 지원
--- =========================================
-CREATE TABLE `chat_message` (
-                                `id`                  BIGINT AUTO_INCREMENT PRIMARY KEY,
-                                `chat_room_id`        BIGINT NOT NULL,
-                                `sender_id`           BIGINT NOT NULL,
-                                `message_type`        VARCHAR(20) NOT NULL, -- TEXT, IMAGE, FILE, SYSTEM
-                                `message_content`     TEXT NULL,
-                                `parent_message_id`   BIGINT NULL,
-                                `created_at`          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                `edited_at`           DATETIME NULL,
-                                `expires_at`          DATETIME NULL,
-                                `deleted_at`          DATETIME NULL,
-                                `is_deleted`          TINYINT(1) NOT NULL DEFAULT 0,
-                                `client_message_id`   VARCHAR(100) NULL,
-
-                                CONSTRAINT `ck_chat_message_type` CHECK (`message_type` IN ('TEXT', 'EMOJI', 'IMAGE', 'FILE', 'SYSTEM')),
-                                CONSTRAINT `uk_chat_message_client` UNIQUE (`client_message_id`),
-                                CONSTRAINT `fk_chat_message_room`
-                                    FOREIGN KEY (`chat_room_id`) REFERENCES `chat_room`(`id`) ON DELETE CASCADE,
-                                CONSTRAINT `fk_chat_message_sender`
-                                    FOREIGN KEY (`sender_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
-                                CONSTRAINT `fk_chat_message_parent`
-                                    FOREIGN KEY (`parent_message_id`) REFERENCES `chat_message`(`id`) ON DELETE SET NULL
+create table if not exists friend
+(
+    id              bigint auto_increment
+        primary key,
+    user_id         bigint                             not null,
+    friend_user_id  bigint                             not null,
+    custom_nickname varchar(30)                        null,
+    created_at      datetime default CURRENT_TIMESTAMP not null,
+    constraint uk_friend
+        unique (user_id, friend_user_id),
+    constraint fk_friend_target
+        foreign key (friend_user_id) references user (id)
+            on delete cascade,
+    constraint fk_friend_user
+        foreign key (user_id) references user (id)
+            on delete cascade
 );
 
-CREATE INDEX `idx_chat_message_room_created` ON `chat_message`(`chat_room_id`, `created_at` DESC);
-CREATE INDEX `idx_chat_message_room_id` ON `chat_message`(`chat_room_id`, `id`);
-CREATE INDEX `idx_chat_message_sender` ON `chat_message`(`sender_id`);
-CREATE INDEX `idx_chat_message_parent` ON `chat_message`(`parent_message_id`);
+create index idx_friend_target
+    on friend (friend_user_id);
 
+create index idx_user_gender
+    on user (gender_id);
 
--- =========================================
--- 14. CHAT ROOM -> CHAT MESSAGE FK
--- 순환참조 방지 위해 뒤에 추가
--- =========================================
-ALTER TABLE `chat_room`
-    ADD CONSTRAINT `fk_chat_room_last_message`
-        FOREIGN KEY (`last_message_id`) REFERENCES `chat_message`(`id`) ON DELETE SET NULL;
+create index idx_user_status
+    on user (status);
 
-ALTER TABLE `chat_room`
-    ADD CONSTRAINT `fk_chat_room_pinned_message`
-        FOREIGN KEY (`pinned_message_id`) REFERENCES `chat_message`(`id`) ON DELETE SET NULL;
-
-
--- =========================================
--- 15. CHAT ATTACHMENT
--- =========================================
-CREATE TABLE `chat_attachment` (
-                                   `id`                  BIGINT AUTO_INCREMENT PRIMARY KEY,
-                                   `chat_message_id`     BIGINT ,
-                                    `room_id`            BIGINT NOT NULL ,
-                                    `uploader_id`        BIGINT NOT NULL ,
-                                   `file_url`            VARCHAR(255) NOT NULL,
-                                   `original_file_name`  VARCHAR(255) NOT NULL,
-                                   `stored_file_name`    VARCHAR(255) NULL,
-                                   `content_type`        VARCHAR(100) NULL,
-                                   `file_size`           BIGINT NULL,
-                                   `created_at`          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-                                   CONSTRAINT `fk_chat_attachment_message`
-                                       FOREIGN KEY (`chat_message_id`) REFERENCES `chat_message`(`id`) ON DELETE CASCADE
+create table if not exists user_block
+(
+    id         bigint auto_increment
+        primary key,
+    blocker_id bigint                             not null,
+    blocked_id bigint                             not null,
+    reason     varchar(255)                       null,
+    expires_at datetime                           null,
+    created_at datetime default CURRENT_TIMESTAMP not null,
+    constraint uk_user_block
+        unique (blocker_id, blocked_id),
+    constraint fk_user_block_blocked
+        foreign key (blocked_id) references user (id)
+            on delete cascade,
+    constraint fk_user_block_blocker
+        foreign key (blocker_id) references user (id)
+            on delete cascade
 );
 
-ALTER TABLE `chat_attachment`
-    ADD CONSTRAINT `fk_chat_attachment_room`
-        FOREIGN KEY (`room_id`) REFERENCES `chat_room`(`id`) ON DELETE CASCADE,
-    ADD CONSTRAINT `fk_chat_attachment_uploader`
-        FOREIGN KEY (`uploader_id`) REFERENCES `user`(`id`) ON DELETE CASCADE;
+create index idx_user_block_blocked
+    on user_block (blocked_id);
 
-CREATE INDEX `idx_chat_attachment_message` ON `chat_attachment`(`chat_message_id`);
-CREATE INDEX idx_chat_attachment_room_id ON chat_attachment(room_id);
-CREATE INDEX idx_chat_attachment_uploader_id ON chat_attachment(uploader_id);
+create index idx_user_block_blocker
+    on user_block (blocker_id);
 
--- =========================================
--- 16. CHAT ROOM SETTING
--- =========================================
-CREATE TABLE `chat_room_setting` (
-                                     `id`                           BIGINT AUTO_INCREMENT PRIMARY KEY,
-                                     `chat_room_id`                 BIGINT NOT NULL,
-                                     `allow_file_upload`            TINYINT(1) NOT NULL DEFAULT 1,
-                                     `allow_self_destruct_message`  TINYINT(1) NOT NULL DEFAULT 0,
-                                     `allow_thread`                 TINYINT(1) NOT NULL DEFAULT 1,
-                                     `message_edit_time_limit`      INT NULL,
-                                     `message_delete_time_limit`    INT NULL,
-                                     `default_notification_on`      TINYINT(1) NOT NULL DEFAULT 1,
-                                     `created_at`                   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                     `updated_at`                   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
-                                     CONSTRAINT `uk_chat_room_setting_room` UNIQUE (`chat_room_id`),
-                                     CONSTRAINT `fk_chat_room_setting_room`
-                                         FOREIGN KEY (`chat_room_id`) REFERENCES `chat_room`(`id`) ON DELETE CASCADE
+create table if not exists user_profile
+(
+    id            bigint auto_increment
+        primary key,
+    user_id       bigint                             not null,
+    state_message varchar(60)                        null,
+    created_at    datetime default CURRENT_TIMESTAMP not null,
+    updated_at    datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP,
+    constraint uk_user_profile_user
+        unique (user_id),
+    constraint fk_user_profile_user
+        foreign key (user_id) references user (id)
+            on delete cascade
 );
 
-
--- =========================================
--- 17. CHAT NOTIFICATION
--- =========================================
-CREATE TABLE `chat_notification` (
-                                     `id`                   BIGINT AUTO_INCREMENT PRIMARY KEY,
-                                     `user_id`              BIGINT NOT NULL,
-                                     `chat_room_id`         BIGINT NOT NULL,
-                                     `chat_message_id`      BIGINT NULL,
-                                     `notification_type`    VARCHAR(30) NOT NULL, -- MESSAGE, MENTION, INVITE, SYSTEM
-                                     `content`              TEXT NOT NULL,
-                                     `is_read`              TINYINT(1) NOT NULL DEFAULT 0,
-                                     `created_at`           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                     `read_at`              DATETIME NULL,
-
-                                     CONSTRAINT `fk_chat_notification_user`
-                                         FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
-                                     CONSTRAINT `fk_chat_notification_room`
-                                         FOREIGN KEY (`chat_room_id`) REFERENCES `chat_room`(`id`) ON DELETE CASCADE,
-                                     CONSTRAINT `fk_chat_notification_message`
-                                         FOREIGN KEY (`chat_message_id`) REFERENCES `chat_message`(`id`) ON DELETE CASCADE
+create table if not exists user_profile_image
+(
+    id              bigint auto_increment
+        primary key,
+    user_profile_id bigint                               not null,
+    image_url       varchar(255)                         not null,
+    is_current      tinyint(1) default 0                 not null,
+    uploaded_at     datetime   default CURRENT_TIMESTAMP not null,
+    constraint fk_user_profile_image_profile
+        foreign key (user_profile_id) references user_profile (id)
+            on delete cascade
 );
 
-CREATE INDEX `idx_chat_notification_user`
-    ON `chat_notification`(`user_id`, `is_read`, `created_at` DESC);
-CREATE INDEX `idx_chat_notification_room`
-    ON `chat_notification`(`chat_room_id`);
-CREATE INDEX `idx_chat_notification_message`
-    ON `chat_notification`(`chat_message_id`);
+create index idx_user_profile_image_current
+    on user_profile_image (user_profile_id, is_current);
+

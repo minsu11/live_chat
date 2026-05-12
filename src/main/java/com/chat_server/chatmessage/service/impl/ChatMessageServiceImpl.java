@@ -2,11 +2,14 @@ package com.chat_server.chatmessage.service.impl;
 
 import com.chat_server.chatmessage.dto.response.ChatMessageItemResponse;
 import com.chat_server.chatmessage.entity.ChatMessage;
+import com.chat_server.chatmessage.exception.ChatMessageNotFoundException;
 import com.chat_server.chatmessage.repository.ChatMessageRepository;
 import com.chat_server.chatmessage.service.ChatMessageService;
 import com.chat_server.chatread.dto.event.UpdatedMessageUnreadCount;
 import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.common.cursor.ChatMessageCursorKey;
+import com.chat_server.common.propertis.CustomProperties;
+import com.chat_server.error.enumulation.ErrorCode;
 import com.chat_server.user.entity.User;
 import com.chat_server.user.exception.UserNotFoundException;
 import com.chat_server.user.repository.UserRepository;
@@ -18,6 +21,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +32,7 @@ import java.util.Map;
 public class ChatMessageServiceImpl implements ChatMessageService {
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
+    private final CustomProperties customProperties;
 
     /**
      * 커서 조건에 맞는 채팅방 메시지 Slice를 조회한다.
@@ -77,6 +82,8 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         return chatMessageRepository.save(chatMessage);
     }
 
+    @Transactional(readOnly = true)
+    @Override
     public List<UpdatedMessageUnreadCount> calculateUnreadCountsWithRedis(
             Long roomId,
             Long currentMessageId,
@@ -105,5 +112,27 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
             return new UpdatedMessageUnreadCount(msgId, unreadCount);
         }).toList();
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<ChatMessage> getContextMessages(Long roomId, Long targetMessageId, int halfLimit) {
+        ChatMessage targetMessage = chatMessageRepository
+                .findByIdAndChatRoom_Id(targetMessageId, roomId)
+                .orElseThrow(() -> new ChatMessageNotFoundException(customProperties.getError().getMessage(ErrorCode.CHAT_MESSAGE_NOT_FOUND)));
+
+
+        List<ChatMessage> olderMessages = chatMessageRepository.findOlderMessagesWithTarget(roomId, targetMessageId, halfLimit);
+
+        List<ChatMessage> newerMessages = chatMessageRepository.findNewerMessages(roomId, targetMessageId, halfLimit);
+
+        List<ChatMessage> combined = new ArrayList<>();
+        for (int i = olderMessages.size() - 1; i >= 0; i--) {
+            combined.add(olderMessages.get(i));
+        }
+
+        combined.addAll(newerMessages);
+
+        return combined;
     }
 }

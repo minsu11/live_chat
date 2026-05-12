@@ -3,10 +3,8 @@ package com.chat_server.chatroom.service.impl;
 import com.chat_server.chatlist.dto.response.ChatListItemResponse;
 import com.chat_server.chatlist.entity.ChatList;
 import com.chat_server.chatlist.service.ChatListService;
-import com.chat_server.chatmessage.dto.response.ChatMessageCatchUpResponse;
-import com.chat_server.chatmessage.dto.response.ChatMessageItemResponse;
-import com.chat_server.chatmessage.dto.response.ChatMessageResponse;
-import com.chat_server.chatmessage.dto.response.ChatMessageSenderResponse;
+import com.chat_server.chatmessage.dto.response.*;
+import com.chat_server.chatmessage.entity.ChatMessage;
 import com.chat_server.chatmessage.enums.MessageType;
 import com.chat_server.chatmessage.service.ChatMessageFacadeService;
 import com.chat_server.chatmessage.service.ChatMessageService;
@@ -555,6 +553,75 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
         // 8. 시스템 메시지 발송 및 브로드캐스트
         chatMessageFacadeService.saveAndBroadcastSystemMessage(roomId, inviterId, MessageType.SYSTEM_INVITE, content);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ChatMessageContextResponse getMessageContext(Long roomId, Long userId, Long targetMessageId, int limit) {
+        chatRoomQueryService.validateMemberOrThrow(roomId, userId);
+
+        int halfLimit = Math.max(limit / 2, 10); // 위아래로 절반씩 가져옴 (예: 50개 요청이면 위로 25, 아래로 25)
+
+        // 1. 문맥 메시지 엔티티 조회
+        List<ChatMessage> contextMessages = chatMessageService.getContextMessages(roomId, targetMessageId, halfLimit);
+
+        if (contextMessages.isEmpty()) {
+            return new ChatMessageContextResponse(roomId, List.of(), null, null);
+        }
+
+        // 2. 발송자 닉네임 처리를 위한 캐싱
+        List<Long> senderIds = contextMessages.stream()
+                .map(msg -> msg.getSender().getId())
+                .distinct().toList();
+        Map<Long, String> displayNameCache = userDisplayNameService.resolveDisplayNamesBulk(userId, senderIds);
+
+        // 3. 안읽음 카운트 처리를 위한 Redis 조회 (세인님의 기존 로직 재사용)
+        List<Long> memberIds = chatRoomMemberService.getRoomMemberIdsByRoomId(roomId);
+        Map<Long, Long> memberReadMap = chatMetadataRedisService.getAllMembersLastReadId(roomId, memberIds);
+
+        // 4. 엔티티 -> Response DTO 변환
+        List<ChatMessageResponse> messages = contextMessages.stream()
+                .map(msg -> {
+                    String displayNickname = displayNameCache.getOrDefault(msg.getSender().getId(), msg.getSender().getNickname());
+
+                    long readCount = memberReadMap.values().stream()
+                            .filter(lastReadId -> lastReadId >= msg.getId())
+                            .count();
+                    int realUnread = Math.max(0, memberIds.size() - (int)readCount);
+
+                    return new ChatMessageResponse(
+                            msg.getId(),
+                            roomId,
+                            msg.getMessageType().name(),
+                            new ChatMessageSenderResponse(msg.getSender().getUuid(), displayNickname, null),
+                            msg.getMessageContent(),
+                            msg.getCreatedAt(),
+                            msg.getSender().getId().equals(userId),
+                            realUnread
+                    );
+                })
+                .toList();
+
+        // 5. 앞뒤 커서(Cursor) 생성
+        String prevCursor = null;
+        String nextCursor = null;
+
+        if (!messages.isEmpty()) {
+            ChatMessageResponse firstMsg = messages.get(0);
+            ChatMessageResponse lastMsg = messages.get(messages.size() - 1);
+
+            // 과거로 더 갈 수 있는 커서 (현재 화면의 제일 첫 메시지 기준)
+            long firstAtMillis = firstMsg.createdAt().atOffset(java.time.ZoneOffset.UTC).toInstant().toEpochMilli();
+            prevCursor = com.chat_server.common.cursor.ChatMessageCursorCodec.encode(firstAtMillis, firstMsg.messageId());
+
+            // 미래로 더 갈 수 있는 커서 (현재 화면의 제일 마지막 메시지 기준) - 세인님 커서 코덱 정책에 따라 다를 수 있음
+            long lastAtMillis = lastMsg.createdAt().atOffset(java.time.ZoneOffset.UTC).toInstant().toEpochMilli();
+            nextCursor = com.chat_server.common.cursor.ChatMessageCursorCodec.encode(lastAtMillis, lastMsg.messageId());
+        }
+
+        return new ChatMessageContextResponse(roomId, messages, prevCursor, nextCursor);
+    }
+
+
 
     /**
      * 채팅방 진입 조회용 메시지 DTO를 프론트 공통 메시지 응답 DTO로 변환한다.

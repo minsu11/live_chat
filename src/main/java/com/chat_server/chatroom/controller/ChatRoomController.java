@@ -1,6 +1,7 @@
 package com.chat_server.chatroom.controller;
 
 
+import com.chat_server.chatmessage.dto.response.ChatMessageContextResponse;
 import com.chat_server.chatroom.dto.request.CreateGroupChatRoomRequest;
 import com.chat_server.chatroom.dto.response.ChatRoomEnterResponse;
 import com.chat_server.chatroom.dto.response.ChatRoomResult;
@@ -128,4 +129,18 @@ public class ChatRoomController {
         ApiResponse<CreateChatRoomResponse> apiResponse = ApiResponse.success(201,"그룹방이 만들어졌습니다.",response);
         return ResponseEntity.ok(apiResponse);
     }
+
+    @GetMapping("{roomId}/messages/{messageId}/context")
+    public ResponseEntity<ApiResponse<ChatMessageContextResponse>> getMessageContext(
+            @PathVariable Long roomId,
+            @PathVariable Long messageId,
+            @RequestParam(defaultValue = "50") int limit,
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+    ) {
+        Long userId = authenticatedUser.userId();
+        ChatMessageContextResponse response = chatRoomFacadeService.getMessageContext(roomId, userId, messageId, limit);
+        ApiResponse<ChatMessageContextResponse> apiResponse = ApiResponse.success(200,"검색 결과를 반환했습니다.", response);
+        return ResponseEntity.ok(apiResponse);
+    }
+
 }

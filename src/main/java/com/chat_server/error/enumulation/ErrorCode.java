@@ -21,6 +21,7 @@ public enum ErrorCode {
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST),
     FILE_SIZE_EXCEEDED(HttpStatus.PAYLOAD_TOO_LARGE),
     INVALID_FILE_UPLOAD(HttpStatus.PAYLOAD_TOO_LARGE),
+    CHAT_MESSAGE_NOT_FOUND(HttpStatus.NOT_FOUND)
     ;
 
     private final HttpStatus status;
