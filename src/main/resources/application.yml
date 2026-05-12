@@ -15,10 +15,10 @@ spring:
     group:
       dev:
         - custom
-        - web-dev
+        - web
       prod:
         - custom
-        - web-prod
+        - web
 
 
 server:
