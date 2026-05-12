@@ -21,6 +21,7 @@ custom:
       VALIDATION_ERROR: "요청 데이터 검증에 실패했습니다."
       NOT_DEFINE: "정의되지 않은 오류 입니다."
       FILE_SIZE_EXCEEDED: "파일 크기가 제한을 초과했습니다."
+      CHAT_MESSAGE_NOT_FOUND: "채팅 메시지를 찾을 수 없습니다."
 
   api:
     common:

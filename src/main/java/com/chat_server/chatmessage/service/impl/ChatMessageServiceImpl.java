@@ -2,11 +2,14 @@ package com.chat_server.chatmessage.service.impl;
 
 import com.chat_server.chatmessage.dto.response.ChatMessageItemResponse;
 import com.chat_server.chatmessage.entity.ChatMessage;
+import com.chat_server.chatmessage.exception.ChatMessageNotFoundException;
 import com.chat_server.chatmessage.repository.ChatMessageRepository;
 import com.chat_server.chatmessage.service.ChatMessageService;
 import com.chat_server.chatread.dto.event.UpdatedMessageUnreadCount;
 import com.chat_server.chatroom.entity.ChatRoom;
 import com.chat_server.common.cursor.ChatMessageCursorKey;
+import com.chat_server.common.propertis.CustomProperties;
+import com.chat_server.error.enumulation.ErrorCode;
 import com.chat_server.user.entity.User;
 import com.chat_server.user.exception.UserNotFoundException;
 import com.chat_server.user.repository.UserRepository;
@@ -29,6 +32,7 @@ import java.util.Map;
 public class ChatMessageServiceImpl implements ChatMessageService {
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
+    private final CustomProperties customProperties;
 
     /**
      * 커서 조건에 맞는 채팅방 메시지 Slice를 조회한다.
@@ -113,19 +117,20 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     @Transactional(readOnly = true)
     @Override
     public List<ChatMessage> getContextMessages(Long roomId, Long targetMessageId, int halfLimit) {
-        // 1. 과거 메시지 (타겟 포함)
+        ChatMessage targetMessage = chatMessageRepository
+                .findByIdAndChatRoom_Id(targetMessageId, roomId)
+                .orElseThrow(() -> new ChatMessageNotFoundException(customProperties.getError().getMessage(ErrorCode.CHAT_MESSAGE_NOT_FOUND)));
+
+
         List<ChatMessage> olderMessages = chatMessageRepository.findOlderMessagesWithTarget(roomId, targetMessageId, halfLimit);
 
-        // 2. 미래 메시지 (타겟 미포함)
         List<ChatMessage> newerMessages = chatMessageRepository.findNewerMessages(roomId, targetMessageId, halfLimit);
 
-        // 3. olderMessages는 내림차순(DESC)으로 가져왔으므로, 합치기 전에 오름차순(ASC)으로 뒤집어줍니다.
         List<ChatMessage> combined = new ArrayList<>();
         for (int i = olderMessages.size() - 1; i >= 0; i--) {
             combined.add(olderMessages.get(i));
         }
 
-        // 4. 미래 메시지 추가 (이미 ASC 정렬됨)
         combined.addAll(newerMessages);
 
         return combined;

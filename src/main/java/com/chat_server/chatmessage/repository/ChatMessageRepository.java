@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long>, ChatMessageRepositoryCustom {
     @Query("SELECT m FROM ChatMessage m " +
@@ -71,4 +72,6 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long>,
             "ORDER BY id ASC LIMIT :limit", nativeQuery = true)
     List<ChatMessage> findNewerMessages(@Param("roomId") Long roomId, @Param("targetId") Long targetId, @Param("limit") int limit);
 
+
+    Optional<ChatMessage>  findByIdAndChatRoom_Id(Long messageId, Long roomId);
 }
