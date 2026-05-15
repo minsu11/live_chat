@@ -5,9 +5,9 @@ spring:
     username: root
     password: 1234
     dbcp2:
-      max-idle: 5
-      min-idle: 5
-      max-total: 5
+      max-idle: 20
+      min-idle: 20
+      max-total: 20
       test-on-borrow: true
       test-on-return: true
       test-on-create: true

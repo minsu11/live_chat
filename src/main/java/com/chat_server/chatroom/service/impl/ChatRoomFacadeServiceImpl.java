@@ -26,6 +26,7 @@ import com.chat_server.chatroommember.service.ChatRoomMemberService;
 import com.chat_server.common.cursor.ChatMessageCursorCodec;
 import com.chat_server.common.cursor.ChatMessageCursorKey;
 import com.chat_server.common.mapper.ChatListUpsertEventMapper;
+import com.chat_server.common.mapper.ChatMessageResponseMapper;
 import com.chat_server.redis.service.ChatMetadataRedisService;
 import com.chat_server.user.entity.User;
 import com.chat_server.user.service.UserDisplayNameService;
@@ -64,6 +65,7 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
     private final ChatMessageFacadeService chatMessageFacadeService;
     private final ChatMetadataRedisService chatMetadataRedisService;
     private final ObjectMapper objectMapper;
+    private final ChatMessageResponseMapper chatMessageResponseMapper;
 
 
     /**
@@ -591,6 +593,7 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
                     return new ChatMessageResponse(
                             msg.getId(),
                             roomId,
+                            msg.getClientMessageId(),
                             msg.getMessageType().name(),
                             new ChatMessageSenderResponse(msg.getSender().getUuid(), displayNickname, null),
                             msg.getMessageContent(),
@@ -661,20 +664,7 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
             content = displayNickname + content;
         }
 
-        return new ChatMessageResponse(
-                item.messageId(),
-                roomId,
-                item.messageType(),
-                new ChatMessageSenderResponse(
-                        item.senderUuid(),
-                        displayNickname,
-                        item.profileImageUrl()
-                ),
-                content,
-                item.createdAt(),
-                item.senderId().equals(viewerUserId),
-                realUnread
-        );
+        return chatMessageResponseMapper.fromItem(item,roomId,viewerUserId);
     }
     private void broadcastChatListUpsertEvents(Long roomId, Set<Long> participantUserIds) {
         for (Long participantUserId : participantUserIds) {

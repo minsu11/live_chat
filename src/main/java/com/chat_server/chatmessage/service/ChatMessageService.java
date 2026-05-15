@@ -20,15 +20,20 @@ public interface ChatMessageService {
      * @param userId 발신자 ID
      * @param messageType 메시지 타입(TEXT/IMAGE/FILE 등)
      * @param text 메시지 본문
+     * @param clientMessageId 클라이언트가 생성한 메시지 식별자. nullable.
      * @return 저장된 ChatMessage 엔티티
-     *
-     * <p>예외 상황:
-     * <ul>
-     *   <li>발신자 유저가 존재하지 않으면 UserNotFoundException</li>
-     * </ul>
      */
-    ChatMessage createChatMessage(ChatRoom chatRoom, Long userId, String messageType, String text);
+    ChatMessage createChatMessage(
+            ChatRoom chatRoom,
+            Long userId,
+            String messageType,
+            String text,
+            String clientMessageId
+    );
 
+    default ChatMessage createChatMessage(ChatRoom chatRoom, Long userId, String messageType, String text) {
+        return createChatMessage(chatRoom, userId, messageType, text, null);
+    }
     /**
      * 채팅방 진입 시 사용할 커서 기반 메시지 페이지를 조회한다.
      *

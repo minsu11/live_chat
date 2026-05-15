@@ -63,7 +63,29 @@ public class ChatMessage {
     @Column(name = "client_message_id", length = 100)
     private String clientMessageId;
 
-    public static ChatMessage create(ChatRoom chatRoom, User user, String message, MessageType messageType, LocalDateTime createdAt) {
+    public static ChatMessage create(
+            ChatRoom chatRoom,
+            User user,
+            String message,
+            MessageType messageType,
+            LocalDateTime createdAt
+    ) {
+        return create(chatRoom, user, message, messageType, createdAt, null);
+    }
+    /**
+     * 클라이언트 메시지 식별자를 포함해 채팅 메시지를 생성한다.
+     *
+     * <p>clientMessageId는 필수값이 아니다.
+     * 기존 프론트에서는 사용하지 않을 수 있고, 부하 테스트/재전송/idempotency가 필요한 경우에만 사용한다.</p>
+     */
+    public static ChatMessage create(
+            ChatRoom chatRoom,
+            User user,
+            String message,
+            MessageType messageType,
+            LocalDateTime createdAt,
+            String clientMessageId
+    ) {
         ChatMessage chatMessage = new ChatMessage();
         chatMessage.chatRoom = chatRoom;
         chatMessage.sender = user;
@@ -71,32 +93,47 @@ public class ChatMessage {
         chatMessage.messageContent = message;
         chatMessage.deleted = false;
         chatMessage.createdAt = createdAt;
+        chatMessage.clientMessageId = normalizeClientMessageId(clientMessageId);
         return chatMessage;
     }
 
     public static ChatMessage create(ChatRoom chatRoom, User user, String message, String messageType) {
-        MessageType type = null;
-        log.info("message type: {}",messageType);
-        if(messageType.equalsIgnoreCase("text")) {
-            type = MessageType.TEXT;
-        }else if(messageType.equalsIgnoreCase("image")) {
-            type = MessageType.IMAGE;
-        }else if(messageType.equalsIgnoreCase("system")) {
-            type = MessageType.SYSTEM;
-        }
-        else if(messageType.equalsIgnoreCase("emoji")) {
-            type = MessageType.EMOJI;
-        }else if(messageType.equalsIgnoreCase("SYSTEM_LEAVE")){
-            type = MessageType.SYSTEM_LEAVE;
-        }
-        else if(messageType.equalsIgnoreCase("SYSTEM_INVITE")){
-            type = MessageType.SYSTEM_INVITE;
-        }
-        else{
-            type = MessageType.FILE;
-        }
-        return create(chatRoom, user, message, type, LocalDateTime.now());
+        return create(chatRoom, user, message, messageType, null);
     }
 
+    public static ChatMessage create(
+            ChatRoom chatRoom,
+            User user,
+            String message,
+            String messageType,
+            String clientMessageId
+    ) {
+        MessageType type = null;
+        log.info("message type: {}", messageType);
 
+        if (messageType.equalsIgnoreCase("text")) {
+            type = MessageType.TEXT;
+        } else if (messageType.equalsIgnoreCase("image")) {
+            type = MessageType.IMAGE;
+        } else if (messageType.equalsIgnoreCase("system")) {
+            type = MessageType.SYSTEM;
+        } else if (messageType.equalsIgnoreCase("emoji")) {
+            type = MessageType.EMOJI;
+        } else if (messageType.equalsIgnoreCase("SYSTEM_LEAVE")) {
+            type = MessageType.SYSTEM_LEAVE;
+        } else if (messageType.equalsIgnoreCase("SYSTEM_INVITE")) {
+            type = MessageType.SYSTEM_INVITE;
+        } else {
+            type = MessageType.FILE;
+        }
+
+        return create(chatRoom, user, message, type, LocalDateTime.now(), clientMessageId);
+    }
+
+    private static String normalizeClientMessageId(String clientMessageId) {
+        if (clientMessageId == null || clientMessageId.isBlank()) {
+            return null;
+        }
+        return clientMessageId.trim();
+    }
 }

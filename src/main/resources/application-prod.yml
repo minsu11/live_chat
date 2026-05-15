@@ -31,7 +31,25 @@ file:
       - jpeg
       - png
 logging:
+  logback:
+    rolling policy:
+      max-file-size: 10MB
+      max-history: 7
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
   level:
     com.chat_server: info
-    org.springframework.security: info
-    org.hibernate.SQL: info
+    org.springframework.security: warn
+    org.hibernate.SQL: warn
+    io.netty: warn
+    reactor.netty: warn
+    org.apache.http: info
+    org.springframework: debug
+    sun.rmi: info
+    javax.management: info
+    org.springframework.messaging: warn
+    org.springframework.web.socket.messaging: warn
+    org.springframework.messaging.simp.annotation.support.SimpAnnotationMethodMessageHandler: warn
+    org.springframework.messaging.handler.annotation.support: warn
+    org.springframework.messaging.converter: warn
+    org.springframework.messaging.support.ExecutorSubscribableChannel: warn
