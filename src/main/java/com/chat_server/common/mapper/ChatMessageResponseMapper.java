@@ -63,4 +63,27 @@ public class ChatMessageResponseMapper {
                 unread
         );
     }
+
+    public ChatMessageResponse fromItem(
+            ChatMessageItemResponse item,
+            Long roomId,
+            Long viewerUserId
+    ) {
+        return new ChatMessageResponse(
+                item.messageId(),
+                roomId,
+                item.clientMessageId(),
+                item.messageType(),
+                new ChatMessageSenderResponse(
+                        item.senderUuid(),
+                        item.senderNickname(),
+                        item.profileImageUrl()
+                ),
+                item.content(),
+                item.createdAt(),
+                item.senderId().equals(viewerUserId),
+                item.unreadCount()
+        );
+    }
+
 }
