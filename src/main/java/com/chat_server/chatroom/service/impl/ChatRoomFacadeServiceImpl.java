@@ -665,8 +665,8 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
         return new ChatMessageResponse(
                 item.messageId(),
                 roomId,
-                item.messageType(),
                 item.clientMessageId(),
+                item.messageType(),
                 new ChatMessageSenderResponse(
                         item.senderUuid(),
                         displayNickname,
