@@ -74,11 +74,26 @@ public class ChatMessageServiceImpl implements ChatMessageService {
      * </ul>
      */
     @Override
-    public ChatMessage createChatMessage(ChatRoom chatRoom, Long userId, String messageType, String text) {
+    public ChatMessage createChatMessage(
+            ChatRoom chatRoom,
+            Long userId,
+            String messageType,
+            String text,
+            String clientMessageId
+    ) {
         log.info("chat message create chat message start");
+
         User user = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
-        ChatMessage chatMessage = ChatMessage.create(chatRoom, user, text, messageType);
+
+        ChatMessage chatMessage = ChatMessage.create(
+                chatRoom,
+                user,
+                text,
+                messageType,
+                clientMessageId
+        );
+
         return chatMessageRepository.save(chatMessage);
     }
 

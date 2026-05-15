@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 
 @Component
 public class ChatMessageResponseMapper {
+
     public ChatMessageResponse fromItem(
             ChatMessageItemResponse item,
             Long roomId,
@@ -18,6 +19,7 @@ public class ChatMessageResponseMapper {
         return new ChatMessageResponse(
                 item.messageId(),
                 roomId,
+                item.clientMessageId(),
                 item.messageType(),
                 new ChatMessageSenderResponse(
                         item.senderUuid(),
@@ -34,6 +36,7 @@ public class ChatMessageResponseMapper {
     public ChatMessageResponse fromMessage(
             Long messageId,
             Long roomId,
+            String clientMessageId,
             String messageType,
             Long senderId,
             String senderUuid,
@@ -47,6 +50,7 @@ public class ChatMessageResponseMapper {
         return new ChatMessageResponse(
                 messageId,
                 roomId,
+                clientMessageId,
                 messageType,
                 new ChatMessageSenderResponse(
                         senderUuid,
@@ -59,5 +63,4 @@ public class ChatMessageResponseMapper {
                 unread
         );
     }
-
 }

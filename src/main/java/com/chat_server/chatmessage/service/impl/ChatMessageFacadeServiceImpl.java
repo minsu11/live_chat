@@ -89,12 +89,20 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         Long roomId = request.roomId();
         String messageType = request.messageType().name();
         String message = request.messageContent();
+        String clientMessageId = normalizeClientMessageId(request.clientMessageId());
 
         ChatRoom room = chatRoomQueryService.getRoomOrThrow(roomId);
         String memberProfileUrl = userProfileImageService.getUserProfileUrl(userId);
 
         validateSendPermission(room, userId);
-        ChatMessage chatMessage = chatMessageService.createChatMessage(room, userId, messageType, message);
+
+        ChatMessage chatMessage = chatMessageService.createChatMessage(
+                room,
+                userId,
+                messageType,
+                message,
+                clientMessageId
+        );
         chatMetadataRedisService.markAsRead(roomId, userId, chatMessage.getId(), LocalDateTime.now());
 
         connectAttachmentIfNeeded(request, chatMessage, userId);
@@ -180,15 +188,16 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
             ChatMessageResponse response = new ChatMessageResponse(
                     chatMessage.getId(),
                     roomId,
+                    chatMessage.getClientMessageId(), // 시스템 메시지는 보통 null
                     messageType.name(),
                     new ChatMessageSenderResponse(
                             chatMessage.getSender().getUuid(),
                             displayNickname,
-                            null // 시스템 메시지는 프로필 이미지 생략 가능
+                            null
                     ),
                     finalContent,
                     chatMessage.getCreatedAt(),
-                    userId.equals(receiverUserId), // 본인 여부
+                    userId.equals(receiverUserId),
                     0
             );
 
@@ -291,6 +300,7 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         ChatMessageResponse response = chatMessageResponseMapper.fromMessage(
                 chatMessage.getId(),
                 roomId,
+                chatMessage.getClientMessageId(),
                 chatMessage.getMessageType().name(),
                 senderId,
                 chatMessage.getSender().getUuid(),
@@ -304,6 +314,11 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         log.debug("createResponseForReceiver return - response: {}", response);
         return response;
     }
-
+    private String normalizeClientMessageId(String clientMessageId) {
+        if (clientMessageId == null || clientMessageId.isBlank()) {
+            return null;
+        }
+        return clientMessageId.trim();
+    }
 
 }

@@ -82,6 +82,7 @@ public class ChatMessageRepositoryCustomImpl extends QuerydslRepositorySupport i
                 .select(Projections.constructor(
                         ChatMessageItemResponse.class,
                         qChatMessage.id,
+                        qChatMessage.clientMessageId,
                         qChatMessage.sender.id,
                         qChatMessage.sender.uuid,
                         qChatMessage.sender.nickname,
@@ -141,6 +142,7 @@ public class ChatMessageRepositoryCustomImpl extends QuerydslRepositorySupport i
                 .select(Projections.constructor(
                         ChatMessageItemResponse.class,
                         qChatMessage.id,
+                        qChatMessage.clientMessageId,
                         qChatMessage.sender.id,
                         qChatMessage.sender.uuid,
                         qChatMessage.sender.nickname,
