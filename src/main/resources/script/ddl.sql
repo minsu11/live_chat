@@ -413,3 +413,21 @@ create table if not exists user_profile_image
 create index idx_user_profile_image_current
     on user_profile_image (user_profile_id, is_current);
 
+CREATE TABLE if not exists oauth_account (
+                               id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                               user_id BIGINT NOT NULL,
+                               provider VARCHAR(30) NOT NULL,
+                               provider_user_id VARCHAR(100) NOT NULL,
+                               email VARCHAR(255) NULL,
+                               nickname VARCHAR(100) NULL,
+                               profile_image_url VARCHAR(500) NULL,
+                               created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                               updated_at DATETIME NULL,
+
+                               CONSTRAINT fk_oauth_account_user
+                                   FOREIGN KEY (user_id) REFERENCES user(id)
+                                       ON DELETE CASCADE,
+
+                               CONSTRAINT uk_oauth_provider_user
+                                   UNIQUE (provider, provider_user_id)
+);
