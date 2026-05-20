@@ -1,6 +1,7 @@
 package com.chat_server.user.entity;
 
 import com.chat_server.gender.entity.Gender;
+import com.chat_server.logintype.entity.LoginType;
 import com.chat_server.user.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -29,15 +30,24 @@ public class User {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
             name = "gender_id",
-            nullable = false,
+            nullable = true,
             foreignKey = @ForeignKey(name = "fk_user_gender")
     )
     private Gender gender;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name= "login_type_id",
+            nullable = false,
+            foreignKey = @ForeignKey(name = "fk_user_login_type")
+    )
+    private LoginType loginType;
+
+
     @Column(name = "input_id", nullable = false, length = 30)
     private String inputId;
 
-    @Column(name = "input_password", nullable = false, length = 100)
+    @Column(name = "input_password", nullable = true, length = 100)
     private String inputPassword;
 
     @Column(name = "name", nullable = false, length = 30)
@@ -60,7 +70,7 @@ public class User {
     @Column(name = "login_lasted_at")
     private LocalDateTime loginLastedAt;
 
-    @Column(name= "age", nullable = false)
+    @Column(name= "age", nullable = true)
     private Integer age;
 
 

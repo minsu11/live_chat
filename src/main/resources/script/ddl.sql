@@ -71,26 +71,37 @@ create table if not exists gender
 create index idx_gender_name
     on gender (name);
 
+create table if not exists login_type(
+  id        int auto_increment,
+  name      varchar(15) not null,
+created_at  datetime    default CURRENT_TIMESTAMP not null,
+    constraint pk_login_type primary key (id)
+);
+
 create table if not exists user
 (
     id              bigint auto_increment
         primary key,
-    gender_id       int                                   not null,
+    gender_id       int                                   null,
+    login_type_id   int                                   not null DEFAULT 1,
     input_id        varchar(30)                           not null,
-    input_password  varchar(100)                          not null,
-    age             int                                   not null,
+    input_password  varchar(100)                          null,
+    age             int                                   null,
     name            varchar(30)                           not null,
     nickname        varchar(30)                           not null,
     uuid            varchar(36)                           not null,
     status          varchar(20) default 'ACTIVE'          not null,
     created_at      datetime    default CURRENT_TIMESTAMP not null,
     login_lasted_at datetime                              null,
+
     constraint uk_user_input_id
         unique (input_id),
     constraint uk_user_uuid
         unique (uuid),
     constraint fk_user_gender
-        foreign key (gender_id) references gender (id)
+        foreign key (gender_id) references gender (id),
+    constraint fk_user_login_type
+        foreign key (login_type_id) references login_type(id)
 );
 
 create table if not exists chat_message
