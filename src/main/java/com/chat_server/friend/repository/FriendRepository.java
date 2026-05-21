@@ -37,4 +37,6 @@ public interface FriendRepository extends JpaRepository<Friend, Long>, FriendRep
             @Param("userId") Long userId,
             @Param("friendUserIds") List<Long> friendUserIds
     );
+
+    boolean existsByUser_IdAndFriendUser_Id(Long userId, Long friendUserId);
 }

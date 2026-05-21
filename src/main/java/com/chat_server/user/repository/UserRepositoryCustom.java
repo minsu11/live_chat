@@ -23,6 +23,7 @@ public interface UserRepositoryCustom {
     Optional<AuthenticatedUser> authorizeUserByUserId(String userId, String roleName);
     SearchUserResponse getSearchUserByUserId(Long userId, String searchUserId);
     Optional<Long> getUserIdByUserUuid(String userUuid);
-    Optional<String> resolveUserDisplayName(Long viewerId, Long targetId);
+    SearchUserResponse searchUserByFriendCodeOrInputId(Long viewerUserId, String keyword);
+
 }
 

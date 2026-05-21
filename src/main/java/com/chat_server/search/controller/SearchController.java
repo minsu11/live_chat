@@ -5,6 +5,7 @@ import com.chat_server.search.dto.request.SearchUserRequest;
 import com.chat_server.search.dto.response.SearchUserResponse;
 import com.chat_server.search.service.SearchService;
 import com.chat_server.user.dto.response.AuthenticatedUser;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -28,12 +29,12 @@ public class SearchController {
     @PostMapping("/users")
     public ResponseEntity<ApiResponse<SearchUserResponse>> searchUser(
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
-        @RequestBody SearchUserRequest request
+        @Valid @RequestBody SearchUserRequest request
     ){
         log.info("search controller");
-        log.info("id : {}", request.userId());
+        log.info("id : {}", request.keyword());
         Long userId = authenticatedUser.userId();
-        SearchUserResponse searchUserResponse = searchService.searchUserByUserId(userId, request);
+        SearchUserResponse searchUserResponse = searchService.searchUser(userId, request);
         log.info("search response: {}", searchUserResponse);
         ApiResponse<SearchUserResponse> response = ApiResponse.success(200, "검색에 성공했습니다.",searchUserResponse);
         log.info("response : {}", response.getData());

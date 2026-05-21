@@ -17,4 +17,6 @@ public interface UserRepository extends JpaRepository<User, Long>, UserRepositor
     boolean existsByInputId(String inputId);
 
     List<User> findAllByUuidIn(List<String> uuids);
+
+    boolean existsByFriendCode(String friendCode);
 }

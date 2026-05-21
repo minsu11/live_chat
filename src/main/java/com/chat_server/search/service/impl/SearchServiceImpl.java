@@ -12,19 +12,48 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
-
 @Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class SearchServiceImpl implements SearchService {
-    // todo 추 후 정책이 생기면 별도로 User에 차단, 비활성 등등의 공통 서비스 만들어야함
     private final UserRepository userRepository;
 
-    // null이 아닌 빈 리스트 반환
     @Override
     @Transactional(readOnly = true)
-    public SearchUserResponse searchUserByUserId(Long userId, SearchUserRequest request) {
-         return userRepository.getSearchUserByUserId(userId, request.userId());
+    public SearchUserResponse searchUser(Long userId, SearchUserRequest request) {
+        String keyword = normalizeSearchKeyword(request.keyword());
+
+        SearchUserResponse response = userRepository.searchUserByFriendCodeOrInputId(userId, keyword);
+
+        if (response == null) {
+            throw new UserNotFoundException("사용자를 찾을 수 없습니다.");
+        }
+
+        return response;
+    }
+
+    private String normalizeSearchKeyword(String keyword) {
+        if (keyword == null) {
+            return "";
+        }
+
+        String trimmed = keyword.trim();
+
+        if (trimmed.isBlank()) {
+            return "";
+        }
+
+        String compact = trimmed
+                .replace(" ", "")
+                .replace("-", "")
+                .toUpperCase();
+
+        if (compact.startsWith("CTK")) {
+            String codeBody = compact.substring(3);
+            return "CTK-" + codeBody;
+        }
+
+        return trimmed;
     }
 }

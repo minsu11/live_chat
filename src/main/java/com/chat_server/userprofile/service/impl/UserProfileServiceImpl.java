@@ -83,7 +83,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     private UserMyProfileDetailResponse getProfileDetail(Long userId) {
         log.info("private method getProfileDetail");
         return userProfileRepository.findProfileDetail(userId)
-                .orElse(new UserMyProfileDetailResponse("","",""));
+                .orElse(new UserMyProfileDetailResponse("","","","",""));
 
     }
 

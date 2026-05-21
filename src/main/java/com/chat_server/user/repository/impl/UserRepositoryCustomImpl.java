@@ -107,16 +107,36 @@ public class UserRepositoryCustomImpl extends QuerydslRepositorySupport implemen
         );
     }
 
+
     @Override
-    public Optional<String> resolveUserDisplayName(Long viewerId, Long targetId) {
-        return Optional.empty();
-//        return Optional.ofNullable(
-//            from(qUser)
-//                .leftJoin(qFriend).on(qFriend.user.id.eq(viewerId).and(qFriend.friend.id.eq(targetId)))
-//                .select(q)
-//                .where(qUser.id.eq(viewerId).and(qFriend.friend.id.eq(targetId)))
-//                .fetchOne()
-//        );
+    public SearchUserResponse searchUserByFriendCodeOrInputId(Long viewerUserId, String keyword) {
+        return from(qUser)
+                .select(Projections.constructor(
+                        SearchUserResponse.class,
+                        qUser.uuid,
+                        qUser.nickname,
+                        qUser.friendCode,
+                        qUserProfileImage.imageUrl,
+                        qFriend.id.isNotNull(),
+                        qUser.id.eq(viewerUserId)
+                ))
+                .innerJoin(qUserProfile).on(qUserProfile.user.eq(qUser))
+                .leftJoin(qUserProfileImage).on(
+                        qUserProfileImage.userProfile.eq(qUserProfile)
+                                .and(qUserProfileImage.current.isTrue())
+                )
+                .leftJoin(qFriend).on(
+                        qFriend.user.id.eq(viewerUserId)
+                                .and(qFriend.friendUser.eq(qUser))
+                )
+                .where(
+                        qUser.status.eq(UserStatus.ACTIVE)
+                                .and(
+                                        qUser.friendCode.eq(keyword)
+                                                .or(qUser.inputId.eq(keyword))
+                                )
+                )
+                .fetchOne();
     }
 
 

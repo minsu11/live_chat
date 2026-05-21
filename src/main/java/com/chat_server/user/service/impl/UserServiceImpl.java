@@ -26,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -45,6 +46,13 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
+    private static final String FRIEND_CODE_PREFIX = "CTK-";
+    private static final String FRIEND_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    private static final int FRIEND_CODE_RANDOM_LENGTH = 8;
+    private static final int FRIEND_CODE_MAX_RETRY = 10;
+
+    private final SecureRandom secureRandom = new SecureRandom();
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final GenderRepository genderRepository;
@@ -73,6 +81,7 @@ public class UserServiceImpl implements UserService {
                 .age(registerRequest.age())
                 .name(registerRequest.name())
                 .nickname(registerRequest.nickName())
+                .friendCode(generateUniqueFriendCode())
                 .status(UserStatus.ACTIVE)
                 .gender(gender)
                 .loginType(loginType)
@@ -128,5 +137,27 @@ public class UserServiceImpl implements UserService {
         return !userRepository.existsByInputId(inputId);
     }
 
+    private String generateUniqueFriendCode() {
+        for (int i = 0; i < FRIEND_CODE_MAX_RETRY; i++) {
+            String friendCode = generateFriendCode();
+
+            if (!userRepository.existsByFriendCode(friendCode)) {
+                return friendCode;
+            }
+        }
+
+        throw new IllegalStateException("친구 코드를 생성하지 못했습니다.");
+    }
+
+    private String generateFriendCode() {
+        StringBuilder builder = new StringBuilder(FRIEND_CODE_PREFIX);
+
+        for (int i = 0; i < FRIEND_CODE_RANDOM_LENGTH; i++) {
+            int index = secureRandom.nextInt(FRIEND_CODE_CHARS.length());
+            builder.append(FRIEND_CODE_CHARS.charAt(index));
+        }
+
+        return builder.toString();
+    }
 
 }
