@@ -1,7 +1,6 @@
 package com.chat_server.userprofile.service;
 
-import com.chat_server.userprofile.dto.request.UserProfileUpdateRequest;
-import com.chat_server.userprofile.dto.response.UserMyProfileDetailResponse;
+import com.chat_server.userprofile.dto.response.UserProfileDetailResponse;
 import com.chat_server.userprofile.dto.response.UserMyProfileSummaryResponse;
 
 public interface UserProfileService {
@@ -17,9 +16,12 @@ public interface UserProfileService {
      * @param userId 유저 아이디
      * @return 상세 정보 DTO
      */
-    UserMyProfileDetailResponse getMyProfileDetail(Long userId);
-    UserMyProfileDetailResponse getMyProfileDetail(String userId);
+    UserProfileDetailResponse getMyProfileDetail(Long userId);
+
     void updateStateMessage(Long userId, String message);
 
     void createUserProfile(String userUuid);
+
+    UserProfileDetailResponse getProfileDetailByUuid(Long viewerId, String targetUserUuid);
+
 }
