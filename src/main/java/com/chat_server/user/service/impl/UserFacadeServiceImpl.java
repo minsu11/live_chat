@@ -1,6 +1,8 @@
 package com.chat_server.user.service.impl;
 
+import com.chat_server.user.dto.request.InputIdCheckRequest;
 import com.chat_server.user.dto.request.UserRegisterRequest;
+import com.chat_server.user.dto.response.InputIdCheckResponse;
 import com.chat_server.user.service.UserFacadeService;
 import com.chat_server.user.service.UserService;
 import com.chat_server.userprofile.service.UserProfileService;
@@ -28,5 +30,11 @@ public class UserFacadeServiceImpl implements UserFacadeService {
         userProfileService.createUserProfile(userUuid);
         log.info("UserFacadeServiceImpl signUp completed");
 
+    }
+
+    @Override
+    public InputIdCheckResponse checkInputIdAvailability(InputIdCheckRequest inputIdCheckRequest) {
+        String inputId = inputIdCheckRequest.inputId();
+        return new InputIdCheckResponse(userService.validateUniqueInputId(inputId));
     }
 }

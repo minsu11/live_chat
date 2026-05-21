@@ -1,5 +1,9 @@
 package com.chat_server.user.service.impl;
 
+import com.chat_server.common.dto.exception.NotFoundException;
+import com.chat_server.logintype.entity.LoginType;
+import com.chat_server.logintype.enums.LoginTypeEnum;
+import com.chat_server.logintype.repository.LoginTypeRepository;
 import com.chat_server.security.dto.UserPrincipal;
 import com.chat_server.gender.entity.Gender;
 import com.chat_server.gender.exception.GenderNotFoundException;
@@ -45,6 +49,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final GenderRepository genderRepository;
     private final UserProfileRepository userProfileRepository;
+    private final LoginTypeRepository loginTypeRepository;
 
 
     @Override
@@ -59,6 +64,9 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new GenderNotFoundException("gender not found"));
         String password = passwordEncoder.encode(registerRequest.password());
         String userUuid = UUID.randomUUID().toString();
+        LoginType loginType = loginTypeRepository.findByName(LoginTypeEnum.LOCAL.name())
+                .orElseThrow(NotFoundException::new);
+
         User user = User.builder()
                 .inputId(registerRequest.id())
                 .inputPassword(password)
@@ -67,6 +75,7 @@ public class UserServiceImpl implements UserService {
                 .nickname(registerRequest.nickName())
                 .status(UserStatus.ACTIVE)
                 .gender(gender)
+                .loginType(loginType)
                 .createdAt(LocalDateTime.now())
                 .uuid(userUuid)
                 .build();
@@ -112,6 +121,11 @@ public class UserServiceImpl implements UserService {
     @Override
     public User getUserById(Long userId) {
         return userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+    }
+
+    @Override
+    public boolean validateUniqueInputId(String inputId) {
+        return !userRepository.existsByInputId(inputId);
     }
 
 

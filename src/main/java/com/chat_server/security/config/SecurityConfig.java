@@ -54,6 +54,7 @@ public class SecurityConfig {
                                         authorizeRequests.requestMatchers(
                                             "/api/v1/users/login",
                                             "/api/v1/users/register",
+                                            "/api/v1/users/input-id/check",
                                             // SockJS/WS 관련 - 전부 허용 (별도 STOMP 인증에서 처리)
                                             "/api/ws/**",
                                             "/api/ws-chat/**",

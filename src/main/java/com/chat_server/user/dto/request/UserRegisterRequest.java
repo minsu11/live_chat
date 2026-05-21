@@ -41,8 +41,6 @@ public record UserRegisterRequest(@NotBlank
                                   @NotBlank
                                   String gender,
 
-                                  String email,
-
                                   String  birth,
                                   String phoneNumber
                                   ) {
