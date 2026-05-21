@@ -2,7 +2,8 @@
 
 insert into `gender` (`name`) values('남자');
 insert into `gender` (`name`) values('여자');
-
+insert login_type(`name`) values ("LOCAL");
+insert login_type(`name`) values("OAUTH");
 #
 # -- 임시 데이터
 # INSERT INTO `user`

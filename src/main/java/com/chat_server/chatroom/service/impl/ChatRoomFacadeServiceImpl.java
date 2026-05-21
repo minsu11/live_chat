@@ -164,11 +164,15 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
                     // Map에 커스텀 닉네임이 있으면 쓰고, 없으면 원래 닉네임(senderNickname) 사용
                     String displayNickname = displayNameCache.getOrDefault(item.senderId(), item.senderNickname());
                     log.info("item id: {}, item type: {}",item.messageId(), item.messageType());
-                    long readCount = memberReadMap.values().stream()
-                            .filter(lastReadId -> lastReadId >= item.messageId())
-                            .count();
-                    int realUnread = Math.max(0, memberIds.size() - (int)readCount);
-                    return toChatMessageResponse(item, roomId, userId, displayNickname, realUnread);
+                    int realUnread = calculateUnreadCount(item, memberIds, memberReadMap);
+
+                    return toChatMessageResponse(
+                            item,
+                            roomId,
+                            userId,
+                            displayNickname,
+                            realUnread
+                    );
                 })
                 .sorted((a, b) -> a.createdAt().equals(b.createdAt())
                         ? Long.compare(a.messageId(), b.messageId())
@@ -268,11 +272,15 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
                     // Map에 커스텀 닉네임이 있으면 쓰고, 없으면 원래 닉네임(senderNickname) 사용
                     String displayNickname = customNameMap.getOrDefault(item.senderId(), item.senderNickname());
                     log.info("item id: {}, item type: {}",item.messageId(), item.messageType());
-                    long readCount = memberReadMap.values().stream()
-                            .filter(lastReadId -> lastReadId >= item.messageId())
-                            .count();
-                    int realUnread = Math.max(0, senderIds.size() - (int)readCount);
-                    return toChatMessageResponse(item, roomId, userId, displayNickname, realUnread);
+                    int realUnread = calculateUnreadCount(item, memberIds, memberReadMap);
+
+                    return toChatMessageResponse(
+                            item,
+                            roomId,
+                            userId,
+                            displayNickname,
+                            realUnread
+                    );
                 })
                 .sorted((a, b) -> a.createdAt().equals(b.createdAt())
                         ? Long.compare(a.messageId(), b.messageId())
@@ -454,46 +462,6 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
                 .toList();
     }
 
-//    @Override
-//    public void inviteMembers(Long roomId, Long inviterId, List<String> inviteeUuids) {
-//        chatRoomQueryService.validateMemberOrThrow(roomId, inviterId);
-//        ChatRoom chatRoom = chatRoomQueryService.getRoomOrThrow(roomId);
-//
-//        chatRoomMemberService.addMembers(roomId,inviteeUuids, chatRoom);
-//
-//        List<User> invitees = userService.getUserIdByUserUuids(inviteeUuids);
-//        List<Long> inviteeIds = invitees.stream().map(User::getId).toList();
-//
-//        chatListService.ensureMembershipsBulk(roomId,inviteeIds);
-//
-//        User inviter = userService.getUserById(inviterId);
-//
-//
-//        Map<String, Object> payload = new HashMap<>();
-//
-//        payload.put("inviter", Map.of(
-//                "uuid",inviter.getUuid(),
-//                "name", inviter.getNickname()
-//        ) );
-//
-//        // 2-2. 피초대자들 정보 리스트 (UUID + 원래 닉네임)
-//        List<Map<String, String>> inviteeInfos = invitees.stream()
-//                .map(u -> Map.of("uuid", u.getUuid(), "name", u.getNickname()))
-//                .toList();
-//        payload.put("invitees", inviteeInfos);
-//
-//        // 3. JSON 문자열로 직렬화 (ObjectMapper 활용)
-//        String content = "";
-//        try {
-//            // 💡 클래스 상단에 private final ObjectMapper objectMapper; 주입 필요
-//            content = objectMapper.writeValueAsString(payload);
-//        } catch (JsonProcessingException e) {
-//            log.error("시스템 초대 메시지 JSON 변환 실패", e);
-//            // 에러 발생 시 Fallback으로 단순 문자열 저장
-//            content = String.format("{\"fallback\": \"%s님이 %d명을 초대했습니다.\"}", inviter.getNickname(), invitees.size());
-//        }
-//        chatMessageFacadeService.saveAndBroadcastSystemMessage(roomId, inviterId, MessageType.SYSTEM_INVITE, content);
-//    }
     @Override
     public void inviteMembers(Long roomId, Long inviterId, List<String> inviteeUuids) {
         // 1. 초대자 권한 검증 및 방 정보 조회
@@ -576,7 +544,7 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
                 .distinct().toList();
         Map<Long, String> displayNameCache = userDisplayNameService.resolveDisplayNamesBulk(userId, senderIds);
 
-        // 3. 안읽음 카운트 처리를 위한 Redis 조회 (세인님의 기존 로직 재사용)
+        // 3. 안읽음 카운트 처리를 위한 Redis 조회
         List<Long> memberIds = chatRoomMemberService.getRoomMemberIdsByRoomId(roomId);
         Map<Long, Long> memberReadMap = chatMetadataRedisService.getAllMembersLastReadId(roomId, memberIds);
 
@@ -652,6 +620,8 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
     ) {
         return toChatMessageResponse(item, roomId, viewerUserId, displayNickname, item.unreadCount());
     }
+
+
     private ChatMessageResponse toChatMessageResponse(
             ChatMessageItemResponse item,
             Long roomId,
@@ -660,11 +630,19 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
             int realUnread
     ) {
         String content = item.content();
-        if(item.messageType().equalsIgnoreCase("SYSTEM_LEAVE")){
+
+        if (item.messageType().equalsIgnoreCase("SYSTEM_LEAVE")) {
             content = displayNickname + content;
         }
 
-        return chatMessageResponseMapper.fromItem(item,roomId,viewerUserId);
+        return chatMessageResponseMapper.fromItem(
+                item,
+                roomId,
+                viewerUserId,
+                displayNickname,
+                content,
+                realUnread
+        );
     }
     private void broadcastChatListUpsertEvents(Long roomId, Set<Long> participantUserIds) {
         for (Long participantUserId : participantUserIds) {
@@ -691,5 +669,23 @@ public class ChatRoomFacadeServiceImpl implements ChatRoomFacadeService {
         }
 
         return trimmed;
+    }
+
+    private int calculateUnreadCount(
+            ChatMessageItemResponse item,
+            List<Long> memberIds,
+            Map<Long, Long> memberReadMap
+    ) {
+        long recipientCount = memberIds.stream()
+                .filter(memberId -> !memberId.equals(item.senderId()))
+                .count();
+
+        long readRecipientCount = memberReadMap.entrySet().stream()
+                .filter(entry -> !entry.getKey().equals(item.senderId()))
+                .filter(entry -> entry.getValue() != null)
+                .filter(entry -> entry.getValue() >= item.messageId())
+                .count();
+
+        return Math.max(0, (int) (recipientCount - readRecipientCount));
     }
 }

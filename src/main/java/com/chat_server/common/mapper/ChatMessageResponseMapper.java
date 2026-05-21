@@ -67,7 +67,10 @@ public class ChatMessageResponseMapper {
     public ChatMessageResponse fromItem(
             ChatMessageItemResponse item,
             Long roomId,
-            Long viewerUserId
+            Long viewerUserId,
+            String displayNickname,
+            String content,
+            int unread
     ) {
         return new ChatMessageResponse(
                 item.messageId(),
@@ -76,13 +79,13 @@ public class ChatMessageResponseMapper {
                 item.messageType(),
                 new ChatMessageSenderResponse(
                         item.senderUuid(),
-                        item.senderNickname(),
+                        displayNickname,
                         item.profileImageUrl()
                 ),
-                item.content(),
+                content,
                 item.createdAt(),
                 item.senderId().equals(viewerUserId),
-                item.unreadCount()
+                unread
         );
     }
 

@@ -32,4 +32,6 @@ public interface UserService {
     String getUuidByUserId(Long userId);
 
     User getUserById(Long userId);
+
+    boolean validateUniqueInputId(String inputId);
 }
