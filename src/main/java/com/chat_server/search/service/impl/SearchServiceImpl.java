@@ -10,13 +10,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
-import java.util.List;
 @Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class SearchServiceImpl implements SearchService {
+
+    private static final String FRIEND_CODE_PREFIX = "CTK-";
+    private static final int FRIEND_CODE_BODY_LENGTH = 8;
+    private static final String FRIEND_CODE_BODY_PATTERN = "^[A-Z0-9]{8}$";
+
     private final UserRepository userRepository;
 
     @Override
@@ -49,11 +52,25 @@ public class SearchServiceImpl implements SearchService {
                 .replace("-", "")
                 .toUpperCase();
 
-        if (compact.startsWith("CTK")) {
-            String codeBody = compact.substring(3);
-            return "CTK-" + codeBody;
+        if (isFriendCodeLike(compact)) {
+            return FRIEND_CODE_PREFIX + compact.substring(3);
         }
 
         return trimmed;
+    }
+
+    private boolean isFriendCodeLike(String compactKeyword) {
+        if (compactKeyword == null) {
+            return false;
+        }
+
+        if (!compactKeyword.startsWith("CTK")) {
+            return false;
+        }
+
+        String body = compactKeyword.substring(3);
+
+        return body.length() == FRIEND_CODE_BODY_LENGTH
+                && body.matches(FRIEND_CODE_BODY_PATTERN);
     }
 }
