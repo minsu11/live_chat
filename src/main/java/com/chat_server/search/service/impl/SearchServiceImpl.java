@@ -10,21 +10,67 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
-import java.util.List;
-
 @Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class SearchServiceImpl implements SearchService {
-    // todo 추 후 정책이 생기면 별도로 User에 차단, 비활성 등등의 공통 서비스 만들어야함
+
+    private static final String FRIEND_CODE_PREFIX = "CTK-";
+    private static final int FRIEND_CODE_BODY_LENGTH = 8;
+    private static final String FRIEND_CODE_BODY_PATTERN = "^[A-Z0-9]{8}$";
+
     private final UserRepository userRepository;
 
-    // null이 아닌 빈 리스트 반환
     @Override
     @Transactional(readOnly = true)
-    public SearchUserResponse searchUserByUserId(Long userId, SearchUserRequest request) {
-         return userRepository.getSearchUserByUserId(userId, request.userId());
+    public SearchUserResponse searchUser(Long userId, SearchUserRequest request) {
+        String keyword = normalizeSearchKeyword(request.keyword());
+
+        SearchUserResponse response = userRepository.searchUserByFriendCodeOrInputId(userId, keyword);
+
+        if (response == null) {
+            throw new UserNotFoundException("사용자를 찾을 수 없습니다.");
+        }
+
+        return response;
+    }
+
+    private String normalizeSearchKeyword(String keyword) {
+        if (keyword == null) {
+            return "";
+        }
+
+        String trimmed = keyword.trim();
+
+        if (trimmed.isBlank()) {
+            return "";
+        }
+
+        String compact = trimmed
+                .replace(" ", "")
+                .replace("-", "")
+                .toUpperCase();
+
+        if (isFriendCodeLike(compact)) {
+            return FRIEND_CODE_PREFIX + compact.substring(3);
+        }
+
+        return trimmed;
+    }
+
+    private boolean isFriendCodeLike(String compactKeyword) {
+        if (compactKeyword == null) {
+            return false;
+        }
+
+        if (!compactKeyword.startsWith("CTK")) {
+            return false;
+        }
+
+        String body = compactKeyword.substring(3);
+
+        return body.length() == FRIEND_CODE_BODY_LENGTH
+                && body.matches(FRIEND_CODE_BODY_PATTERN);
     }
 }

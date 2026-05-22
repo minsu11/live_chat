@@ -1,6 +1,8 @@
 package com.chat_server.friend.service.impl;
 
 import com.chat_server.common.cursor.CursorCodec;
+import com.chat_server.common.dto.exception.ConflictException;
+import com.chat_server.common.dto.exception.ValidationException;
 import com.chat_server.friend.dto.request.UserFriendRegisterRequest;
 import com.chat_server.friend.dto.response.CursorPageResponse;
 import com.chat_server.common.cursor.CursorKey;
@@ -33,38 +35,24 @@ public class FriendServiceImpl implements FriendService {
     @Override
     @Transactional(readOnly = true)
     public CursorPageResponse<UserFriendResponse> getFriendsByCursor(Long userId, int limit, @Nullable String cursor) {
-        log.info("friend service start");
         if (limit <= 0 || limit > 200) {
-            log.info("limit 가드레일");
             limit = 50;
-        }// 가드레일
-
-        log.info("decoded before");
-        CursorKey decoded = CursorCodec.decode(cursor);
-        log.info("decoded after");
-        log.info("repository before");
-        Slice<UserFriendResponse> slice = friendRepository.getFriendsWithProfileByCursor(userId, limit, decoded);
-        log.info("repository after");
-        // next 선언
-        String next = null;
-        log.info("next null ");
-        if (slice.hasNext() && !slice.getContent().isEmpty()) {
-            log.info("slice ");
-            UserFriendResponse last = slice.getContent().get(slice.getContent().size() - 1);
-            next = CursorCodec.encode(last.nickName().toLowerCase(Locale.ROOT), last.uuid());
-            log.info("next: {}",next);
         }
 
-        log.info("return ");
+        CursorKey decoded = CursorCodec.decode(cursor);
+
+        Slice<UserFriendResponse> slice = friendRepository.getFriendsWithProfileByCursor(userId, limit, decoded);
+        String next = null;
+        if (slice.hasNext() && !slice.getContent().isEmpty()) {
+            UserFriendResponse last = slice.getContent().get(slice.getContent().size() - 1);
+            next = CursorCodec.encode(last.nickName().toLowerCase(Locale.ROOT), last.uuid());
+        }
         return new CursorPageResponse<>(slice.getContent(), next, slice.hasNext());
     }
 
     @Override
     public void saveFriend(UserFriendRegisterRequest registerRequest, Long userId) {
-
         String friendId = registerRequest.friendId();
-        log.info("friend id: {}", friendId);
-        log.info("friend id: {}", userId);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
@@ -73,6 +61,14 @@ public class FriendServiceImpl implements FriendService {
         // todo 검색 방법에 대해서도 고민을 해봐야할듯
         User friend = userRepository.findByUuid(friendId)
                 .orElseThrow(UserNotFoundException::new);
+
+        if (user.getId().equals(friend.getId())) {
+            throw new ValidationException("자기 자신은 친구로 추가할 수 없습니다.");
+        }
+
+        if (friendRepository.existsByUser_IdAndFriendUser_Id(user.getId(), friend.getId())) {
+            throw new ConflictException("이미 친구로 추가된 사용자입니다.");
+        }
 
         Friend registerFriend = Friend.builder()
                 .user(user)

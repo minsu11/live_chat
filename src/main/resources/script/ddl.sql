@@ -89,6 +89,7 @@ create table if not exists user
     age             int                                   null,
     name            varchar(30)                           not null,
     nickname        varchar(30)                           not null,
+    friend_code     varchar(20)                           not null,
     uuid            varchar(36)                           not null,
     status          varchar(20) default 'ACTIVE'          not null,
     created_at      datetime    default CURRENT_TIMESTAMP not null,
@@ -98,6 +99,8 @@ create table if not exists user
         unique (input_id),
     constraint uk_user_uuid
         unique (uuid),
+    constraint uk_user_friend_code
+        unique (friend_code),
     constraint fk_user_gender
         foreign key (gender_id) references gender (id),
     constraint fk_user_login_type

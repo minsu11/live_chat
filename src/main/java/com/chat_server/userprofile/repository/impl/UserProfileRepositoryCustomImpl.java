@@ -1,24 +1,30 @@
 package com.chat_server.userprofile.repository.impl;
 
+import com.chat_server.friend.entity.QFriend;
 import com.chat_server.user.entity.QUser;
+import com.chat_server.user.enums.UserStatus;
+import com.chat_server.userprofile.dto.response.UserProfileDetailResponse;
 import com.chat_server.userprofile.dto.response.UserMyProfileSummaryResponse;
-import com.chat_server.userprofile.dto.response.UserMyProfileDetailResponse;
 import com.chat_server.userprofile.enrtity.QUserProfile;
 import com.chat_server.userprofile.enrtity.UserProfile;
 import com.chat_server.userprofile.repository.UserProfileRepositoryCustom;
 import com.chat_server.userprofileImage.entity.QUserProfileImage;
 import com.querydsl.core.types.Projections;
-import java.util.Optional;
+import com.querydsl.core.types.dsl.Expressions;
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
 
+import java.util.Optional;
+
 public class UserProfileRepositoryCustomImpl extends QuerydslRepositorySupport implements UserProfileRepositoryCustom {
+
     private final QUserProfile qUserProfile = QUserProfile.userProfile;
     private final QUser qUser = QUser.user;
     private final QUserProfileImage qUserProfileImage = QUserProfileImage.userProfileImage;
+    private final QFriend qFriend = QFriend.friend;
+
     public UserProfileRepositoryCustomImpl() {
         super(UserProfile.class);
     }
-
 
     @Override
     public Optional<UserMyProfileSummaryResponse> findMyProfile(Long id) {
@@ -33,34 +39,86 @@ public class UserProfileRepositoryCustomImpl extends QuerydslRepositorySupport i
                                 UserMyProfileSummaryResponse.class,
                                 qUser.uuid,
                                 qUser.nickname,
+                                qUser.friendCode,
                                 qUserProfile.stateMessage,
                                 qUserProfileImage.imageUrl
                         ))
-                        .where(qUser.id.eq(id))
+                        .where(
+                                qUser.id.eq(id)
+                                        .and(qUser.status.eq(UserStatus.ACTIVE))
+                        )
                         .fetchOne()
         );
     }
 
-
-    // 쿼리 관점으로 from 기준을 잡으면 될듯.
-    // user profile 무조건 존재한다고 가정 하면은. user profile 가능, 그렇지만 무조건 존재하지 않는다면은 user로 잡아야 함
-    // 그 이유는 user profile이 없는 사람이 있다면 프로필을 가지고 올 수 없기 때문
+    /**
+     * 내 프로필 상세 조회
+     * - me = true
+     * - friend = false
+     */
     @Override
-    public Optional<UserMyProfileDetailResponse> findProfileDetail(Long id) {
-        return
-                 Optional.ofNullable(
-                         from(qUserProfile)
-                                 .leftJoin(qUserProfile).on(qUserProfile.user.eq(qUser))
-                                 .leftJoin(qUserProfileImage).on(qUserProfileImage.userProfile.eq(qUserProfile)
-                                         .and(qUserProfileImage.current.isTrue()))
-                                 .select(Projections.constructor(
-                                         UserMyProfileDetailResponse.class,
-                                         qUser.nickname,
-                                         qUserProfile.stateMessage,
-                                         qUserProfileImage.imageUrl
-                                 ))
-                                 .where(qUserProfile.user.id.eq(id))
-                                 .fetchOne()
-                 );
+    public Optional<UserProfileDetailResponse> findProfileDetail(Long id) {
+        return Optional.ofNullable(
+                from(qUserProfile)
+                        .join(qUserProfile.user, qUser)
+                        .leftJoin(qUserProfileImage).on(
+                                qUserProfileImage.userProfile.eq(qUserProfile)
+                                        .and(qUserProfileImage.current.isTrue())
+                        )
+                        .select(Projections.constructor(
+                                UserProfileDetailResponse.class,
+                                qUser.uuid,
+                                qUser.nickname,
+                                qUser.friendCode,
+                                qUserProfile.stateMessage,
+                                qUserProfileImage.imageUrl,
+                                Expressions.constant(false), // friend
+                                Expressions.constant(true)   // me
+                        ))
+                        .where(
+                                qUser.id.eq(id)
+                                        .and(qUser.status.eq(UserStatus.ACTIVE))
+                        )
+                        .fetchOne()
+        );
+    }
+
+    /**
+     * uuid 기반 프로필 상세 조회
+     * - viewerId: 현재 로그인한 사용자 id
+     * - targetUserUuid: 조회 대상 사용자 uuid
+     */
+    @Override
+    public Optional<UserProfileDetailResponse> findProfileDetailByUuid(
+            Long viewerId,
+            String targetUserUuid
+    ) {
+        return Optional.ofNullable(
+                from(qUserProfile)
+                        .join(qUserProfile.user, qUser)
+                        .leftJoin(qUserProfileImage).on(
+                                qUserProfileImage.userProfile.eq(qUserProfile)
+                                        .and(qUserProfileImage.current.isTrue())
+                        )
+                        .leftJoin(qFriend).on(
+                                qFriend.user.id.eq(viewerId)
+                                        .and(qFriend.friendUser.eq(qUser))
+                        )
+                        .select(Projections.constructor(
+                                UserProfileDetailResponse.class,
+                                qUser.uuid,
+                                qUser.nickname,
+                                qUser.friendCode,
+                                qUserProfile.stateMessage,
+                                qUserProfileImage.imageUrl,
+                                qFriend.id.isNotNull(), // friend
+                                qUser.id.eq(viewerId)   // me
+                        ))
+                        .where(
+                                qUser.uuid.eq(targetUserUuid)
+                                        .and(qUser.status.eq(UserStatus.ACTIVE))
+                        )
+                        .fetchOne()
+        );
     }
 }
