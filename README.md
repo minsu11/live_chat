@@ -739,3 +739,58 @@ docs/
 ├── test-result.md
 └── chat-list-testcase.md
 ```
+
+---
+
+## 🧪 테스트 및 품질 리포트
+
+### 테스트 실행
+
+```bash
+./gradlew test
+```
+
+JaCoCo 커버리지 리포트까지 생성하려면 다음 명령을 사용합니다.
+
+```bash
+./gradlew test jacocoTestReport
+```
+
+### JaCoCo 리포트 위치
+
+- HTML: `build/reports/jacoco/test/html/index.html`
+- XML: `build/reports/jacoco/test/jacocoTestReport.xml`
+
+### SonarQube 분석 실행
+
+이 프로젝트는 SonarQube 분석 기반을 구성해 두었습니다. Java 커버리지는 SonarQube가 JaCoCo XML 리포트를 읽는 방식으로 연동합니다.
+
+Local SonarQube를 사용할 수도 있고, 팀 공용 SonarQube 또는 SonarCloud를 사용할 수도 있습니다. 기본 host는 `http://localhost:9000`이며, CI/팀 서버에서는 환경변수로 변경합니다.
+
+```bash
+SONAR_HOST_URL=http://localhost:9000 \
+SONAR_TOKEN=<your-token> \
+./gradlew test jacocoTestReport sonar
+```
+
+### 주요 테스트 코드
+
+JUnit 5와 Mockito 기반 단위 테스트를 추가했고, 핵심 Facade/Service/Controller 흐름을 중심으로 검증합니다.
+
+| 영역 | 테스트 파일 | 주요 검증 |
+|---|---|---|
+| 메시지 전송 Facade | `src/test/java/com/chat_server/chatmessage/service/impl/ChatMessageFacadeServiceImplTest.java` | 메시지 저장, Redis 메타 갱신, WebSocket 브로드캐스트, 채팅 목록 upsert, 알림 전파, 파일 첨부 연결, 차단 사용자 제외 |
+| 채팅방 진입/복구 Facade | `src/test/java/com/chat_server/chatroom/service/impl/ChatRoomFacadeServiceImplTest.java` | 채팅방 진입 읽음 처리, cursor 처리, unread count 계산, `afterMessageId` 기반 누락 메시지 복구 |
+| 메시지 도메인 Service | `src/test/java/com/chat_server/chatmessage/service/impl/ChatMessageServiceImplTest.java` | 메시지 생성, 발신자 검증, 메시지별 unread count 계산, context 메시지 조합 |
+| 읽음 처리 | `src/test/java/com/chat_server/chatread/service/impl/ChatReadFacadeServiceImplTest.java`, `src/test/java/com/chat_server/chatread/service/impl/ChatReadServiceImplTest.java`, `src/test/java/com/chat_server/chatlist/service/impl/ChatListServiceImplTest.java`, `src/test/java/com/chat_server/redis/service/ChatMetadataRedisServiceTest.java` | lastReadMessageId 갱신, 채팅방 목록 unreadCount 초기화, READ_UPDATED 이벤트 전파, Redis fallback 흐름 |
+| 첨부파일 cleanup | `src/test/java/com/chat_server/chatattachment/service/impl/ChatAttachmentCleanupServiceImplTest.java`, `src/test/java/com/chat_server/chatattachment/scheduler/ChatAttachmentCleanupSchedulerTest.java` | orphan attachment 조회, 실제 파일 삭제, metadata 삭제, 삭제 실패 시 흐름 유지 |
+| 메시지 검색 | `src/test/java/com/chat_server/chatmessage/service/impl/ChatMessageSearchServiceImplTest.java`, `src/test/java/com/chat_server/chatmessage/service/impl/ChatMessageSearchFacadeServiceImplTest.java` | 검색어 정규화, 채팅방 단위 검색 위임, 빈 검색어 처리, cursor 기반 nextCursor 생성 |
+| Redis Repository | `src/test/java/com/chat_server/redis/repository/impl/RedisRepositoryImplTest.java` | Redis key/value/ttl validation, save/find/delete/list operation 위임 |
+| 친구/유저 Service | `src/test/java/com/chat_server/friend/service/impl/FriendServiceImplTest.java`, `src/test/java/com/chat_server/user/service/impl/UserServiceImplTest.java` | 친구 등록 성공/실패, 회원가입 성공/실패, 사용자 조회 실패, 아이디 중복 검증 |
+
+### 현재 테스트의 한계와 향후 보강 과제
+
+- 실제 DB 기반 Querydsl Repository 통합 테스트는 아직 제한적입니다. MySQL Full-Text Search는 H2와 동작 차이가 있어 `@DataJpaTest` 또는 Testcontainers 기반 테스트로 보강하는 것이 적절합니다.
+- 실제 WebSocket/STOMP 연결 테스트는 아직 완료된 상태가 아닙니다. 현재는 Controller/Facade 단위에서 메시지 전송 위임과 브로드캐스트 호출 여부를 검증합니다.
+- 실제 Redis 장애 복구를 완전히 검증한 것은 아닙니다. 현재는 Redis fallback 메서드가 의도한 repository 동기화 호출을 수행하는지 단위 테스트로 확인합니다.
+- 전체 사용자 E2E 시나리오 테스트는 향후 보강 과제로 남겨 두었습니다.
