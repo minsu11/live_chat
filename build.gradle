@@ -1,5 +1,7 @@
 plugins {
     id 'java'
+    id 'jacoco'
+    id 'org.sonarqube' version '7.3.1.8318'
     id 'org.springframework.boot' version '3.4.3'
     id 'io.spring.dependency-management' version '1.1.7'
 }
@@ -79,4 +81,31 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    finalizedBy tasks.named('jacocoTestReport')
+}
+
+jacoco {
+    toolVersion = '0.8.12'
+}
+
+tasks.named('jacocoTestReport') {
+    dependsOn tasks.named('test')
+    reports {
+        html.required = true
+        xml.required = true
+        csv.required = false
+    }
+}
+
+
+sonar {
+    properties {
+        property 'sonar.projectKey', 'live_chat'
+        property 'sonar.projectName', 'live_chat'
+        property 'sonar.host.url', System.getenv('SONAR_HOST_URL') ?: 'http://localhost:9000'
+        property 'sonar.token', System.getenv('SONAR_TOKEN') ?: ''
+        property 'sonar.java.coveragePlugin', 'jacoco'
+        property 'sonar.coverage.jacoco.xmlReportPaths', layout.buildDirectory.file('reports/jacoco/test/jacocoTestReport.xml').get().asFile.path
+        property 'sonar.coverage.exclusions', '**/dto/**,**/entity/**,**/enums/**,**/*Application.java'
+    }
 }
