@@ -16,6 +16,17 @@ Front/Auth/API 서버를 분리하여 인증과 화면, 채팅 도메인의 책�
 - Redis 기반 채팅 메타데이터 Write-Back 구조 적용
 - 파일/이미지 메시지와 orphan attachment cleanup 처리
 - MySQL Full-Text Search + LIKE fallback 기반 채팅 메시지 검색 구현
+---
+
+## 🔗 Links
+
+- 배포 서비스: https://chatalk.store
+- Front Server: https://github.com/minsu11/live_chat_front
+- Auth Server: https://github.com/minsu11/live_chat_auth
+- API Server: https://github.com/minsu11/live_chat
+- 요약 포트폴리오 PDF: docs/portfolio/ParkMinsu_Chatalk_Summary_Portfolio.pdf
+- 상세 포트폴리오 PDF: docs/portfolio/ParkMinsu_Chatalk_Detail_Portfolio.pdf
+- Notion 상세 정리: https://ms-pt.notion.site/343b77b258e780bfac21d407cc70ac72?pvs=74
 
 ---
 
