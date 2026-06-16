@@ -8,6 +8,7 @@ import com.chat_server.chatmessage.dto.request.ChatSendRequest;
 import com.chat_server.chatmessage.dto.response.ChatMessageResponse;
 import com.chat_server.chatmessage.entity.ChatMessage;
 import com.chat_server.chatmessage.enums.MessageType;
+import com.chat_server.chatmessage.service.ChatMessageFacadeService;
 import com.chat_server.chatmessage.service.ChatMessageService;
 import com.chat_server.chatnotification.dto.event.ChatNotificationEvent;
 import com.chat_server.chatroom.entity.ChatRoom;
@@ -63,7 +64,7 @@ class ChatMessageFacadeServiceImplTest {
     private ChatRoomMemberService chatRoomMemberService;
     private ChatMetadataRedisService chatMetadataRedisService;
 
-    private ChatMessageFacadeServiceImpl target;
+    private ChatMessageFacadeService target;
 
     @BeforeEach
     void setUp() {
