@@ -3,6 +3,7 @@ package com.chat_server.chatroom.service.impl;
 import com.chat_server.chatlist.dto.event.ChatListUpsertEvent;
 import com.chat_server.chatlist.dto.response.ChatListItemResponse;
 import com.chat_server.chatlist.service.ChatListService;
+import com.chat_server.chatmessage.dto.response.ChatMessageCatchUpResponse;
 import com.chat_server.chatmessage.dto.response.ChatMessageItemResponse;
 import com.chat_server.chatmessage.dto.response.ChatMessageResponse;
 import com.chat_server.chatmessage.service.ChatMessageFacadeService;
@@ -38,6 +39,7 @@ import org.springframework.data.domain.SliceImpl;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -115,11 +117,13 @@ class ChatRoomFacadeServiceImplTest {
 
         when(chatRoomQueryService.getRoomOrThrow(roomId)).thenReturn(room);
         when(chatMetadataRedisService.getLatestMessageId(roomId, 30L)).thenReturn(30L);
-        when(chatMessageService.getEnterMessagesByCursor(eq(roomId), eq(viewerId), eq(100), isNull())).thenReturn(slice);
-        when(chatRoomMemberService.getRoomMemberIdsByRoomId(roomId)).thenReturn(List.of(1L, 2L, viewerId));
-        when(chatMetadataRedisService.getAllMembersLastReadId(roomId, List.of(1L, 2L, viewerId)))
+        when(chatMessageService.getEnterMessagesByCursor(eq(roomId), eq(viewerId), eq(100), isNull()))
+                .thenReturn(slice);
+        when(chatRoomMemberService.getRoomMemberIdsByRoomId(roomId))
+                .thenReturn(List.of(1L, 2L, viewerId));
+        when(chatMetadataRedisService.getAllMembersLastReadId(eq(roomId), anyList()))
                 .thenReturn(new java.util.HashMap<>(Map.of(1L, 10L, 2L, 5L)));
-        when(userDisplayNameService.resolveDisplayNamesBulk(viewerId, List.of(2L, 1L)))
+        when(userDisplayNameService.resolveDisplayNamesBulk(eq(viewerId), anyList()))
                 .thenReturn(Map.of(1L, "친구별칭1"));
         when(chatRoomDisplayResolver.resolveTitle(roomId, viewerId, room)).thenReturn("화면 제목");
         when(chatListService.getMuted(roomId, viewerId)).thenReturn(true);
@@ -230,7 +234,7 @@ class ChatRoomFacadeServiceImplTest {
         Long requesterId = 1L;
         CreateGroupChatRoomRequest request = new CreateGroupChatRoomRequest(
                 "  새 그룹방  ",
-                List.of(" uuid-2 ", "uuid-3", "uuid-2", "my-uuid", " ", null)
+                Arrays.asList(" uuid-2 ", "uuid-3", "uuid-2", "my-uuid", " ", null)
         );
         ChatRoom room = chatRoom(200L, RoomType.GROUP, "새 그룹방", null);
         ChatListItemResponse item1 = new ChatListItemResponse(200L, "me", 0, "", null, null);
@@ -277,6 +281,116 @@ class ChatRoomFacadeServiceImplTest {
                 .hasMessage("그룹 채팅방은 본인을 제외한 2명 이상의 멤버가 필요합니다.");
 
         verify(chatRoomService, never()).createGroupChatRoom(any(), any());
+    }
+
+
+    @Test
+    @DisplayName("재연결 후 누락 메시지 조회 성공 시 afterMessageId 이후 메시지를 messageId 오름차순으로 반환한다")
+    void getMessagesAfterShouldReturnSortedMessagesAfterCursor() {
+        Long roomId = 300L;
+        Long userId = 1L;
+        ChatRoom room = chatRoom(roomId, RoomType.GROUP, "room", 30L);
+
+        LocalDateTime sameTime = LocalDateTime.of(2026, 6, 11, 12, 0);
+
+        ChatMessageItemResponse id20 = messageItem(
+                20L,
+                "c20",
+                2L,
+                "u2",
+                "sender2",
+                "TEXT",
+                "m20",
+                sameTime,
+                0
+        );
+
+        ChatMessageItemResponse id10 = messageItem(
+                10L,
+                "c10",
+                3L,
+                "u3",
+                "sender3",
+                "TEXT",
+                "m10",
+                sameTime,
+                0
+        );
+
+        when(chatRoomQueryService.getRoomOrThrow(roomId)).thenReturn(room);
+
+        when(chatMessageService.getMessagesAfter(roomId, 5L, 100))
+                .thenReturn(new SliceImpl<>(List.of(id20, id10), PageRequest.of(0, 100), false));
+
+        when(userDisplayNameService.resolveDisplayNamesBulk(eq(userId), anyList()))
+                .thenReturn(Map.of(2L, "별칭2"));
+
+        ChatMessageCatchUpResponse response = target.getMessagesAfter(roomId, userId, 5L, 999);
+
+        verify(chatRoomQueryService).validateMemberOrThrow(roomId, userId);
+        verify(chatMessageService).getMessagesAfter(roomId, 5L, 100);
+        verify(userDisplayNameService).resolveDisplayNamesBulk(eq(userId), anyList());
+
+        assertThat(response.roomId()).isEqualTo(roomId);
+        assertThat(response.messages())
+                .extracting(ChatMessageResponse::messageId)
+                .containsExactly(10L, 20L);
+
+        assertThat(response.messages().get(1).sender().senderNickname())
+                .isEqualTo("별칭2");
+
+        assertThat(response.hasMore()).isFalse();
+        assertThat(response.lastMessageId()).isEqualTo(20L);
+    }
+
+    @Test
+    @DisplayName("재연결 후 누락 메시지 조회 성공 시 결과가 비어 있어도 afterMessageId를 lastMessageId로 반환한다")
+    void getMessagesAfterShouldReturnEmptyResponseWithAfterMessageIdWhenNoMessages() {
+        Long roomId = 301L;
+        Long userId = 1L;
+        ChatRoom room = chatRoom(roomId, RoomType.GROUP, "room", 30L);
+        when(chatRoomQueryService.getRoomOrThrow(roomId)).thenReturn(room);
+        when(chatMessageService.getMessagesAfter(roomId, 50L, 1))
+                .thenReturn(new SliceImpl<>(List.of(), PageRequest.of(0, 1), false));
+        when(userDisplayNameService.resolveDisplayNamesBulk(userId, List.of())).thenReturn(Map.of());
+
+        ChatMessageCatchUpResponse response = target.getMessagesAfter(roomId, userId, 50L, 0);
+
+        assertThat(response.messages()).isEmpty();
+        assertThat(response.lastMessageId()).isEqualTo(50L);
+        assertThat(response.hasMore()).isFalse();
+    }
+
+
+    @Test
+    @DisplayName("재연결 후 누락 메시지 조회 성공 시 afterMessageId가 null이면 null cursor로 최신 catch-up을 조회한다")
+    void getMessagesAfterShouldPassNullCursorWhenAfterMessageIdIsNull() {
+        Long roomId = 302L;
+        Long userId = 1L;
+        ChatRoom room = chatRoom(roomId, RoomType.GROUP, "room", 30L);
+        when(chatRoomQueryService.getRoomOrThrow(roomId)).thenReturn(room);
+        when(chatMessageService.getMessagesAfter(roomId, null, 20))
+                .thenReturn(new SliceImpl<>(List.of(), PageRequest.of(0, 20), false));
+        when(userDisplayNameService.resolveDisplayNamesBulk(userId, List.of())).thenReturn(Map.of());
+
+        ChatMessageCatchUpResponse response = target.getMessagesAfter(roomId, userId, null, 20);
+
+        verify(chatMessageService).getMessagesAfter(roomId, null, 20);
+        assertThat(response.messages()).isEmpty();
+        assertThat(response.lastMessageId()).isNull();
+        assertThat(response.hasMore()).isFalse();
+    }
+
+    @Test
+    @DisplayName("재연결 후 누락 메시지 조회 실패 시 채팅방 멤버가 아니면 메시지를 조회하지 않는다")
+    void getMessagesAfterShouldStopWhenMembershipValidationFails() {
+        doThrow(new IllegalArgumentException("not member")).when(chatRoomQueryService).validateMemberOrThrow(300L, 1L);
+
+        assertThatThrownBy(() -> target.getMessagesAfter(300L, 1L, 5L, 50))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("not member");
+
+        verify(chatMessageService, never()).getMessagesAfter(any(), any(), anyInt());
     }
 
     private ChatMessageItemResponse messageItem(

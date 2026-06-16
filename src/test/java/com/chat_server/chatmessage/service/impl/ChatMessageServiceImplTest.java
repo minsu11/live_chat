@@ -133,18 +133,26 @@ class ChatMessageServiceImplTest {
     void getContextMessagesShouldCombineOlderTargetAndNewerMessagesInDisplayOrder() {
         Long roomId = 40L;
         Long targetMessageId = 100L;
+
         ChatMessage older90 = message(roomId, 90L, user(1L, "u1", "나"), "older90");
         ChatMessage older80 = message(roomId, 80L, user(1L, "u1", "나"), "older80");
         ChatMessage targetMessage = message(roomId, targetMessageId, user(2L, "u2", "친구"), "target");
         ChatMessage newer110 = message(roomId, 110L, user(3L, "u3", "다른친구"), "newer110");
 
-        when(chatMessageRepository.findByIdAndChatRoom_Id(targetMessageId, roomId)).thenReturn(Optional.of(targetMessage));
-        when(chatMessageRepository.findOlderMessagesWithTarget(roomId, targetMessageId, 2)).thenReturn(List.of(older90, older80));
-        when(chatMessageRepository.findNewerMessages(roomId, targetMessageId, 2)).thenReturn(List.of(newer110));
+        when(chatMessageRepository.findByIdAndChatRoom_Id(targetMessageId, roomId))
+                .thenReturn(Optional.of(targetMessage));
 
-        List<ChatMessage> result = target.getContextMessages(roomId, targetMessageId, 2);
+        when(chatMessageRepository.findOlderMessagesWithTarget(roomId, targetMessageId, 3))
+                .thenReturn(List.of(targetMessage, older90, older80));
 
-        assertThat(result).extracting(ChatMessage::getId).containsExactly(80L, 90L, 100L, 110L);
+        when(chatMessageRepository.findNewerMessages(roomId, targetMessageId, 3))
+                .thenReturn(List.of(newer110));
+
+        List<ChatMessage> result = target.getContextMessages(roomId, targetMessageId, 3);
+
+        assertThat(result)
+                .extracting(ChatMessage::getId)
+                .containsExactly(80L, 90L, 100L, 110L);
     }
 
     @Test

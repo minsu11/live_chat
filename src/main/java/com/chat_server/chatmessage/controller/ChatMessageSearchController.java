@@ -1,9 +1,7 @@
 package com.chat_server.chatmessage.controller;
 import com.chat_server.chatmessage.dto.response.ChatMessageSearchPageResponse;
-import com.chat_server.chatmessage.dto.response.ChatMessageSearchResponse;
-import com.chat_server.chatmessage.service.impl.ChatMessageSearchFacadeServiceImpl;
+import com.chat_server.chatmessage.service.ChatMessageSearchFacadeService;
 import com.chat_server.common.dto.response.ApiResponse;
-import com.chat_server.common.propertis.CustomProperties;
 import com.chat_server.user.dto.response.AuthenticatedUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +17,7 @@ import java.util.List;
 @RequestMapping("${custom.api.common.prefix}${custom.api.chat-room.prefix}")
 public class ChatMessageSearchController {
 
-    private final ChatMessageSearchFacadeServiceImpl chatMessageSearchFacadeService;
+    private final ChatMessageSearchFacadeService chatMessageSearchFacadeService;
     /**
      * 채팅방 메시지를 키워드로 검색한다.
      *
