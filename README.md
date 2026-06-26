@@ -1,4 +1,4 @@
-# 💬 Live Chat API Server
+# 💬 Chatalk API Server
 
 Spring Boot 기반 실시간 채팅 **API 서버**입니다.
 
@@ -745,26 +745,46 @@ Full-Text Search는 성능상 유리하지만, parser/token 설정에 따라 일
 
 ```text
 docs/
+├── portfolio/
+│   ├── ParkMinsu_Chatalk_Summary_Portfolio.pdf
+│   └── ParkMinsu_Chatalk_Detail_Portfolio.pdf
+├── testing/
+│   └── test-strategy-and-coverage.md
 ├── Requirements.md
-├── task-list.md
 ├── test-result.md
 └── chat-list-testcase.md
 ```
 
 ---
 
+## 🧭 핵심 코드 위치
+
+Chatalk API 서버의 주요 구현 흐름을 빠르게 확인할 수 있도록 핵심 운영 코드와 테스트 코드를 정리했습니다.
+
+| 영역                          | 설명                                                                                          | 주요 운영 코드                                                                                                                                                                                                                                                              | 테스트 코드                                                                                                                                                                                                                                                                                |
+| --------------------------- | ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| WebSocket 메시지 수신            | STOMP publish 요청을 받아 인증 사용자 기준으로 메시지 전송 유스케이스를 시작합니다.                                       | [`ChatMessageWsController`](src/main/java/com/chat_server/chatmessage/controller/ChatMessageWsController.java)                                                                                                                                                        | [`ChatMessageFacadeServiceImplTest`](src/test/java/com/chat_server/chatmessage/service/impl/ChatMessageFacadeServiceImplTest.java)                                                                                                                                                    |
+| 메시지 전송 Facade               | 채팅방 멤버 검증, 메시지 저장, 첨부파일 연결, Redis 메타데이터 갱신, WebSocket 브로드캐스트, 알림 전파를 하나의 메시지 전송 흐름으로 조율합니다. | [`ChatMessageFacadeServiceImpl`](src/main/java/com/chat_server/chatmessage/service/impl/ChatMessageFacadeServiceImpl.java)                                                                                                                                            | [`ChatMessageFacadeServiceImplTest`](src/test/java/com/chat_server/chatmessage/service/impl/ChatMessageFacadeServiceImplTest.java)                                                                                                                                                    |
+| 메시지 도메인 Service             | 메시지 생성, 메시지 타입 처리, 최근 메시지 조회, 메시지별 unread count 계산, 검색 결과 context 메시지 조합을 담당합니다.            | [`ChatMessageServiceImpl`](src/main/java/com/chat_server/chatmessage/service/impl/ChatMessageServiceImpl.java)                                                                                                                                                        | [`ChatMessageServiceImplTest`](src/test/java/com/chat_server/chatmessage/service/impl/ChatMessageServiceImplTest.java)                                                                                                                                                                |
+| 채팅방 진입 / 재연결 복구             | 채팅방 진입 시 메시지 조회, 읽음 처리, unread count 계산, cursor 생성, `afterMessageId` 기반 누락 메시지 복구를 처리합니다.   | [`ChatRoomFacadeServiceImpl`](src/main/java/com/chat_server/chatroom/service/impl/ChatRoomFacadeServiceImpl.java)                                                                                                                                                     | [`ChatRoomFacadeServiceImplTest`](src/test/java/com/chat_server/chatroom/service/impl/ChatRoomFacadeServiceImplTest.java)                                                                                                                                                             |
+| 읽음 처리                       | 사용자의 `lastReadMessageId`를 갱신하고, 채팅방 목록 unread count 초기화와 `READ_UPDATED` 이벤트 전파를 처리합니다.      | [`ChatReadFacadeServiceImpl`](src/main/java/com/chat_server/chatread/service/impl/ChatReadFacadeServiceImpl.java), [`ChatReadServiceImpl`](src/main/java/com/chat_server/chatread/service/impl/ChatReadServiceImpl.java)                                              | [`ChatReadFacadeServiceImplTest`](src/test/java/com/chat_server/chatread/service/impl/ChatReadFacadeServiceImplTest.java), [`ChatReadServiceImplTest`](src/test/java/com/chat_server/chatread/service/impl/ChatReadServiceImplTest.java)                                              |
+| 채팅방 목록 메타데이터                | 사용자별 채팅방 목록, unread count, last message, 채팅방 표시 이름 계산 흐름을 담당합니다.                            | [`ChatListServiceImpl`](src/main/java/com/chat_server/chatlist/service/impl/ChatListServiceImpl.java)                                                                                                                                                                 | [`ChatListServiceImplTest`](src/test/java/com/chat_server/chatlist/service/impl/ChatListServiceImplTest.java)                                                                                                                                                                         |
+| Redis Write-Back            | 채팅방/사용자별 메타데이터를 Redis Hash에 우선 반영하고, Dirty Set을 통해 DB Bulk Update 대상으로 관리합니다.               | [`ChatMetadataRedisService`](src/main/java/com/chat_server/redis/service/ChatMetadataRedisService.java)                                                                                                                                                               | [`ChatMetadataRedisServiceTest`](src/test/java/com/chat_server/redis/service/ChatMetadataRedisServiceTest.java)                                                                                                                                                                       |
+| Redis Batch 동기화             | Dirty Set에 기록된 변경 대상을 주기적으로 읽어 DB에 Bulk Update하고, 실패 시 fallback 흐름으로 보완합니다.                 | [`ChatMetadataBatchScheduler`](src/main/java/com/chat_server/redis/scheduler/ChatMetadataBatchScheduler.java)                                                                                                                                                         | [`ChatMetadataRedisServiceTest`](src/test/java/com/chat_server/redis/service/ChatMetadataRedisServiceTest.java)                                                                                                                                                                       |
+| 첨부파일 업로드 / 연결               | 파일 선업로드, attachment metadata 저장, FILE/IMAGE 메시지 전송 시 attachment-message 연결, 다운로드 처리를 담당합니다. | [`ChatAttachmentServiceImpl`](src/main/java/com/chat_server/chatattachment/service/impl/ChatAttachmentServiceImpl.java)                                                                                                                                               | [`ChatMessageFacadeServiceImplTest`](src/test/java/com/chat_server/chatmessage/service/impl/ChatMessageFacadeServiceImplTest.java)                                                                                                                                                    |
+| Orphan attachment cleanup   | 메시지와 연결되지 않은 오래된 attachment metadata와 실제 파일을 스케줄러를 통해 정리합니다.                                | [`ChatAttachmentCleanupServiceImpl`](src/main/java/com/chat_server/chatattachment/service/impl/ChatAttachmentCleanupServiceImpl.java), [`ChatAttachmentCleanupScheduler`](src/main/java/com/chat_server/chatattachment/scheduler/ChatAttachmentCleanupScheduler.java) | [`ChatAttachmentCleanupServiceImplTest`](src/test/java/com/chat_server/chatattachment/service/impl/ChatAttachmentCleanupServiceImplTest.java), [`ChatAttachmentCleanupSchedulerTest`](src/test/java/com/chat_server/chatattachment/scheduler/ChatAttachmentCleanupSchedulerTest.java) |
+| 메시지 검색 Facade               | 채팅방 멤버 검증, 검색 결과 cursor 처리, 검색 결과 선택 시 context 조회 흐름을 조율합니다.                                | [`ChatMessageSearchFacadeServiceImpl`](src/main/java/com/chat_server/chatmessage/service/impl/ChatMessageSearchFacadeServiceImpl.java)                                                                                                                                | [`ChatMessageSearchFacadeServiceImplTest`](src/test/java/com/chat_server/chatmessage/service/impl/ChatMessageSearchFacadeServiceImplTest.java)                                                                                                                                        |
+| 메시지 검색 Service / Repository | 검색어 정규화, Full-Text Search + LIKE fallback, 채팅방 단위 검색, context 메시지 조회를 담당합니다.                | [`ChatMessageSearchServiceImpl`](src/main/java/com/chat_server/chatmessage/service/impl/ChatMessageSearchServiceImpl.java), [`ChatMessageRepository`](src/main/java/com/chat_server/chatmessage/repository/ChatMessageRepository.java)                                | [`ChatMessageSearchServiceImplTest`](src/test/java/com/chat_server/chatmessage/service/impl/ChatMessageSearchServiceImplTest.java)                                                                                                                                                    |
+| 친구 / 사용자                    | 회원가입, 사용자 조회, 친구 등록, 친구 관계 검증 등 채팅 서비스의 사용자 관계 기반 기능을 담당합니다.                                | [`UserServiceImpl`](src/main/java/com/chat_server/user/service/impl/UserServiceImpl.java), [`FriendServiceImpl`](src/main/java/com/chat_server/friend/service/impl/FriendServiceImpl.java)                                                                            | [`UserServiceImplTest`](src/test/java/com/chat_server/user/service/impl/UserServiceImplTest.java), [`FriendServiceImplTest`](src/test/java/com/chat_server/friend/service/impl/FriendServiceImplTest.java)                                                                            |
+| WebSocket 설정 / 인증           | WebSocket endpoint, publish/subscribe prefix, STOMP CONNECT 시 JWT 인증 인터셉터를 설정합니다.           | [`WebSocketConfig`](src/main/java/com/chat_server/websocket/config/WebSocketConfig.java), [`StompAuthChannelInterceptor`](src/main/java/com/chat_server/websocket/interceptor/StompAuthChannelInterceptor.java)                                                       | -                                                                                                                                                                                                                                                                                     |
+
+
 ## 🧪 테스트 및 품질 리포트
 
-### 테스트 실행
+### 테스트 및 JaCoCo 리포트 생성
 
 ```bash
-./gradlew test
-```
-
-JaCoCo 커버리지 리포트까지 생성하려면 다음 명령을 사용합니다.
-
-```bash
-./gradlew test jacocoTestReport
+./gradlew clean test jacocoTestReport
 ```
 
 ### JaCoCo 리포트 위치
