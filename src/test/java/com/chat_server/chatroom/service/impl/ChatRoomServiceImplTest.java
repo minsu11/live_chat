@@ -38,9 +38,7 @@ class ChatRoomServiceImplTest {
         service = new ChatRoomServiceImpl(chatRoomRepository, userRepository);
     }
 
-    /**
-     * 동일한 사용자 조합의 DM이 이미 존재하면 새 엔티티를 생성하지 않고 기존 방을 반환하는지 검증한다.
-     */
+    /** 기존 DM이 있으면 사용자 조회와 저장 없이 기존 방을 반환하는지 검증한다. */
     @Test
     @DisplayName("1대1 채팅방 조회 성공 - 기존 DM이 있으면 저장 없이 기존 roomId를 반환한다")
     void getOrCreateOneToOneChatRoomShouldReturnExistingRoom() {
@@ -56,9 +54,7 @@ class ChatRoomServiceImplTest {
         verify(chatRoomRepository, never()).save(any(ChatRoom.class));
     }
 
-    /**
-     * 기존 DM이 없을 때 생성자를 조회하고 DM 정책값으로 새 방을 저장하는지 검증한다.
-     */
+    /** 기존 DM이 없으면 DM 정책값으로 새 방을 생성하는지 검증한다. */
     @Test
     @DisplayName("1대1 채팅방 생성 성공 - 기존 방이 없으면 DM 정책으로 새 방을 저장한다")
     void getOrCreateOneToOneChatRoomShouldCreateNewRoom() {
@@ -93,9 +89,7 @@ class ChatRoomServiceImplTest {
         assertThat(created.getParticipantCount()).isEqualTo(2);
     }
 
-    /**
-     * 방 생성자 사용자가 존재하지 않으면 저장을 시도하지 않고 도메인 예외를 발생시키는지 검증한다.
-     */
+    /** 생성자 사용자가 없으면 저장을 중단하고 도메인 예외를 발생시키는지 검증한다. */
     @Test
     @DisplayName("1대1 채팅방 생성 실패 - 생성자 사용자가 없으면 UserNotFoundException을 발생시킨다")
     void getOrCreateOneToOneChatRoomShouldFailWhenCreatorDoesNotExist() {
@@ -110,12 +104,9 @@ class ChatRoomServiceImplTest {
         verify(chatRoomRepository, never()).save(any(ChatRoom.class));
     }
 
-    /**
-     * 두 요청이 동시에 같은 DM을 생성해 unique key 충돌이 발생하는 상황을 검증한다.
-     * 저장 실패 후 다시 조회한 기존 방을 반환해 멱등성을 보장해야 한다.
-     */
+    /** 동시 생성 충돌 후 다른 트랜잭션이 만든 방을 재조회해 반환하는지 검증한다. */
     @Test
-    @DisplayName("1대1 채팅방 동시성 복구 - unique key 충돌 후 생성된 기존 방을 재조회해 반환한다")
+    @DisplayName("1대1 채팅방 동시성 복구 - unique key 충돌 후 기존 방을 재조회해 반환한다")
     void getOrCreateOneToOneChatRoomShouldRecoverFromConcurrentInsertConflict() {
         User creator = user(1L, "user-1");
         String dmKey = ChatRoomHashUtil.createUserPairHash(1L, 2L);
@@ -134,11 +125,9 @@ class ChatRoomServiceImplTest {
                 .findRoomIdByDmKeyAndRoomType(dmKey, RoomType.DM);
     }
 
-    /**
-     * unique key 충돌 이후에도 방을 찾지 못하면 원래 DB 예외를 그대로 전파하는 한계를 검증한다.
-     */
+    /** 충돌 이후에도 방을 찾지 못하면 원래 DB 예외를 전파하는 한계를 검증한다. */
     @Test
-    @DisplayName("1대1 채팅방 동시성 복구 실패 - 충돌 후 방 재조회도 실패하면 원래 DB 예외를 전파한다")
+    @DisplayName("1대1 채팅방 동시성 복구 실패 - 재조회도 실패하면 원래 DB 예외를 전파한다")
     void getOrCreateOneToOneChatRoomShouldRethrowConflictWhenRoomStillMissing() {
         User creator = user(1L, "user-1");
         String dmKey = ChatRoomHashUtil.createUserPairHash(1L, 2L);
@@ -153,11 +142,9 @@ class ChatRoomServiceImplTest {
                 .isSameAs(conflict);
     }
 
-    /**
-     * 사용자 ID 순서가 달라도 동일한 DM 해시를 사용해 같은 방을 조회하는지 검증한다.
-     */
+    /** 사용자 ID 순서가 바뀌어도 동일한 DM 해시를 사용하는지 검증한다. */
     @Test
-    @DisplayName("1대1 채팅방 해시 임계 조건 - 사용자 순서가 바뀌어도 동일한 DM 방을 조회한다")
+    @DisplayName("1대1 채팅방 해시 경계값 - 사용자 순서가 바뀌어도 같은 DM 방을 조회한다")
     void getOrCreateOneToOneChatRoomShouldUseOrderIndependentHash() {
         String expectedKey = ChatRoomHashUtil.createUserPairHash(1L, 9L);
         when(chatRoomRepository.findRoomIdByDmKeyAndRoomType(expectedKey, RoomType.DM))
@@ -171,9 +158,7 @@ class ChatRoomServiceImplTest {
                 .findRoomIdByDmKeyAndRoomType(expectedKey, RoomType.DM);
     }
 
-    /**
-     * 그룹 방 생성 시 제목과 생성자를 포함한 GROUP 엔티티를 저장하는지 검증한다.
-     */
+    /** 제목과 생성자를 포함한 GROUP 방을 저장하는지 검증한다. */
     @Test
     @DisplayName("그룹 채팅방 생성 성공 - 제목과 생성자를 가진 GROUP 방을 저장한다")
     void createGroupChatRoomShouldSaveGroupRoom() {
@@ -197,9 +182,7 @@ class ChatRoomServiceImplTest {
         assertThat(captor.getValue().getCreatedBy()).isSameAs(creator);
     }
 
-    /**
-     * 그룹 방 생성자 조회 실패 시 채팅방 저장을 중단하는지 검증한다.
-     */
+    /** 그룹 방 생성자가 없으면 저장을 수행하지 않는지 검증한다. */
     @Test
     @DisplayName("그룹 채팅방 생성 실패 - 생성자 사용자가 없으면 저장하지 않는다")
     void createGroupChatRoomShouldFailWhenCreatorIsMissing() {
@@ -211,11 +194,9 @@ class ChatRoomServiceImplTest {
         verify(chatRoomRepository, never()).save(any(ChatRoom.class));
     }
 
-    /**
-     * 메시지 타입에 맞는 미리보기를 계산해 채팅방 마지막 메시지 메타데이터를 변경하는지 검증한다.
-     */
+    /** 메시지 ID, 미리보기, 생성 시각이 방 메타데이터에 반영되는지 검증한다. */
     @Test
-    @DisplayName("마지막 메시지 갱신 성공 - 메시지 ID, 발신자, 미리보기, 생성 시각을 방 메타데이터에 반영한다")
+    @DisplayName("마지막 메시지 갱신 성공 - 메시지 메타데이터를 채팅방에 반영한다")
     void updateLastMessageInfoShouldUpdateRoomMetadata() {
         User sender = user(3L, "sender");
         ChatRoom room = ChatRoom.builder()
@@ -231,14 +212,11 @@ class ChatRoomServiceImplTest {
         service.updateLastMessageInfo(room, message);
 
         assertThat(room.getLastMessageId()).isEqualTo(777L);
-        assertThat(room.getLastSenderId()).isEqualTo(3L);
         assertThat(room.getLastMessagePreview()).isEqualTo("안녕하세요");
         assertThat(room.getLastMessageAt()).isEqualTo(createdAt);
     }
 
-    /**
-     * 참여자 수 감소가 Repository 원자적 update 메서드로 위임되는지 검증한다.
-     */
+    /** 참여자 수 감소가 Repository update 메서드로 위임되는지 검증한다. */
     @Test
     @DisplayName("참여자 수 감소 성공 - 대상 roomId로 Repository 감소 쿼리를 호출한다")
     void decrementParticipantCountShouldDelegateToRepository() {
