@@ -1,35 +1,44 @@
-# 💬 Live Chat API Server
+# Chatalk API Server
 
-Spring Boot 기반 실시간 채팅 **API 서버**입니다.
+Spring Boot와 WebSocket/STOMP로 구현한 실시간 채팅 API 서버입니다.
 
-이 저장소는 실시간 채팅 서비스의 핵심 도메인인 **채팅방, 멤버십, 메시지, 읽음 상태, 첨부파일, 알림, 메시지 검색**을 담당합니다.  
-Front/Auth/API 서버를 분리하여 인증과 화면, 채팅 도메인의 책임을 나누고, WebSocket(STOMP)을 통해 실시간 메시지 송수신을 처리합니다.
+처음에는 1:1 메시지 송수신 기능부터 시작했지만, 실제로 서비스를 운영하려면 연결이 끊겼을 때의 메시지 복구, 사용자별 읽음 상태, 채팅방 목록 정합성, 파일 업로드 실패, Redis 장애처럼 정상 흐름 밖의 문제를 함께 다뤄야 했습니다. 현재는 이러한 문제를 기능 구현과 테스트 코드로 확인하면서 안정성을 보강하고 있습니다.
 
----
+## 프로젝트 링크
 
-## 📌 프로젝트 개요
-
-- 1:1 채팅에서 시작해 GROUP/OPEN 채팅방까지 확장 가능한 구조로 설계
-- Front / Auth / API 서버를 분리하여 책임 분리
-- WebSocket STOMP 기반 실시간 메시지 송수신
-- 사용자별 읽음 상태와 채팅방 목록 unread 상태 분리 관리
-- Redis 기반 채팅 메타데이터 Write-Back 구조 적용
-- 파일/이미지 메시지와 orphan attachment cleanup 처리
-- MySQL Full-Text Search + LIKE fallback 기반 채팅 메시지 검색 구현
+- 배포 서비스: https://chatalk.store
+- Front Server: https://github.com/minsu11/live_chat_front
+- Auth Server: https://github.com/minsu11/live_chat_auth
+- API Server: https://github.com/minsu11/live_chat
+- 요약 포트폴리오: `docs/portfolio/ParkMinsu_Chatalk_Summary_Portfolio.pdf`
+- 상세 포트폴리오: `docs/portfolio/ParkMinsu_Chatalk_Detail_Portfolio.pdf`
+- Notion 상세 정리: https://ms-pt.notion.site/343b77b258e780bfac21d407cc70ac72?pvs=74
 
 ---
 
-## 🧱 전체 구성
+## 1. 프로젝트 구성
 
-| 서버 | 역할 | Repository |
-|---|---|---|
-| Front Server | Vue 기반 채팅 UI, WebSocket 연결, 메시지 렌더링 | https://github.com/minsu11/live_chat_front |
-| Auth Server | 로그인, 토큰 발급/재발급, 인증 처리 | https://github.com/minsu11/live_chat_auth |
-| API Server | 채팅 도메인, WebSocket 처리, Redis/DB 동기화 | 현재 저장소 |
+Chatalk은 화면, 인증, 채팅 도메인의 책임을 나누기 위해 세 저장소로 구성했습니다.
+
+| 서버 | 역할 | 저장소 |
+| --- | --- | --- |
+| Front Server | Vue 기반 채팅 UI, WebSocket 연결, 메시지 렌더링 | `live_chat_front` |
+| Auth Server | 로그인, JWT 발급·재발급, OAuth2 인증 | `live_chat_auth` |
+| API Server | 채팅방, 메시지, 읽음, 파일, 검색, Redis 동기화 | 현재 저장소 |
+
+### API 서버의 주요 책임
+
+- 1:1·그룹 채팅방과 멤버십 관리
+- STOMP 기반 실시간 메시지 송수신
+- 사용자별 읽음 상태와 안 읽은 메시지 수 관리
+- WebSocket 재연결 이후 누락 메시지 복구
+- 이미지·파일 메시지 업로드와 고아 첨부파일 정리
+- Redis 메타데이터 캐시와 DB Write-Back
+- 채팅방 내 메시지 검색과 검색 결과 문맥 조회
 
 ---
 
-## 🛠 기술 스택
+## 2. 기술 스택
 
 ### Backend
 
@@ -38,146 +47,137 @@ Front/Auth/API 서버를 분리하여 인증과 화면, 채팅 도메인의 책�
 - Spring Security
 - Spring WebSocket / STOMP
 - Spring Data JPA
-- Spring Data Redis
-- Spring Cloud OpenFeign
 - Querydsl
+- Spring Data Redis
 - Resilience4j
-- MySQL
+- MySQL 8
 - Redis
+
+### Test / Quality
+
+- JUnit 5
+- Mockito
+- AssertJ
+- JaCoCo
+- SonarQube 연동 설정
+- GitHub Actions
+
+### Deployment
+
 - Docker
-
-### 주요 인프라/운영 요소
-
-- JWT 기반 HTTP 인증
-- STOMP CONNECT 시 JWT 검증
-- Redis 메타데이터 캐싱 및 Write-Back
-- 파일 업로드 디렉토리 분리
-- 로그 파일 rolling 설정
-- dev/prod profile 분리
+- Nginx
+- Cloudflare
+- GitHub Actions
 
 ---
 
-## ✨ 주요 기능
+## 3. 주요 기능
 
-### 1. 채팅방 / 멤버십
+### 채팅방과 멤버십
 
-- 1:1 채팅방 생성 및 기존 방 조회
-- 그룹 채팅방 생성
-- 채팅방 멤버 조회
-- 멤버 초대
+- 기존 1:1 채팅방 조회 또는 신규 생성
+- 그룹 채팅방 생성과 멤버 초대
+- 채팅방 멤버 목록 조회
 - 채팅방 나가기
-- 비멤버 접근 차단
-- DM / GROUP / OPEN 타입 확장을 고려한 채팅방 모델 구성
+- 비멤버의 채팅방 접근 차단
+- DM / GROUP / OPEN 타입 확장을 고려한 모델 구성
 
----
+### 메시지와 실시간 전송
 
-### 2. 메시지 / 실시간 전송
-
-- `@MessageMapping` 기반 WebSocket 메시지 송신
+- `@MessageMapping`을 통한 메시지 수신
 - TEXT / EMOJI / IMAGE / FILE / SYSTEM 메시지 처리
-- 메시지 저장 후 수신자별 실시간 브로드캐스트
-- 채팅방 목록 갱신 이벤트 전파
-- 메시지 알림 이벤트 전파
-- 중복 메시지 수신 방지를 위한 메시지 ID 기준 병합 처리
+- 메시지 DB 저장 후 사용자별 WebSocket destination으로 전파
+- 채팅방 목록 갱신 이벤트와 알림 이벤트 전파
+- 차단된 사용자에게는 메시지 알림을 보내지 않도록 분기
 
----
+### 메시지 조회와 재연결 복구
 
-### 3. 메시지 조회 / 복구
-
-- 채팅방 진입 시 최신 메시지 조회
+- 채팅방 진입 시 최근 메시지 조회
 - 커서 기반 과거 메시지 조회
-- 스크롤 상단 도달 시 과거 메시지 추가 로딩
-- `afterMessageId` 기반 누락 메시지 복구 API
-- WebSocket 재연결 후 catch-up 처리
-- 일반 페이지네이션 API와 재연결 복구 API 목적 분리
+- `afterMessageId` 이후의 메시지만 조회하는 catch-up API
+- WebSocket 재연결 시 마지막 수신 메시지 이후 구간 복구
+- 일반 페이지네이션과 재연결 복구 API의 목적 분리
 
----
-
-### 4. 읽음 / 안읽음 정합성
+### 읽음과 안 읽음 상태
 
 - 사용자별 `lastReadMessageId` 관리
-- 채팅방 목록 unread count와 메시지별 unread count 분리
-- 채팅방 진입 시 read 메타데이터 반영
-- 메시지 수신 후 read 이벤트 전송
-- `READ_UPDATED` 이벤트로 메시지 unread count 실시간 갱신
-- 신규 멤버 초대 시점의 read 기준 초기화
+- 채팅방 목록의 `unreadCount`와 메시지별 unread count 분리
+- 채팅방 진입 시 읽음 상태 반영
+- `READ_UPDATED` 이벤트로 메시지별 unread count 갱신
+- 신규 멤버 초대 시점에 읽음 기준 초기화
 
----
+### 채팅방 표시 이름과 설정
 
-### 5. 채팅방 표시 이름 / 설정
+조회자에 따라 채팅방 제목이 달라질 수 있어 표시 이름 계산을 별도 Resolver로 분리했습니다.
 
-- 조회자 기준 채팅방 표시 이름 계산
-  - 커스텀 방 이름 우선
-  - DM: 상대 사용자 표시 이름 fallback
-  - GROUP: 방 이름 또는 멤버 이름 조합 fallback
-- 채팅방 이름 변경
-- 채팅방 알림 on/off 설정
-- 채팅방 나가기
-- 채팅방 멤버 조회
-- 멤버 초대
+1. 사용자가 직접 지정한 커스텀 이름
+2. 채팅방에 저장된 기본 이름
+3. DM은 상대방 표시 이름
+4. GROUP은 다른 참여자의 이름 조합
+5. OPEN은 기본 문구
 
----
+추가로 채팅방 이름 변경, 알림 음소거, 멤버 조회, 초대, 나가기 기능을 제공합니다.
 
-### 6. 첨부파일 처리
+### 첨부파일
 
-- 이미지 메시지 업로드
-- 일반 파일 메시지 업로드
-- 첨부파일 선업로드 후 메시지와 연결
-- 파일 다운로드 API 제공
-- 파일 크기 및 확장자 검증
-- 메시지 미전송으로 연결되지 않은 orphan attachment 정리 스케줄러 운영
+- 프로필 이미지 업로드
+- 채팅 이미지와 일반 파일 업로드
+- 첨부파일을 먼저 업로드한 뒤 메시지와 연결
+- 파일 크기, MIME type, 확장자 검증
+- 메시지와 연결되지 않은 오래된 첨부파일 cleanup
 
----
-
-### 7. 메시지 검색
+### 메시지 검색
 
 - 채팅방 단위 키워드 검색
-- MySQL Full-Text Search + ngram parser 적용
-- Full-Text Search 누락 보완을 위한 LIKE fallback 적용
-- 검색 결과 cursor pagination
-- 특정 검색 결과 기준 앞뒤 메시지 context 조회
-- 검색 결과 간 이동을 위한 messageId 기반 jump 처리
-- 프론트 검색어 하이라이트 및 스크롤 위치 보정 지원
-
-#### 검색 API 역할 분리
-
-| API | 역할 |
-|---|---|
-| `GET /api/v1/chat-room/{roomId}/messages/search` | 키워드 기반 검색 결과 조회 |
-| `GET /api/v1/chat-room/{roomId}/messages/{messageId}/context` | 특정 메시지 기준 앞뒤 대화 조회 |
+- MySQL Full-Text Search와 ngram parser 사용
+- 검색 누락을 보완하기 위한 LIKE fallback
+- 검색 결과 커서 페이지네이션
+- 특정 검색 결과를 기준으로 앞뒤 메시지 문맥 조회
 
 ---
 
-### 8. 친구 / 유저 검색 / 프로필
+## 4. 핵심 처리 흐름
 
-- 친구 목록 cursor 조회
-- 친구 등록
-- 유저 ID 기반 검색
-- 내 프로필 요약 조회
-- 내 프로필 상세 조회
-- 타인 프로필 조회
-- 프로필 이미지 업로드
-- 프로필 수정
+### 메시지 전송
+
+```text
+STOMP 메시지 수신
+→ 채팅방 멤버 검증
+→ 메시지 DB 저장
+→ 첨부파일 연결
+→ Redis 메타데이터 갱신
+→ 수신자별 메시지 전파
+→ 채팅방 목록 갱신 이벤트 전파
+→ 알림 대상 사용자에게 알림 전파
+```
+
+메시지가 DB에 저장되기 전에 WebSocket 전파가 먼저 실행되면 클라이언트에는 보이지만 재조회할 수 없는 메시지가 생길 수 있습니다. 그래서 저장 실패 시 브로드캐스트와 후속 메타데이터 갱신이 실행되지 않는지 테스트로 확인했습니다.
+
+### 읽음 처리
+
+```text
+채팅방 멤버 검증
+→ 사용자 읽음 메타데이터 저장
+→ 방 참여자 조회
+→ 사용자별 lastReadMessageId 조회
+→ 메시지별 unread count 계산
+→ READ_UPDATED 이벤트 전파
+→ 채팅방 목록 upsert 이벤트 전파
+```
+
+읽음 상태는 한 값으로 관리하지 않았습니다. 채팅방 목록에서 보여 주는 안 읽은 개수와 각 메시지에 표시하는 unread count의 계산 기준이 다르기 때문입니다.
+
+### 재연결 이후 누락 메시지 복구
+
+실시간 연결만으로는 네트워크가 끊긴 동안의 메시지를 보장할 수 없습니다. 클라이언트가 마지막으로 수신한 메시지 ID를 보관하고, 재연결 후 `afterMessageId`를 전달해 누락된 구간을 다시 조회하도록 구성했습니다.
 
 ---
 
-### 9. 인증 / 보안
+## 5. Redis 메타데이터 Write-Back
 
-- JWT 기반 HTTP 인증
-- Auth 서버와 연동한 로그인 처리
-- WebSocket 연결용 토큰 발급 API
-- STOMP CONNECT 시 JWT 검증
-- 인증 유저 Principal 설정
-- `/user` destination 기반 사용자별 WebSocket 메시지 전송
-- Refresh Token Redis 저장
+메시지 한 건을 보낼 때마다 동일한 채팅방 row와 여러 사용자의 채팅 목록 row를 즉시 UPDATE하면 DB 경합이 커질 수 있습니다. 채팅 메시지 저장과 직접 관련이 없는 일부 메타데이터는 Redis에 먼저 반영한 뒤 주기적으로 DB에 동기화하도록 변경했습니다.
 
----
-
-## ⚡ Redis Write-Back 메타데이터 동기화
-
-채팅 메시지 발송 핫패스에서 DB UPDATE 경합을 줄이기 위해 일부 메타데이터는 Redis에 먼저 반영하고, 주기적으로 DB에 동기화합니다.
-
-### 처리 대상
+### Redis에 먼저 반영하는 값
 
 #### 채팅방 메타데이터
 
@@ -193,179 +193,258 @@ Front/Auth/API 서버를 분리하여 인증과 화면, 채팅 도메인의 책�
 
 ### 처리 방식
 
-1. 메시지 송수신 시 Redis Hash에 메타데이터 우선 반영
-2. 변경된 채팅방/사용자를 Dirty Set에 기록
-3. 스케줄러가 주기적으로 Redis 변경분을 DB에 Bulk Update로 반영
-4. 반영 완료 후 Dirty Set 정리
-5. Redis 배치 동기화 실패 시 Circuit Breaker를 통해 DB 직접 반영 경로로 fallback
-6. Redis 장애/재시작 상황에서 미반영 메타데이터 유실을 줄이기 위해 AOF 설정 적용
+```text
+메타데이터 Redis Hash 갱신
+→ Dirty Set에 roomId 또는 roomId:userId 기록
+→ Scheduler가 Dirty Set 조회
+→ JdbcTemplate batchUpdate로 DB 반영
+→ DB 반영에 성공한 Dirty Key만 제거
+```
 
-### 적용 의도
+Redis 쓰기 자체가 실패하는 경우에는 Resilience4j Circuit Breaker fallback에서 DB에 직접 반영합니다. 반면 스케줄러의 DB batchUpdate가 실패한 경우에는 Dirty Key를 지우지 않고 다음 배치에서 다시 시도합니다. 두 실패 상황을 같은 방식으로 처리하지 않고 역할을 나눴습니다.
 
-- 동일 채팅방 메타데이터에 대한 DB 동시 UPDATE 경합 완화
-- 메시지 발송 핫패스의 DB 부하 감소
-- Redis 장애 시에도 미반영 메타데이터가 복구 후 DB에 동기화될 수 있도록 보완
-- 배치 동기화 실패 시 DB 직접 반영 fallback으로 서비스 안정성 보강
+### 캐시 미스 시 unread count 보정
 
-### 검증한 내용
+Redis에 사용자 메타데이터가 없는 상태에서 바로 `increment`하면 DB에는 5가 있는데 Redis는 1부터 시작하는 문제가 생길 수 있습니다.
 
-- Redis에 Dirty 데이터가 남아 있는 상태에서 장애/재시작 상황 발생
-- Redis 복구 후 AOF에 남아 있던 데이터가 다시 로드되는지 확인
-- 복구 이후 스케줄러가 미반영 메타데이터를 DB에 추가 반영하는지 확인
+```text
+Redis key 없음
+→ DB unreadCount 조회
+→ Redis에 현재 값 저장
+→ increment 수행
+```
+
+이 순서가 유지되는지 단위 테스트로 확인했습니다.
 
 ### 남은 검증 과제
 
-- Redis 복구 후 DB 반영 시점의 메시지 순서 보장 검증
-- Redis AOF 복구 데이터와 DB PK 증가 순서 간 정합성 검증
-- 장애 중복 복구 상황에서 idempotency 보장 검증
+- Redis AOF 복구 데이터와 DB 반영 순서의 정합성
+- 동일 데이터가 여러 번 복구되는 상황의 멱등성
+- Circuit Breaker open / half-open / close 상태의 운영 지표 수집
 
 ---
 
-## 🔌 WebSocket 구조
+## 6. 테스트 전략
 
-### 개발 환경 기준
+테스트 개수나 커버리지 수치만 높이기보다, 실패했을 때 데이터가 잘못 저장되거나 사용자에게 잘못 전파될 수 있는 흐름을 우선했습니다.
+
+### 테스트 분류
+
+| 분류 | 확인한 내용 |
+| --- | --- |
+| Controller | 인증 사용자와 path/query/body 값이 Service로 정확히 전달되는지 확인 |
+| Service | 성공, 입력 검증, 조회 실패, 저장 실패, 경계값 확인 |
+| Facade | 여러 Service·Redis·브로드캐스터의 호출 순서와 실패 이후 중단 여부 확인 |
+| Redis / Scheduler | 캐시 미스, DB fallback, Dirty Key 유지, batchUpdate 변환 확인 |
+| Security / STOMP | JWT 쿠키 누락·검증 실패, STOMP Bearer 형식, Principal 설정 확인 |
+| File | MIME type, 확장자, 정확한 제한 크기와 1byte 초과, 디스크 저장 실패 확인 |
+| WebSocket Broadcaster | 사용자별 destination 문자열과 멤버별 이벤트 전파 확인 |
+
+### 대표 테스트 시나리오
+
+| 영역 | 시나리오 | 확인한 내용 |
+| --- | --- | --- |
+| 메시지 전송 | DB 저장 실패 | 실패한 메시지가 WebSocket으로 전파되지 않음 |
+| Redis 배치 | DB batchUpdate 실패 | Dirty Key를 유지해 다음 배치에서 재시도 |
+| DM 생성 | 동일 사용자 조합 동시 생성 | Unique Key 충돌 후 기존 방 재조회 |
+| 파일 업로드 | 20MB / 20MB + 1byte | 제한값은 허용하고 초과값은 거부 |
+| 채팅 목록 | 다음 Cursor 생성 | Cursor를 디코딩해 마지막 시간과 roomId 확인 |
+| 읽음 처리 | 중간 계산 실패 | `READ_UPDATED`와 채팅 목록 이벤트 전파 중단 |
+| Redis unread | 캐시 미스 후 증가 | DB 값으로 캐시를 워밍한 뒤 증가 |
+| HTTP 인증 | 쿠키 누락·잘못된 토큰 | SecurityContext 미설정과 오류 코드 기록 |
+| STOMP 인증 | Authorization 형식·JWT 검증 | 유효한 CONNECT에서만 Principal 설정 |
+| 프로필 수정 | 부분 수정과 이미지 저장 실패 | 전달된 필드만 수정하고 파일 실패 시 URL 갱신 중단 |
+| 채팅방 나가기 | 목록·멤버 처리 실패 | 실패 지점 이후 참여자 수와 시스템 메시지 변경 중단 |
+
+### JaCoCo 기준
+
+GitHub Actions에서 테스트와 JaCoCo 검증을 함께 실행합니다.
+
+```gradle
+LINE >= 0.60
+BRANCH >= 0.40
+```
+
+현재 `feature/test-code` 브랜치의 GitHub Actions 결과는 다음과 같습니다.
+
+- 전체 테스트: **326개**
+- 실패: **0개**
+- Line Coverage: **64.36%** (`1,647 / 2,559`)
+- Branch Coverage: **65.23%** (`424 / 650`)
+- JaCoCo 품질 기준: **통과**
+
+JaCoCo 측정에서는 DTO, 설정 바인딩, enum, 단순 예외, Querydsl 자동 생성 클래스와 애플리케이션 진입점을 제외했습니다. Service, Facade, Controller, Repository 구현체, Scheduler, Security Filter와 도메인 로직이 있는 Entity는 측정 대상에 남겼습니다.
+
+### 테스트 실행
+
+```bash
+./gradlew clean test jacocoTestReport jacocoTestCoverageVerification
+```
+
+리포트 위치:
+
+```text
+build/reports/tests/test/index.html
+build/reports/jacoco/test/html/index.html
+build/reports/jacoco/test/jacocoTestReport.xml
+```
+
+### 현재 테스트의 한계
+
+- Querydsl Repository 구현체는 실제 DB 기반 검증이 부족합니다.
+- MySQL Full-Text Search는 H2와 차이가 있어 Testcontainers 기반 테스트가 필요합니다.
+- STOMP CONNECT 인터셉터는 단위 테스트를 추가했지만 실제 WebSocket 연결과 구독까지 포함한 통합 테스트는 남아 있습니다.
+- Redis 장애 fallback은 단위 테스트 중심이며 Redis 프로세스를 실제로 내렸다 복구하는 자동화 테스트는 아직 없습니다.
+- 회원가입부터 채팅방 생성, 메시지 전송, 재연결까지 이어지는 전체 E2E 테스트는 향후 과제입니다.
+
+테스트 전략과 면접 대비용 상세 정리는 [`docs/testing/chatalk-test-study-notes.md`](docs/testing/chatalk-test-study-notes.md)에 별도로 작성했습니다.
+
+---
+
+## 7. Trouble Shooting
+
+### 1. 메시지 발송 시 DB 메타데이터 경합
+
+**문제**
+
+메시지를 보낼 때마다 채팅방의 마지막 메시지 정보와 사용자별 unread count를 즉시 UPDATE하면 동일 row에 쓰기 요청이 몰립니다.
+
+**변경**
+
+- Redis Hash에 메타데이터 우선 반영
+- Dirty Set으로 변경 대상 추적
+- Scheduler에서 JDBC batchUpdate 수행
+- 성공한 Dirty Key만 제거
+
+**확인**
+
+- Dirty Set이 비어 있을 때 불필요한 DB 호출이 없는지 확인
+- DB 반영 실패 시 Dirty Key가 남는지 확인
+- 잘못된 Dirty Key가 있어도 스케줄 전체가 중단되지 않는지 확인
+
+### 2. Redis 캐시 미스 이후 unread count가 1부터 시작하는 문제
+
+**문제**
+
+DB에는 기존 unread count가 있지만 Redis key가 사라진 상태에서 `increment`를 호출하면 Redis 값이 1부터 시작할 수 있습니다.
+
+**변경**
+
+Redis key가 없으면 DB 값을 먼저 읽어 캐시를 워밍한 뒤 증가하도록 처리했습니다.
+
+### 3. WebSocket 재연결 동안의 메시지 누락
+
+**문제**
+
+WebSocket은 연결이 유지되는 동안의 실시간 전송에는 적합하지만 끊어진 시간의 메시지를 자동으로 복구하지 않습니다.
+
+**변경**
+
+- 마지막 수신 메시지 ID를 클라이언트가 보관
+- 재연결 후 `afterMessageId` 기반 catch-up API 호출
+- 실시간 수신 데이터와 catch-up 응답을 메시지 ID 기준으로 병합
+
+### 4. 동일 DM 채팅방의 중복 생성 가능성
+
+**문제**
+
+두 요청이 동시에 기존 DM을 조회하면 모두 “채팅방 없음”으로 판단할 수 있습니다.
+
+**변경**
+
+- 두 사용자 ID로 순서와 관계없는 DM hash 생성
+- DB Unique Constraint를 최종 방어선으로 사용
+- 저장 충돌이 발생하면 기존 채팅방을 다시 조회해 반환
+
+### 5. 첨부파일 선업로드 후 고아 파일 누적
+
+**문제**
+
+파일 업로드에는 성공했지만 메시지 전송이 취소되면 실제 파일과 메타데이터가 남습니다.
+
+**변경**
+
+메시지 연결 여부와 생성 시간을 기준으로 오래된 미연결 첨부파일을 정리하는 Scheduler를 추가했습니다.
+
+### 6. Full-Text Search 검색 누락
+
+**문제**
+
+ngram parser를 적용해도 토큰 조건에 따라 일부 문자열이 Full-Text Search 결과에서 빠졌습니다.
+
+**변경**
+
+Full-Text Search를 기본 검색으로 사용하면서, 사용자가 입력한 문자열을 빠짐없이 찾기 위해 LIKE 조건을 fallback으로 추가했습니다.
+
+---
+
+## 8. WebSocket 경로
+
+### 개발 환경
 
 | 구분 | 경로 |
-|---|---|
-| WebSocket Endpoint | `/api/ws-chat` |
+| --- | --- |
+| Endpoint | `/api/ws-chat` |
 | Publish Prefix | `/api/pub` |
 | Subscribe Prefix | `/api/sub` |
 | 메시지 발송 | `/api/pub/chat/message` |
 | 읽음 이벤트 발송 | `/api/pub/chat/read` |
 | 채팅방 메시지 구독 | `/user/api/sub/chat/rooms/{roomId}` |
-| 읽음 갱신 구독 | `/user/api/sub/chat/rooms/{roomId}/read` |
+| 읽음 이벤트 구독 | `/user/api/sub/chat/rooms/{roomId}/read` |
 
-### 운영 환경 기준
-
-운영 profile에서는 WebSocket prefix가 다음과 같이 단순화됩니다.
-
-| 구분 | 경로 |
-|---|---|
-| WebSocket Endpoint | `/ws-chat` |
-| Publish Prefix | `/pub` |
-| Subscribe Prefix | `/sub` |
+운영 profile에서는 `/api` prefix 없이 `/ws-chat`, `/pub`, `/sub`를 사용합니다.
 
 ---
 
-## 📡 주요 API
+## 9. 주요 API
 
-### 인증 / 유저
-
-| Method | Endpoint | 설명 |
-|---|---|---|
-| POST | `/api/v1/users/login` | 로그인 |
-| POST | `/api/v1/users/register` | 회원가입 |
-| GET | `/api/v1/users/me/profile/summary` | 내 프로필 요약 조회 |
-| GET | `/api/v1/users/me/profile/detail` | 내 프로필 상세 조회 |
-| GET | `/api/v1/users/{userId}/profile/detail` | 타인 프로필 조회 |
-| POST | `/api/v1/users/me/profile/image` | 프로필 이미지 업로드 |
-| POST | `/api/v1/users/me/profile` | 프로필 수정 |
-
-### 친구 / 검색
+### 채팅방과 메시지
 
 | Method | Endpoint | 설명 |
-|---|---|---|
-| GET | `/api/v1/friends` | 친구 목록 조회 |
-| POST | `/api/v1/friends/register` | 친구 등록 |
-| POST | `/api/v1/search/users` | 유저 검색 |
-
-### 채팅방
-
-| Method | Endpoint | 설명 |
-|---|---|---|
+| --- | --- | --- |
 | GET | `/api/v1/chat-room/{roomId}/enter` | 채팅방 진입 정보 조회 |
 | GET | `/api/v1/chat-room/{roomId}/summary` | 채팅방 요약 조회 |
 | GET | `/api/v1/chat-room/{userId}/register` | 1:1 채팅방 생성 또는 조회 |
 | POST | `/api/v1/chat-room/group` | 그룹 채팅방 생성 |
-| GET | `/api/v1/chat-room/{roomId}/messages` | 과거 메시지 cursor 조회 |
+| GET | `/api/v1/chat-room/{roomId}/messages` | 과거 메시지 커서 조회 |
 | GET | `/api/v1/chat-room/{roomId}/messages/after` | 누락 메시지 catch-up 조회 |
-| GET | `/api/v1/chat-room/{roomId}/messages/search` | 채팅방 메시지 검색 |
-| GET | `/api/v1/chat-room/{roomId}/messages/{messageId}/context` | 특정 메시지 기준 context 조회 |
+| GET | `/api/v1/chat-room/{roomId}/messages/search` | 메시지 검색 |
+| GET | `/api/v1/chat-room/{roomId}/messages/{messageId}/context` | 검색 결과 주변 메시지 조회 |
 
 ### 채팅방 설정
 
 | Method | Endpoint | 설명 |
-|---|---|---|
-| PATCH | `/api/v1/chat-room/{roomId}/settings/name` | 채팅방 이름 변경 |
-| PATCH | `/api/v1/chat-room/{roomId}/settings/notification` | 채팅방 알림 설정 변경 |
+| --- | --- | --- |
+| PATCH | `/api/v1/chat-room/{roomId}/settings/name` | 사용자별 채팅방 이름 변경 |
+| PATCH | `/api/v1/chat-room/{roomId}/settings/notification` | 알림 음소거 변경 |
 | DELETE | `/api/v1/chat-room/{roomId}/settings/leave` | 채팅방 나가기 |
 | GET | `/api/v1/chat-room/{roomId}/settings/members` | 채팅방 멤버 조회 |
-| POST | `/api/v1/chat-room/{roomId}/settings/invite` | 채팅방 멤버 초대 |
+| POST | `/api/v1/chat-room/{roomId}/settings/invite` | 멤버 초대 |
 
-### 첨부파일
+### 프로필과 파일
 
 | Method | Endpoint | 설명 |
-|---|---|---|
+| --- | --- | --- |
+| GET | `/api/v1/users/me/profile/summary` | 내 프로필 요약 조회 |
+| GET | `/api/v1/users/me/profile/detail` | 내 프로필 상세 조회 |
+| GET | `/api/v1/users/{userId}/profile/detail` | 다른 사용자 프로필 조회 |
+| POST | `/api/v1/users/me/profile/image` | 프로필 이미지 업로드 |
+| POST | `/api/v1/users/me/profile` | 프로필 수정 |
 | POST | `/api/v1/chat-attachments/upload` | 채팅 첨부파일 업로드 |
 | GET | `/api/v1/chat-attachments/{attachmentId}/download` | 첨부파일 다운로드 |
-| POST | `/api/v1/chat-files/images` | 채팅 이미지 업로드 |
-| POST | `/api/v1/chat-files/files` | 채팅 파일 업로드 |
-
-### 채팅 목록
-
-| Method | Endpoint | 설명 |
-|---|---|---|
-| GET | `/api/v1/chat-list` | 채팅방 목록 cursor 조회 |
-
-### WebSocket Token
-
-| Method | Endpoint | 설명 |
-|---|---|---|
-| GET | `/api/ws/token` | WebSocket 연결용 토큰 발급 |
 
 ---
 
-## 📁 패키지 구조
+## 10. 로컬 실행
 
-```text
-com.chat_server
-├── chatroom              # 채팅방 도메인
-├── chatroommember        # 채팅방 멤버십
-├── chatroomsetting       # 채팅방 이름/알림/나가기/초대 설정
-├── chatmessage           # 채팅 메시지 저장/조회/검색/WebSocket 발송
-├── chatread              # 읽음 처리
-├── chatlist              # 채팅방 목록 조회
-├── chatattachment        # 첨부파일 업로드/다운로드/cleanup
-├── chatnotification      # 채팅 알림 이벤트
-├── friend                # 친구 관계
-├── search                # 유저 검색
-├── user                  # 유저 도메인
-├── userprofile           # 프로필
-├── security              # HTTP 인증/JWT/WebSocket token
-├── websocket             # STOMP 설정/인터셉터
-├── redis                 # Redis 메타데이터/배치 동기화
-├── file                  # 파일 업로드 공통 처리
-├── common                # 공통 DTO, cursor, config, exception
-└── error                 # 공통 에러 응답/핸들러
-```
-
----
-
-## 🚀 로컬 실행 방법
-
-### 1. 필수 환경
+### 필요 환경
 
 - Java 21
-- MySQL 8.x
+- MySQL 8
 - Redis
-- Gradle Wrapper
-- Auth Server 실행 필요
-- Front Server 실행 선택
+- Auth Server
 
----
-
-### 2. MySQL 준비
-
-`application-dev.yml` 기준으로 API 서버는 MySQL을 사용합니다.
-
-```yaml
-spring:
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/chat_server?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-```
-
-로컬 DB 예시:
+### MySQL
 
 ```sql
 CREATE DATABASE chat_server
@@ -373,24 +452,7 @@ CREATE DATABASE chat_server
   COLLATE utf8mb4_unicode_ci;
 ```
 
-> 실제 테이블은 프로젝트 DDL 또는 JPA validate 기준 스키마에 맞춰 준비해야 합니다.
-
----
-
-### 3. Redis 실행
-
-로컬 개발 profile 기준 Redis는 다음 설정을 사용합니다.
-
-```yaml
-spring:
-  data:
-    redis:
-      host: localhost
-      port: 6379
-      database: 0
-```
-
-Docker로 Redis를 실행하는 예시:
+### Redis
 
 ```bash
 docker run -d \
@@ -399,343 +461,82 @@ docker run -d \
   redis:7
 ```
 
----
-
-### 4. 파일 업로드 경로 설정
-
-개발 환경에서는 업로드 파일을 로컬 프로젝트 내부 디렉토리에 저장합니다.
-
-```yaml
-file:
-  upload:
-    profile-dir: C:\chat-server-uploads\image\profile
-    chat-image-dir: C:\chat-server-uploads\image\chat
-    chat-file-dir: C:\chat-server-uploads\image\file
-    chat-file-max-size: 5MB
-    chat-file-allowed-extensions:
-      - pdf
-      - txt
-      - doc
-      - docx
-      - xls
-      - xlsx
-      - ppt
-      - pptx
-      - zip
-      - hwp
-      - hwpx
-      - jpg
-      - jpeg
-      - png
-```
-
-업로드 경로는 용도별로 분리되어 있습니다.
-
-| 설정 | 용도 |
-|---|---|
-| `profile-dir` | 사용자 프로필 이미지 저장 |
-| `chat-image-dir` | 채팅 이미지 메시지 저장 |
-| `chat-file-dir` | 채팅 일반 파일 저장 |
-| `chat-file-max-size` | 채팅 파일 최대 업로드 크기 |
-| `chat-file-allowed-extensions` | 업로드 허용 확장자 목록 |
-
-```text
-개발 환경: C:\project_file\live_chat\src\main\resources\image\...
-운영/Docker 환경: 서버 경로 또는 volume mount 경로로 분리 필요
-```
-
----
-
-### 5. Auth Server 실행
-
-API 서버는 로그인 및 토큰 검증을 위해 Auth Server와 연동합니다.
-
-개발 profile 기준:
-
-```yaml
-auth:
-  server:
-    url: http://localhost:9090
-```
-
-Auth Server를 먼저 실행한 뒤 API 서버를 실행해야 합니다.
-
----
-
-### 6. API 서버 실행
+### 실행
 
 ```bash
 ./gradlew bootRun --args='--spring.profiles.active=dev'
 ```
 
-Windows 환경:
+Windows:
 
 ```bash
 gradlew.bat bootRun --args="--spring.profiles.active=dev"
 ```
 
-기본 포트:
+기본 API 주소는 `http://localhost:7070`입니다.
+
+---
+
+## 11. 패키지 구조
 
 ```text
-http://localhost:7070
+com.chat_server
+├── chatroom              # 채팅방
+├── chatroommember        # 채팅방 멤버십
+├── chatroomsetting       # 이름·알림·나가기·초대
+├── chatmessage           # 메시지 저장·조회·검색·발송
+├── chatread              # 읽음 처리
+├── chatlist              # 채팅방 목록과 unread
+├── chatattachment        # 첨부파일과 cleanup
+├── chatnotification      # 알림 이벤트
+├── friend                # 친구 관계
+├── search                # 사용자 검색
+├── user                  # 사용자
+├── userprofile           # 프로필
+├── security              # HTTP JWT 인증
+├── websocket             # STOMP 설정과 인증
+├── redis                 # 캐시·Pub/Sub·Write-Back
+├── file                  # 파일 저장 공통 처리
+└── error                 # 공통 예외 응답
 ```
 
 ---
 
-## 🐳 Docker 실행
+## 12. 향후 개선
 
-Dockerfile은 빌드된 jar 파일을 실행하는 구조입니다.
+### 테스트
 
-```dockerfile
-FROM eclipse-temurin:21-jdk-alpine
-WORKDIR /app
-COPY build/libs/*.jar app.jar
-ENTRYPOINT ["java","-jar","/app/app.jar"]
-```
+- [ ] Testcontainers MySQL 기반 Querydsl Repository 통합 테스트
+- [ ] 실제 STOMP 연결·구독·발행 통합 테스트
+- [ ] Redis 장애·복구 자동화 테스트
+- [ ] 주요 사용자 흐름 E2E 테스트
 
-### 1. jar 빌드
+### 안정성
 
-```bash
-./gradlew clean build
-```
+- [ ] 메시지 전송 `clientMessageId`와 멱등성 처리
+- [ ] Redis 복구 이후 DB 반영 순서 검증
+- [ ] 멀티 디바이스 읽음 상태 동기화
+- [ ] 메시지 ACK와 재전송 정책 정리
 
-### 2. Docker image build
+### 운영
 
-```bash
-docker build -t live-chat-api .
-```
-
-### 3. Docker container run 예시
-
-```bash
-docker run -d \
-  --name live-chat-api \
-  -p 7070:7070 \
-  -e SPRING_PROFILES_ACTIVE=prod \
-  -v /host/uploads:/app/uploads \
-  live-chat-api
-```
+- [ ] Micrometer / Prometheus / Grafana 연동
+- [ ] 메시지 처리 지연, 오류율, Redis fallback, 배치 처리량 지표화
+- [ ] 로그에 남아 있는 토큰 관련 정보 마스킹 범위 점검
 
 ---
 
-## ⚙️ 주요 설정
-
-### Profile group
-
-```yaml
-spring:
-  profiles:
-    group:
-      dev:
-        - custom
-        - web-dev
-      prod:
-        - custom
-        - web-prod
-```
-
-### 파일 업로드 제한
-
-개발 profile 기준:
-
-```yaml
-spring:
-  servlet:
-    multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
-
-file:
-  upload:
-    chat-file-max-size: 5MB
-    chat-file-allowed-extensions:
-      - pdf
-      - txt
-      - doc
-      - docx
-      - xls
-      - xlsx
-      - ppt
-      - pptx
-      - zip
-      - hwp
-      - hwpx
-      - jpg
-      - jpeg
-      - png
-```
-
-운영 profile에서는 파일 업로드 크기를 더 제한할 수 있습니다.
-
-```yaml
-file:
-  upload:
-    chat-file-max-size: 1MB
-```
-
----
-
-## 🔍 메시지 검색 설계
-
-메시지 검색은 다음 흐름으로 동작합니다.
-
-1. 검색어 입력
-2. 채팅방 단위 메시지 검색
-3. 검색 결과 최신순 반환
-4. 검색 결과가 많으면 cursor로 다음 페이지 조회
-5. 검색 결과 선택 시 해당 메시지 기준 앞뒤 메시지 context 조회
-6. 프론트에서 검색어 하이라이트 및 스크롤 위치 보정
-
-### 검색 방식
-
-- 기본 검색: MySQL Full-Text Search
-- 한글 검색 대응: ngram parser
-- 검색 누락 보완: LIKE fallback
-
-```sql
-WHERE chat_room_id = :roomId
-  AND message_content IS NOT NULL
-  AND (
-        MATCH(message_content) AGAINST(:booleanKeyword IN BOOLEAN MODE)
-        OR message_content LIKE CONCAT('%', :rawKeyword, '%')
-  )
-```
-
-### 적용 이유
-
-Full-Text Search는 성능상 유리하지만, parser/token 설정에 따라 일부 키워드가 누락될 수 있습니다.  
-채팅 검색에서는 “사용자가 입력한 문자열이 포함된 메시지를 빠짐없이 찾는 것”이 중요하므로, Full-Text Search를 기본으로 사용하되 LIKE fallback을 함께 적용했습니다.
-
----
-
-## 🔥 Trouble Shooting 요약
-
-### 1. DB 메타데이터 경합과 Redis Write-Back
-
-- 문제: 메시지 발송 시 동일 채팅방/사용자 메타데이터를 DB에서 즉시 갱신하면서 lock 경합과 데드락 가능성이 발생
-- 해결:
-  - 채팅방/사용자 메타데이터를 Redis에 우선 반영
-  - Dirty Set으로 변경 대상을 추적
-  - 스케줄러에서 Redis 변경분을 DB에 Bulk Update로 반영
-- 결과:
-  - 메시지 발송 핫패스의 DB UPDATE 경합 완화
-  - 배치 동기화 방식으로 DB 반영 비용 분산
-
----
-
-### 2. Redis 장애와 미반영 메타데이터 유실 위험
-
-- 문제: Redis에만 반영되고 DB에 아직 동기화되지 않은 Dirty 데이터가 Redis 장애 시 유실될 수 있음
-- 해결:
-  - Redis AOF 설정을 적용하여 장애/재시작 후 미반영 데이터 복구 가능성 확보
-  - 배치 동기화 실패 시 Circuit Breaker를 통해 DB 직접 반영 경로로 fallback
-- 결과:
-  - Redis 장애 복구 후 AOF에 남아 있던 Dirty 데이터가 DB에 추가 동기화되는 것을 확인
-  - 단, DB PK 순서와 메시지 순서 보장은 추가 검증 과제로 분리
-
----
-
-
-### 3. unread count 정합성
-
-- 문제: 채팅방 목록 unread와 메시지별 unread를 하나의 값처럼 다루면 재접속/재조회 시 불일치 발생
-- 해결: `lastReadMessageId`와 `unreadCount`를 분리하고 read 이벤트 기준으로 명시적 갱신
-- 결과: 목록 unread와 메시지 unread의 역할 분리
-
----
-
-### 4. WebSocket 재연결 후 누락 메시지 복구
-
-- 문제: WebSocket 연결이 끊긴 동안 발생한 메시지를 클라이언트가 놓칠 수 있음
-- 해결: 클라이언트가 마지막으로 받은 `lastReceivedMessageId` 이후 메시지를 catch-up API로 조회
-- 결과: 재연결 후 누락 구간 복구 가능
-
----
-
-### 5. orphan attachment 누적
-
-- 문제: 첨부파일 선업로드 후 메시지 전송이 완료되지 않으면 고아 파일/메타데이터가 누적됨
-- 해결: 메시지 연결 전/후 상태를 분리하고 cleanup scheduler로 미연결 첨부 정리
-- 결과: 파일 스토리지와 DB 메타데이터 누수 리스크 감소
-
----
-
-### 6. 메시지 검색 누락
-
-- 문제: MySQL Full-Text Search + ngram parser 적용 후에도 일부 영문 키워드가 검색되지 않는 케이스 발생
-- 해결: Full-Text Search를 유지하되 LIKE fallback 추가
-- 결과: 검색 정확도 보완 및 카카오톡식 검색 UX 구현
-
----
-
-## 🎯 향후 개선 과제
-
-### 단기
-
-- [ ] Redis Write-Back 장애 시나리오 검증 강화
-  - Redis 복구 후 DB 반영 순서 검증
-  - DB PK 증가 순서와 메시지 시간 순서 정합성 검증
-  - 중복 동기화 방지를 위한 idempotency 검증
-  - Circuit Breaker open/half-open/close 전환 로그 정리
-- [ ] 메시지 검색 필터 고도화
-  - 기간 필터
-  - 발신자 필터
-  - 파일명 검색
-- [ ] 메시지 삭제 기능
-  - 소프트 삭제
-  - 실시간 삭제 이벤트
-  - 검색 결과 제외 처리
-
-### 중기
-
-- [ ] 관리자 기능
-  - 유저 제재
-  - 신고 처리
-  - 채팅방 강제 퇴장
-  - 운영 감사 로그 조회
-- [ ] 관측성 강화
-  - Micrometer
-  - Prometheus
-  - Grafana
-  - TPS / 지연시간 / 에러율 / 배치 처리량 시각화
-- [ ] 메시지 검색 고도화
-  - OpenSearch / Elasticsearch 검토
-  - 형태소 분석
-  - 오타 허용
-  - 랭킹 기반 검색
-
-### 확장
-
-- [ ] 모바일 환경 최적화
-  - 백그라운드 복귀 후 catch-up
-  - read ACK 튜닝
-  - 푸시 알림 토큰 연동
-- [ ] 멀티 디바이스 동기화
-  - 동일 계정 다중 세션 읽음 상태 동기화
-  - 디바이스별 알림 정책
-- [ ] 메시지 전달 보장 강화
-  - client message id
-  - idempotency key
-  - ACK / 재전송 정책
-
----
-
-## 🔗 연관 저장소
-
-- Front Server: https://github.com/minsu11/live_chat_front
-- Auth Server: https://github.com/minsu11/live_chat_auth
-- API Server: https://github.com/minsu11/live_chat
-
----
-
-## 📚 참고 문서
-
-현재 저장소의 `docs` 디렉토리에 요구사항 및 테스트 관련 문서를 함께 관리합니다.
+## 13. 관련 문서
 
 ```text
 docs/
+├── portfolio/
+│   ├── ParkMinsu_Chatalk_Summary_Portfolio.pdf
+│   └── ParkMinsu_Chatalk_Detail_Portfolio.pdf
+├── testing/
+│   ├── test-strategy-and-coverage.md
+│   └── chatalk-test-study-notes.md
 ├── Requirements.md
-├── task-list.md
 ├── test-result.md
 └── chat-list-testcase.md
 ```
