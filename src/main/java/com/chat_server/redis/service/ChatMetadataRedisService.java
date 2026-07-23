@@ -102,7 +102,7 @@ public class ChatMetadataRedisService {
     @Transactional
     public void incrementUnreadCountFallback(Long roomId, Long userId, Throwable t) {
         log.warn("[CircuitBreaker] Redis 장애로 유저({}, 방:{}) 안읽음 카운트를 DB에 직접 증가시킵니다.", userId, roomId);
-        chatListRepository.addUnreadCountBatch(roomId, userId, 1);
+        chatListRepository.increaseUnreadCount(roomId, userId);
     }
 
     // 읽을 때
