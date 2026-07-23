@@ -41,3 +41,8 @@ src/main/resources/rsa/**
 src/main/resources/image/**
 
 logs/**
+
+performance/results/*
+!performance/results/.gitkeep
+performance/snapshots/*
+!performance/snapshots/.gitkeep
