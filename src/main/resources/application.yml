@@ -19,7 +19,9 @@ spring:
       prod:
         - custom
         - web
-
+      perf:
+        - custom
+        - web
 
 server:
   port: 7070
@@ -32,7 +34,6 @@ logging:
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
   level:
     root: info
-
 
 file:
   upload:
