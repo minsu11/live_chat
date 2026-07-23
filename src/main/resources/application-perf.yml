@@ -1,0 +1,97 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:${PERF_DB_PORT:3307}/${PERF_DB_NAME:chat_server_perf}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&rewriteBatchedStatements=true
+    username: ${PERF_DB_USERNAME:root}
+    password: ${PERF_DB_PASSWORD:1234}
+    hikari:
+      pool-name: ChatalkPerfPool
+      maximum-pool-size: ${PERF_DB_POOL_MAX:10}
+      minimum-idle: ${PERF_DB_POOL_MIN:10}
+      connection-timeout: ${PERF_DB_CONNECTION_TIMEOUT_MS:3000}
+      validation-timeout: 1000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    hibernate:
+      # 성능 비교 전용의 격리 DB이므로 Entity 기준으로 테이블을 준비한다.
+      # 운영 DB나 기존 개발 DB에는 이 프로필을 사용하지 않는다.
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 100
+        order_updates: true
+
+  data:
+    redis:
+      host: localhost
+      port: ${PERF_REDIS_PORT:6380}
+      database: 0
+      timeout: 1000ms
+
+chat:
+  metadata:
+    # redis-write-back 또는 sync-db
+    write-mode: ${CHAT_METADATA_WRITE_MODE:redis-write-back}
+    flush-delay-ms: ${CHAT_METADATA_FLUSH_DELAY_MS:10000}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: chatalk
+      metadata-mode: ${CHAT_METADATA_WRITE_MODE:redis-write-back}
+    distribution:
+      percentiles-histogram:
+        hikaricp.connections.acquire: true
+      percentiles:
+        hikaricp.connections.acquire: 0.5,0.95,0.99
+
+server:
+  port: ${PERF_SERVER_PORT:7070}
+
+file:
+  upload:
+    profile-dir: ./build/perf-uploads/profile
+    chat-image-dir: ./build/perf-uploads/chat/images
+    chat-file-dir: ./build/perf-uploads/chat/files
+    chat-file-max-size: 5MB
+    chat-file-allowed-extensions:
+      - pdf
+      - txt
+      - doc
+      - docx
+      - xls
+      - xlsx
+      - ppt
+      - pptx
+      - zip
+      - hwp
+      - hwpx
+      - jpg
+      - jpeg
+      - png
+
+auth:
+  server:
+    url: ${PERF_AUTH_SERVER_URL:http://localhost:9090}
+  key:
+    public-path: classpath:rsa/login_public_key.pem
+
+logging:
+  level:
+    root: warn
+    com.chat_server: warn
+    com.chat_server.redis.scheduler.ChatMetadataBatchScheduler: info
+    org.hibernate.SQL: warn
+    org.springframework.web.socket: warn
+    org.springframework.messaging: warn
