@@ -1,4 +1,4 @@
-$ErrorActionPreference = "Stop"
+﻿$ErrorActionPreference = "Stop"
 
 function Get-EnvOrDefault([string]$Name, [string]$DefaultValue) {
     $value = [Environment]::GetEnvironmentVariable($Name)
@@ -29,3 +29,4 @@ Write-Host "Prometheus: http://localhost:$prometheusPort"
 Write-Host "Grafana   : http://localhost:$grafanaPort (admin/admin)"
 Write-Host ""
 Write-Host "다음 단계: CHAT_METADATA_WRITE_MODE를 설정하고 perf 프로필로 API 서버를 실행하세요."
+

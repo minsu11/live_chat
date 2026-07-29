@@ -1,4 +1,4 @@
-$ErrorActionPreference = "Stop"
+﻿$ErrorActionPreference = "Stop"
 
 $dbName = if ([string]::IsNullOrWhiteSpace($env:PERF_DB_NAME)) { "chat_server_perf" } else { $env:PERF_DB_NAME }
 $dbPassword = if ([string]::IsNullOrWhiteSpace($env:PERF_DB_PASSWORD)) { "1234" } else { $env:PERF_DB_PASSWORD }
@@ -27,3 +27,4 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "DB와 Redis를 기준 상태로 복원했습니다."
+

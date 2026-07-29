@@ -27,10 +27,34 @@ const stompErrors = new Counter('stomp_errors');
 const messageE2eLatency = new Trend('chat_message_e2e_latency_ms', true);
 const postSendReceiveDelay = new Trend('chat_post_send_receive_delay_ms', true);
 
+const MAX_DURATION_SECONDS = Math.max(
+    60,
+    Math.ceil((MESSAGES_PER_VU * SEND_INTERVAL_MS) / 1000)
+    + DRAIN_SECONDS
+    + 30,
+);
+
 export const options = {
-  vus: VUS,
-  iterations: VUS,
-  maxDuration: `${Math.max(60, Math.ceil((MESSAGES_PER_VU * SEND_INTERVAL_MS) / 1000) + DRAIN_SECONDS + 30)}s`,
+  summaryTrendStats: [
+    'avg',
+    'min',
+    'med',
+    'max',
+    'p(90)',
+    'p(95)',
+    'p(99)',
+  ],
+
+  scenarios: {
+    default: {
+      executor: 'per-vu-iterations',
+      vus: VUS,
+      iterations: 1,
+      maxDuration: `${MAX_DURATION_SECONDS}s`,
+      gracefulStop: '5s',
+    },
+  },
+
   thresholds: {
     checks: ['rate>0.95'],
     stomp_connected: ['rate>0.95'],
@@ -48,7 +72,7 @@ export default function () {
   const serverId = String((__VU * 37) % 1000).padStart(3, '0');
   const socketUrl = `${WS_BASE_URL}${SOCKJS_ENDPOINT}/${serverId}/${sessionId}/websocket`;
 
-  const sentAtByClientMessageId = new Map();
+  const sentAtByMessageContent = new Map();
   let sentCount = 0;
   let receivedOwnCount = 0;
   let sendCompletedAt = 0;
@@ -71,27 +95,30 @@ export default function () {
             connectMetricRecorded = true;
           }
 
-          socket.send(sockJsEncode(buildSubscribeFrame(userId)));
+          socket.send(sockJsEncode(buildSubscribeFrame()));
 
           for (let index = 0; index < MESSAGES_PER_VU; index += 1) {
             socket.setTimeout(() => {
-              const clientMessageId = `${RUN_ID}-vu${__VU}-msg${index}-${Date.now()}`;
+              const messageContent =
+                  `${MESSAGE_PREFIX}-${RUN_ID}-vu${__VU}-msg${index}`;
+
               const body = JSON.stringify({
                 roomId: ROOM_ID,
                 messageType: MESSAGE_TYPE,
-                messageContent: `${MESSAGE_PREFIX}-${MODE}-vu${__VU}-${index}`,
-                clientMessageId,
+                messageContent,
               });
 
-              sentAtByClientMessageId.set(clientMessageId, Date.now());
+              sentAtByMessageContent.set(messageContent, Date.now());
+
               socket.send(sockJsEncode(buildSendFrame(body)));
+
               sentCount += 1;
               messagesSent.add(1);
 
               if (index === MESSAGES_PER_VU - 1) {
                 sendCompletedAt = Date.now();
               }
-            }, index * SEND_INTERVAL_MS);
+            }, (index +1)* SEND_INTERVAL_MS);
           }
 
           socket.setTimeout(() => {
@@ -103,26 +130,47 @@ export default function () {
         }
 
         if (frame.command === 'MESSAGE') {
+
+
           let payload;
           try {
             payload = JSON.parse(frame.body);
           } catch (error) {
             stompErrors.add(1);
+            console.error(
+                `MESSAGE JSON parse error vu=${__VU}: body=${frame.body}`,
+            );
             return;
           }
 
           const message = payload?.data || payload;
-          const clientMessageId = message?.clientMessageId;
-          const sentAt = clientMessageId ? sentAtByClientMessageId.get(clientMessageId) : undefined;
-          if (sentAt === undefined) return;
+
+          const receivedContent =
+              message?.content ?? message?.messageContent;
+
+          const sentAt = receivedContent
+              ? sentAtByMessageContent.get(receivedContent)
+              : undefined;
+
+          const DEBUG = (__ENV.DEBUG || 'false') === 'true';
+
+          if (sentAt === undefined) {
+            if (DEBUG) {
+              console.log(
+                  `Other user's MESSAGE vu=${__VU}: ${JSON.stringify(message)}`
+              );
+            }
+            return;
+          }
 
           const now = Date.now();
           messageE2eLatency.add(now - sentAt);
+
           if (sendCompletedAt > 0 && now >= sendCompletedAt) {
             postSendReceiveDelay.add(now - sendCompletedAt);
           }
 
-          sentAtByClientMessageId.delete(clientMessageId);
+          sentAtByMessageContent.delete(receivedContent);
           receivedOwnCount += 1;
           ownMessagesReceived.add(1);
           return;
@@ -130,7 +178,12 @@ export default function () {
 
         if (frame.command === 'ERROR') {
           stompErrors.add(1);
-          console.error(`STOMP ERROR vu=${__VU}: ${frame.body}`);
+
+          console.error(
+              `STOMP ERROR vu=${__VU}: ` +
+              `headers=${JSON.stringify(frame.headers)} ` +
+              `body=${frame.body}`,
+          );
         }
       }
     });
@@ -218,8 +271,10 @@ function buildConnectFrame(token) {
   ].join('\n');
 }
 
-function buildSubscribeFrame(userId) {
-  const destination = `/user/${userId}/api/sub/chat/rooms/${ROOM_ID}`;
+function buildSubscribeFrame() {
+  const destination =
+      `/user/api/sub/chat/rooms/${ROOM_ID}`;
+
   return [
     'SUBSCRIBE',
     `id:room-${ROOM_ID}-vu-${__VU}`,
@@ -235,11 +290,9 @@ function buildSendFrame(body) {
     'SEND',
     'destination:/api/pub/chat/message',
     'content-type:application/json',
-    `content-length:${body.length}`,
     '',
     body,
-    '\u0000',
-  ].join('\n');
+  ].join('\n') +'\u0000';
 }
 
 function parseStompFrame(rawFrame) {

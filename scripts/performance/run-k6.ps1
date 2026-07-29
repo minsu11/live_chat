@@ -1,4 +1,4 @@
-param(
+﻿param(
     [Parameter(Mandatory = $true)]
     [ValidateSet("sync-db", "redis-write-back")]
     [string]$Mode,
@@ -79,3 +79,4 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host ""
 Write-Host "결과 파일: performance/results/$runId-summary.json"
 Write-Host "샘플 CSV : performance/results/$runId-samples.csv"
+
