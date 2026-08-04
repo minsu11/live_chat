@@ -43,6 +43,7 @@ src/main/resources/image/**
 logs/**
 
 performance/results/*
+performance/evidence/*
 !performance/results/.gitkeep
 performance/snapshots/*
 !performance/snapshots/.gitkeep
