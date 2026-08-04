@@ -34,8 +34,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final AntPathMatcher pm = new AntPathMatcher();
     private static final String[] SKIP = {
-        "/api/ws/**", "/api/ws-chat/**", "/api/ws-chat/info**",
-        "/api/sockjs/**", "/api/webjars/**", "/api/favicon.ico", "/api/v1/users/login"
+        "/api/ws-chat/info**",
+        "/api/sockjs/**",
+        "/api/webjars/**",
+        "/api/favicon.ico",
+
+        "/api/v1/users/login",
+        "/api/v1/users/register",
+        "/api/v1/users/input-id/check",
+
+        "/api/ws/**",
+        "/api/ws-chat/**",
+        "/ws/**",
+        "/ws-chat/**",
+
+        "/actuator/health",
+        "/actuator/mappings"
     };
 
     @Override
