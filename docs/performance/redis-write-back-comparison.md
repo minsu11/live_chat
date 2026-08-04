@@ -331,7 +331,7 @@ DB에는 매 요청마다 UPDATE하지 않고, Redis에 저장된 최신 값을
 
 ## 9. Redis Write-Back 결과
 
-### `1회차 실행 결과`
+### 1회차 실행 결과
 
 ```text
 Run ID: redis-write-back-20260730-173658
@@ -397,20 +397,30 @@ Redis Write-Back 구조는 동일한 조건에서 총 3회 반복해 검증했�
 | 2 | `redis-write-back-20260730-195841` | 60 | 60 | 1,130.63ms | 1,392.15ms | 1,482.31ms | 1,536ms | 937ms |
 | 3 | `redis-write-back-20260730-225803` | 60 | 60 | 1,864.67ms | 2,168.10ms | 2,506.82ms | 2,921ms | 1,962ms |
 
-세 실행 모두 다음 조건을 만족했다.
+세 실행 모두 k6 결과에서 다음 조건을 만족했다.
 
-- 전송 메시지 60건 전체 수신
-- DB에 60건 저장
-- 고유 메시지 60건 확인
-- VU별 20건씩 저장
+- 전송 메시지 60건
+- 자기 메시지 60건 전체 수신
 - `all_own_messages_received = 1`
+
+이 중 별도 검증 명령을 수행한
+`redis-write-back-20260730-173658`,
+`redis-write-back-20260730-225803` 실행에서는
+다음 항목도 확인했다.
+
+- DB 저장 60건
+- 고유 메시지 60건
+- VU별 20건씩 저장
 - 데드락 증가량 0
 - 사용자 Dirty Set 최종 0
 - 채팅방 Dirty Set 최종 0
 - 데드락, 트랜잭션 롤백, 커넥션 풀 포화 로그 없음
 
-실행마다 지연시간 편차는 있었지만, 세 번 모두 메시지 유실이나
-데드락 없이 전체 메시지가 저장·수신됐다.
+실행마다 지연시간 편차는 있었지만,
+세 번 모두 k6 기준으로 전송한 메시지를 전체 수신했다.
+
+별도 DB 및 Redis 검증을 수행한 실행에서도 메시지 저장 누락이나
+데드락 증가 없이 최종 DB 반영까지 완료됐다.
 
 ### 반복 실행 대표값
 
@@ -447,7 +457,7 @@ Redis Write-Back 구조는 동일한 조건에서 총 3회 반복해 검증했�
 | MySQL 데드락 | 발생 | 테스트 중 증가 없음 |
 | 트랜잭션 롤백 | 발생 | 확인되지 않음 |
 | 커넥션 풀 포화 | 발생 | 확인되지 않음 |
-| Dirty Set 최종 상태 | 해당 없음 | 0 |
+| Dirty Set 최종 상태 | 해당 없음 | 상세 검증 실행에서 0 |
 
 Redis Write-Back 열의 지연시간은 세 번의 반복 실행에서 구한
 중앙값을 사용했다.
@@ -462,8 +472,10 @@ sync-db 실행은 일부 요청이 실패한 상태다.
 
 - sync-db는 동일 조건에서 일부 메시지를 처리하지 못했다.
 - Redis Write-Back은 반복 실행에서 메시지를 모두 처리했다.
-- Redis Write-Back 실행 중 데드락 누적 수가 증가하지 않았다.
-- Dirty Set이 최종적으로 비워져 DB 반영까지 완료됐다.
+- 별도 검증 명령을 수행한 Redis Write-Back 실행에서는
+  데드락 누적 수가 증가하지 않았다.
+- 해당 실행에서 Dirty Set이 최종적으로 비워져
+  메타데이터의 DB 반영까지 완료됐다.
 - 요청 종료 후 남아 있던 tail latency가 크게 감소했다.
 
 ---
@@ -485,9 +497,12 @@ sync-db 실행은 일부 요청이 실패한 상태다.
 Redis Write-Back 적용 후에는 메타데이터 DB 쓰기를
 메시지 요청 경로에서 분리했다.
 
-동일 조건의 반복 테스트에서 다음을 확인했다.
+동일 조건으로 수행한 세 번의 반복 테스트에서는
+모두 전송한 메시지 60건 전체 수신을 확인했다.
 
-- 전송한 메시지 60건 전체 수신
+이 중 별도 DB 및 Redis 검증을 수행한 실행에서는
+다음 항목도 확인했다.
+
 - 60건 전체 DB 저장
 - VU별 20건씩 저장
 - 데드락 증가량 0
@@ -496,9 +511,8 @@ Redis Write-Back 적용 후에는 메타데이터 DB 쓰기를
 - 롤백 및 커넥션 풀 포화 로그 없음
 
 이를 통해 해당 테스트 조건에서 Redis Write-Back 구조가
-요청 경로의 DB 락 경합을 줄이고, 메시지 처리 안정성과
-tail latency를 개선한 것을 확인했다.
-
+요청 경로의 DB 락 경합을 줄이고, 반복 실행에서 메시지 수신 안정성을
+확보했으며, 상세 검증 실행에서는 최종 DB 반영까지 완료한 것을 확인했다.
 ---
 
 ## 12. 결과 해석의 한계
@@ -578,10 +592,12 @@ $env:CHAT_METADATA_WRITE_MODE = "redis-write-back"
 
 ```text
 docs/performance/redis-write-back-comparison.md
-performance/results/*-summary.json
-performance/results/*-samples.csv
-logs/sync-db-*.log
-logs/redis-write-back-*.log
+docs/performance/redis-write-back-3runs.csv
+scripts/performance/
+performance/docker-compose.yml
+performance/prometheus/
+performance/grafana/
+src/main/resources/application-perf.yml
 ```
 
 전체 원본 로그와 DB snapshot에는 테스트 계정 정보가 포함될 수 있어
