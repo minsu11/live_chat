@@ -445,22 +445,26 @@ Redis Write-Back 구조는 동일한 조건에서 총 3회 반복해 검증했�
 | 동시 사용자 | 3 | 3 |
 | 총 전송 | 60 | 60 |
 | 자기 메시지 수신 | 56 | 60 |
-| DB 저장 | 46 | 60 |
-| DB 고유 메시지 | 46 | 60 |
-| 저장 성공률 | 76.7% | 100% |
 | 모든 메시지 수신 VU | 0 / 3 | 3 / 3 |
+| DB 저장 | 46 | 상세 검증 실행에서 60 |
+| DB 고유 메시지 | 46 | 상세 검증 실행에서 60 |
+| 저장 성공률 | 76.7% | 상세 검증 실행에서 100% |
 | E2E 평균 | 3,631.73ms | 1,130.63ms |
 | E2E p95 | 7,903.50ms | 1,392.15ms |
 | E2E p99 | 7,945.15ms | 1,482.31ms |
 | E2E 최대 | 7,960ms | 1,536ms |
 | Post-send tail 최대 | 6,459ms | 937ms |
-| MySQL 데드락 | 발생 | 테스트 중 증가 없음 |
-| 트랜잭션 롤백 | 발생 | 확인되지 않음 |
-| 커넥션 풀 포화 | 발생 | 확인되지 않음 |
+| MySQL 데드락 | 발생 | 상세 검증 실행에서 증가량 0 |
+| 트랜잭션 롤백 | 발생 | 상세 검증 실행에서 확인되지 않음 |
+| 커넥션 풀 포화 | 발생 | 상세 검증 실행에서 확인되지 않음 |
 | Dirty Set 최종 상태 | 해당 없음 | 상세 검증 실행에서 0 |
 
-Redis Write-Back 열의 지연시간은 세 번의 반복 실행에서 구한
-중앙값을 사용했다.
+sync-db 지연시간은 문제 재현 실행 1회의 값이며,
+Redis Write-Back 지연시간은 세 번의 반복 실행에서 구한
+실행별 결과의 중앙값을 사용했다.
+
+DB 저장 건수, 데드락 증가량, Dirty Set 최종 상태는
+별도 DB 및 Redis 검증을 수행한 실행의 결과다.
 
 sync-db보다 낮은 지연시간을 보였지만,
 sync-db 실행은 일부 요청이 실패한 상태다.
@@ -513,6 +517,7 @@ Redis Write-Back 적용 후에는 메타데이터 DB 쓰기를
 이를 통해 해당 테스트 조건에서 Redis Write-Back 구조가
 요청 경로의 DB 락 경합을 줄이고, 반복 실행에서 메시지 수신 안정성을
 확보했으며, 상세 검증 실행에서는 최종 DB 반영까지 완료한 것을 확인했다.
+
 ---
 
 ## 12. 결과 해석의 한계
@@ -569,6 +574,16 @@ $env:CHAT_METADATA_WRITE_MODE = "redis-write-back"
   --console=plain
 ```
 
+### 테스트 환경 변수 준비
+
+Auth Server와 API Server를 실행하고,
+성능 테스트용 사용자와 그룹 채팅방 데이터가 준비된 상태에서 실행한다.
+
+```powershell
+& .\scripts\performance\prepare-k6-env.ps1
+```
+
+
 ### 부하 테스트
 
 ```powershell
@@ -590,9 +605,18 @@ $env:CHAT_METADATA_WRITE_MODE = "redis-write-back"
 
 ## 14. 관련 자료
 
+### dev 브랜치에 보관하는 결과 문서
+
 ```text
 docs/performance/redis-write-back-comparison.md
 docs/performance/redis-write-back-3runs.csv
+```
+
+### 비교 재현 브랜치에 보관하는 실행 환경
+
+```text
+Branch: perf/redis-write-back-comparison
+
 scripts/performance/
 performance/docker-compose.yml
 performance/prometheus/
@@ -601,4 +625,4 @@ src/main/resources/application-perf.yml
 ```
 
 전체 원본 로그와 DB snapshot에는 테스트 계정 정보가 포함될 수 있어
-Git 저장소에는 필요한 발췌본과 요약 결과만 보관한다.
+Git 저장소에 커밋하지 않고 로컬 검증 자료로만 보관한다.

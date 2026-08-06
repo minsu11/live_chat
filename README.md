@@ -222,8 +222,11 @@ Redis key 없음
 사용자별 `chat_list` 메타데이터를 즉시 갱신했습니다.
 
 동일 그룹 채팅방에 여러 사용자가 동시에 메시지를 보내자
-두 테이블의 잠금 순서가 충돌하면서 MySQL 데드락이 발생했고,
-트랜잭션 롤백과 HikariCP 커넥션 풀 포화가 함께 나타났습니다.
+MySQL 데드락과 트랜잭션 롤백, HikariCP 커넥션 풀 포화가
+같은 실행에서 발생했습니다.
+
+이후 후속 재현에서 `chat_room`과 `chat_list`를 갱신하는
+트랜잭션 사이의 잠금 순서 충돌 구조를 확인했습니다.
 
 이를 재현하기 위해 현재 스키마와 메시지 저장 방식은 유지하고,
 메타데이터 처리 방식만 다음 두 모드로 비교했습니다.
@@ -248,7 +251,8 @@ Redis key 없음
 | MySQL 데드락 | 발생 | 상세 검증 실행에서 증가량 0 |
 | Dirty Set 최종 상태 | 해당 없음 | 상세 검증 실행에서 0 |
 
-Redis Write-Back 지연시간은 동일 조건으로 수행한 3회 결과의
+`sync-db` 지연시간은 문제 재현 실행 1회의 값이며,
+Redis Write-Back 지연시간은 동일 조건으로 수행한 3회 실행의
 중앙값을 사용했습니다. 세 실행 모두 k6 기준으로 60건 전체 수신을
 확인했으며, 별도 DB·Redis 검증을 수행한 실행에서는 60건 전체 저장,
 데드락 증가량 0, Dirty Set 최종 0을 확인했습니다.
@@ -312,7 +316,7 @@ LINE >= 0.60
 BRANCH >= 0.40
 ```
 
-현재 `feature/test-code` 브랜치의 GitHub Actions 결과는 다음과 같습니다.
+테스트 코드 정리 당시 GitHub Actions 검증 결과는 다음과 같습니다.
 
 - 전체 테스트: **326개**
 - 실패: **0개**
@@ -358,8 +362,10 @@ build/reports/jacoco/test/jacocoTestReport.xml
 사용자별 unread count를 DB에 즉시 반영했습니다.
 
 동일 그룹 채팅방에서 여러 사용자가 동시에 메시지를 보내자
-`chat_room`과 `chat_list`의 잠금 획득 순서가 충돌했고,
 MySQL 데드락과 트랜잭션 롤백이 발생했습니다.
+
+후속 재현에서 `chat_room`과 `chat_list`를 갱신하는
+트랜잭션 사이의 잠금 순서 충돌 구조를 확인했습니다.
 
 락 대기와 처리되지 못한 트랜잭션이 누적되면서 HikariCP도
 `active=10`, `idle=0`, `waiting=20~21` 상태까지 포화됐습니다.
@@ -600,6 +606,9 @@ com.chat_server
 
 ```text
 docs/
+├── performance/
+│   ├── redis-write-back-comparison.md
+│   └── redis-write-back-3runs.csv
 ├── portfolio/
 │   ├── ParkMinsu_Chatalk_Summary_Portfolio.pdf
 │   └── ParkMinsu_Chatalk_Detail_Portfolio.pdf
