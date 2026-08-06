@@ -41,3 +41,8 @@ src/main/resources/rsa/**
 src/main/resources/image/**
 
 logs/**
+
+# Performance test local artifacts
+performance/results/**
+performance/evidence/**
+performance/snapshots/**
