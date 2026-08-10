@@ -216,6 +216,57 @@ Redis key 없음
 
 이 순서가 유지되는지 단위 테스트로 확인했습니다.
 
+### 동일 채팅방 동시 요청 성능 검증
+
+기존에는 메시지 요청 트랜잭션 안에서 `chat_room`과
+사용자별 `chat_list` 메타데이터를 즉시 갱신했습니다.
+
+동일 그룹 채팅방에 여러 사용자가 동시에 메시지를 보내자
+MySQL 데드락과 트랜잭션 롤백, HikariCP 커넥션 풀 포화가
+같은 실행에서 발생했습니다.
+
+이후 후속 재현에서 `chat_room`과 `chat_list`를 갱신하는
+트랜잭션 사이의 잠금 순서 충돌 구조를 확인했습니다.
+
+이를 재현하기 위해 현재 스키마와 메시지 저장 방식은 유지하고,
+메타데이터 처리 방식만 다음 두 모드로 비교했습니다.
+
+| 모드 | 메타데이터 처리 |
+| --- | --- |
+| `sync-db` | 메시지 요청 트랜잭션 안에서 DB에 즉시 반영 |
+| Redis Write-Back | Redis Hash와 Dirty Set에 반영한 뒤 Scheduler가 DB에 배치 반영 |
+
+테스트 조건은 서로 다른 사용자 3명이 같은 그룹 채팅방에
+각각 20건씩, 총 60건의 메시지를 100ms 간격으로 전송하는 방식입니다.
+
+| 지표 | `sync-db` | Redis Write-Back |
+| --- | ---: | ---: |
+| 전송 메시지 | 60 | 60 |
+| 자기 메시지 수신 | 56 | 60 |
+| DB 저장 | 46 | 상세 검증 실행에서 60 |
+| 저장 성공률 | 76.7% | 상세 검증 실행에서 100% |
+| 모든 메시지를 수신한 VU | 0 / 3 | 3 / 3 |
+| E2E p99 | 7,945.15ms | 1,482.31ms |
+| Post-send tail 최대 | 6,459ms | 937ms |
+| MySQL 데드락 | 발생 | 상세 검증 실행에서 증가량 0 |
+| Dirty Set 최종 상태 | 해당 없음 | 상세 검증 실행에서 0 |
+
+`sync-db` 지연시간은 문제 재현 실행 1회의 값이며,
+Redis Write-Back 지연시간은 동일 조건으로 수행한 3회 실행의
+중앙값을 사용했습니다. 세 실행 모두 k6 기준으로 60건 전체 수신을
+확인했으며, 별도 DB·Redis 검증을 수행한 실행에서는 60건 전체 저장,
+데드락 증가량 0, Dirty Set 최종 0을 확인했습니다.
+
+`sync-db` 실행은 일부 요청이 실패한 상태이므로 이 결과를
+단순히 Redis가 DB보다 몇 배 빠르다는 의미로 해석하지 않았습니다.
+이번 검증의 핵심은 요청 경로에서 메타데이터 DB 쓰기를 분리한 뒤
+동일 조건에서 메시지 처리 안정성과 tail latency가 개선됐다는 점입니다.
+
+- [상세 성능 비교 문서](docs/performance/redis-write-back-comparison.md)
+- [반복 실행 결과 CSV](docs/performance/redis-write-back-3runs.csv)
+- [성능 비교 재현 브랜치](https://github.com/minsu11/live_chat/tree/perf/redis-write-back-comparison)
+
+
 ### 남은 검증 과제
 
 - Redis AOF 복구 데이터와 DB 반영 순서의 정합성
@@ -265,7 +316,7 @@ LINE >= 0.60
 BRANCH >= 0.40
 ```
 
-현재 `feature/test-code` 브랜치의 GitHub Actions 결과는 다음과 같습니다.
+테스트 코드 정리 당시 GitHub Actions 검증 결과는 다음과 같습니다.
 
 - 전체 테스트: **326개**
 - 실패: **0개**
@@ -303,24 +354,49 @@ build/reports/jacoco/test/jacocoTestReport.xml
 
 ## 7. Trouble Shooting
 
-### 1. 메시지 발송 시 DB 메타데이터 경합
+### 1. 동일 채팅방 메타데이터 갱신 시 데드락과 커넥션 풀 포화
 
 **문제**
 
-메시지를 보낼 때마다 채팅방의 마지막 메시지 정보와 사용자별 unread count를 즉시 UPDATE하면 동일 row에 쓰기 요청이 몰립니다.
+메시지를 보낼 때마다 채팅방의 마지막 메시지 정보와
+사용자별 unread count를 DB에 즉시 반영했습니다.
+
+동일 그룹 채팅방에서 여러 사용자가 동시에 메시지를 보내자
+MySQL 데드락과 트랜잭션 롤백이 발생했습니다.
+
+후속 재현에서 `chat_room`과 `chat_list`를 갱신하는
+트랜잭션 사이의 잠금 순서 충돌 구조를 확인했습니다.
+
+락 대기와 처리되지 못한 트랜잭션이 누적되면서 HikariCP도
+`active=10`, `idle=0`, `waiting=20~21` 상태까지 포화됐습니다.
 
 **변경**
 
-- Redis Hash에 메타데이터 우선 반영
-- Dirty Set으로 변경 대상 추적
-- Scheduler에서 JDBC batchUpdate 수행
-- 성공한 Dirty Key만 제거
+- 채팅방과 사용자별 메타데이터를 Redis Hash에 우선 반영
+- Dirty Set으로 DB 반영 대상을 추적
+- Scheduler에서 JDBC `batchUpdate` 수행
+- DB 반영에 성공한 Dirty Key만 제거
+- DB 반영 실패 시 Dirty Key를 유지해 다음 배치에서 재시도
 
-**확인**
+**검증**
 
-- Dirty Set이 비어 있을 때 불필요한 DB 호출이 없는지 확인
-- DB 반영 실패 시 Dirty Key가 남는지 확인
-- 잘못된 Dirty Key가 있어도 스케줄 전체가 중단되지 않는지 확인
+동일 조건에서 사용자 3명이 각각 20건씩 총 60건을 전송했습니다.
+
+- `sync-db`: 56건 수신, 46건 DB 저장
+- Redis Write-Back: 3회 모두 60건 전체 수신
+- 상세 검증 실행: 60건 전체 DB 저장
+- 상세 검증 실행: 데드락 증가량 0
+- 상세 검증 실행: 사용자·채팅방 Dirty Set 최종 0
+- E2E p99: 7,945.15ms (`sync-db` 재현 1회)
+  → 1,482.31ms (Redis Write-Back 3회 중앙값)
+- Post-send tail 최대: 6,459ms (`sync-db` 재현 1회)
+  → 937ms (Redis Write-Back 3회 중앙값)
+
+`sync-db` 지연시간은 문제 재현 실행 1회의 값이며,
+Redis Write-Back 지연시간은 동일 조건으로 수행한 3회 실행의
+중앙값을 사용했습니다.
+
+[상세 성능 비교 결과](docs/performance/redis-write-back-comparison.md)
 
 ### 2. Redis 캐시 미스 이후 unread count가 1부터 시작하는 문제
 
@@ -530,6 +606,9 @@ com.chat_server
 
 ```text
 docs/
+├── performance/
+│   ├── redis-write-back-comparison.md
+│   └── redis-write-back-3runs.csv
 ├── portfolio/
 │   ├── ParkMinsu_Chatalk_Summary_Portfolio.pdf
 │   └── ParkMinsu_Chatalk_Detail_Portfolio.pdf
