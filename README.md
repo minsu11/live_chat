@@ -59,7 +59,8 @@ Chatalk은 화면, 인증, 채팅 도메인의 책임을 나누기 위해 세 �
 
 ### 인증 요청 흐름
 
-일반 로그인
+**일반 로그인**
+```text
 Client
 → API Server
 → Feign Client
@@ -67,12 +68,15 @@ Client
 → 로그인 검증 및 Access/Refresh Token 발급
 → API Server
 → Client
+```
 
-OAuth2
+**OAuth2**
+```text
 Client
 → Nginx `/a/**`
 → Auth Server
 → OAuth2 Provider
+```
 
 ### API 서버의 주요 책임
 
@@ -194,9 +198,10 @@ STOMP 메시지 수신
 → 메시지 DB 저장
 → 첨부파일 연결
 → Redis 메타데이터 갱신
-→ 수신자별 메시지 전파
-→ 채팅방 목록 갱신 이벤트 전파
-→ 알림 대상 사용자에게 알림 전파
+→ Redis Publish
+→ Redis Subscriber
+→ STOMP 브로드캐스트
+→ 채팅방 목록 / 알림 이벤트 전파
 ```
 
 메시지가 DB에 저장되기 전에 WebSocket 전파가 먼저 실행되면 클라이언트에는 보이지만 재조회할 수 없는 메시지가 생길 수 있습니다. 그래서 저장 실패 시 브로드캐스트와 후속 메타데이터 갱신이 실행되지 않는지 테스트로 확인했습니다.
@@ -502,21 +507,25 @@ Full-Text Search를 기본 검색으로 사용하면서, 사용자가 입력한 
 
 ---
 
-## 8. WebSocket 경로
+## 8. WebSocket / STOMP 경로
 
-### 개발 환경
+`dev`와 `prod` 환경 모두 동일한 WebSocket/STOMP 경로 설정을 사용합니다.
 
 | 구분 | 경로 |
 | --- | --- |
-| Endpoint | `/api/ws-chat` |
-| Publish Prefix | `/api/pub` |
-| Subscribe Prefix | `/api/sub` |
+| WebSocket Endpoint | `/api/ws-chat` |
+| STOMP Publish Prefix | `/api/pub` |
+| STOMP Subscribe Prefix | `/api/sub` |
 | 메시지 발송 | `/api/pub/chat/message` |
 | 읽음 이벤트 발송 | `/api/pub/chat/read` |
 | 채팅방 메시지 구독 | `/user/api/sub/chat/rooms/{roomId}` |
 | 읽음 이벤트 구독 | `/user/api/sub/chat/rooms/{roomId}/read` |
 
-운영 profile에서는 `/api` prefix 없이 `/ws-chat`, `/pub`, `/sub`를 사용합니다.
+운영 환경에서는 Client가 `/api/ws-chat`으로 WebSocket/SockJS 연결을 요청하고,
+Nginx가 해당 요청을 API Server로 프록시합니다.
+
+WebSocket 연결 이후 사용하는 `/api/pub/**`, `/api/sub/**`는
+HTTP API 경로가 아니라 STOMP frame의 destination입니다.
 
 ---
 
