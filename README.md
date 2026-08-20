@@ -4,10 +4,25 @@ Spring Boot와 WebSocket/STOMP로 구현한 실시간 채팅 API 서버입니다
 
 처음에는 1:1 메시지 송수신 기능부터 시작했지만, 실제로 서비스를 운영하려면 연결이 끊겼을 때의 메시지 복구, 사용자별 읽음 상태, 채팅방 목록 정합성, 파일 업로드 실패, Redis 장애처럼 정상 흐름 밖의 문제를 함께 다뤄야 했습니다. 현재는 이러한 문제를 기능 구현과 테스트 코드로 확인하면서 안정성을 보강하고 있습니다.
 
+## 목차
+1. 프로젝트 구성
+2. 기술 스택
+3. 주요 기능
+4. 핵심 처리 흐름
+5. Redis Write-Back
+6. 테스트 전략
+7. Troubleshooting
+8. WebSocket 경로
+9. 주요 API
+10. 로컬 실행
+11. 패키지 구조
+12. 향후 개선
+
+
 ## 프로젝트 링크
 
 - 배포 서비스: https://chatalk.store
-- Front Server: https://github.com/minsu11/live_chat_front
+- Front Repository: https://github.com/minsu11/live_chat_front
 - Auth Server: https://github.com/minsu11/live_chat_auth
 - API Server: https://github.com/minsu11/live_chat
 - 요약 포트폴리오: `docs/portfolio/ParkMinsu_Chatalk_Summary_Portfolio.pdf`
@@ -16,15 +31,48 @@ Spring Boot와 WebSocket/STOMP로 구현한 실시간 채팅 API 서버입니다
 
 ---
 
+## 핵심 성과
+
+| 항목 | 결과 |
+| --- | --- |
+| 동일 채팅방 동시 요청 | DB 저장 46/60 → 60/60 |
+| Redis Write-Back | 3회 반복 모두 60/60 수신 |
+| 장애/정합성 검증 | Deadlock 증가량 0 · Dirty Set 0 |
+| 테스트 | 326개 / 실패 0개 |
+| Coverage | Line 64.36% · Branch 65.23% |
+
+---
+
+## 전체 아키텍처
+
+![project_architecture.png](docs%2Fimage%2Fproject_architecture.png)
+
 ## 1. 프로젝트 구성
 
 Chatalk은 화면, 인증, 채팅 도메인의 책임을 나누기 위해 세 저장소로 구성했습니다.
 
 | 서버 | 역할 | 저장소 |
 | --- | --- | --- |
-| Front Server | Vue 기반 채팅 UI, WebSocket 연결, 메시지 렌더링 | `live_chat_front` |
+| Vue SPA / Front Repository | Vue 기반 채팅 UI, WebSocket 연결, 메시지 렌더링 | `live_chat_front` |
 | Auth Server | 로그인, JWT 발급·재발급, OAuth2 인증 | `live_chat_auth` |
 | API Server | 채팅방, 메시지, 읽음, 파일, 검색, Redis 동기화 | 현재 저장소 |
+
+### 인증 요청 흐름
+
+일반 로그인
+Client
+→ API Server
+→ Feign Client
+→ Auth Server
+→ 로그인 검증 및 Access/Refresh Token 발급
+→ API Server
+→ Client
+
+OAuth2
+Client
+→ Nginx `/a/**`
+→ Auth Server
+→ OAuth2 Provider
 
 ### API 서버의 주요 책임
 
