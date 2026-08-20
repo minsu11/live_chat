@@ -26,8 +26,8 @@ Spring Boot와 WebSocket/STOMP로 구현한 실시간 채팅 API 서버입니다
 - Front Repository: https://github.com/minsu11/live_chat_front
 - Auth Server: https://github.com/minsu11/live_chat_auth
 - API Server: https://github.com/minsu11/live_chat
-- 요약 포트폴리오: `docs/portfolio/ParkMinsu_Chatalk_Summary_Portfolio.pdf`
-- 상세 포트폴리오: `docs/portfolio/ParkMinsu_Chatalk_Detail_Portfolio.pdf`
+- [요약 포트폴리오](docs/portfolio/ParkMinsu_Chatalk_Summary_Portfolio.pdf)
+- [상세 포트폴리오](docs/portfolio/ParkMinsu_Chatalk_Detail_Portfolio.pdf)
 - Notion 상세 정리: https://ms-pt.notion.site/343b77b258e780bfac21d407cc70ac72?pvs=74
 
 ---
@@ -86,7 +86,7 @@ Client
 - 사용자별 읽음 상태와 안 읽은 메시지 수 관리
 - WebSocket 재연결 이후 누락 메시지 복구
 - 이미지·파일 메시지 업로드와 고아 첨부파일 정리
-- Redis 메타데이터 캐시와 DB Write-Back
+- Redis 메타데이터 Write-Back 및 Pub/Sub
 - 채팅방 내 메시지 검색과 검색 결과 문맥 조회
 
 ---
@@ -99,6 +99,7 @@ Client
 - Spring Boot 3.4.3
 - Spring Security
 - Spring WebSocket / STOMP
+- Spring Cloud OpenFeign
 - Spring Data JPA
 - Querydsl
 - Spring Data Redis
@@ -119,7 +120,7 @@ Client
 
 - Docker
 - Nginx
-- Cloudflare
+- Cloudflare - DNS / Proxy / SSL
 - GitHub Actions
 
 ---
@@ -406,7 +407,7 @@ build/reports/jacoco/test/jacocoTestReport.xml
 
 ---
 
-## 7. Trouble Shooting
+## 7. Troubleshooting
 
 ### 1. 동일 채팅방 메타데이터 갱신 시 데드락과 커넥션 풀 포화
 
