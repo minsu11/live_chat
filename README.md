@@ -5,6 +5,7 @@ Spring Boot와 WebSocket/STOMP로 구현한 실시간 채팅 API 서버입니다
 처음에는 1:1 메시지 송수신 기능부터 시작했지만, 실제로 서비스를 운영하려면 연결이 끊겼을 때의 메시지 복구, 사용자별 읽음 상태, 채팅방 목록 정합성, 파일 업로드 실패, Redis 장애처럼 정상 흐름 밖의 문제를 함께 다뤄야 했습니다. 현재는 이러한 문제를 기능 구현과 테스트 코드로 확인하면서 안정성을 보강하고 있습니다.
 
 ## 목차
+
 1. 프로젝트 구성
 2. 기술 스택
 3. 주요 기능
@@ -12,12 +13,12 @@ Spring Boot와 WebSocket/STOMP로 구현한 실시간 채팅 API 서버입니다
 5. Redis Write-Back
 6. 테스트 전략
 7. Troubleshooting
-8. WebSocket 경로
+8. WebSocket / STOMP 경로
 9. 주요 API
 10. 로컬 실행
 11. 패키지 구조
 12. 향후 개선
-
+13. 관련 문서
 
 ## 프로젝트 링크
 
@@ -35,9 +36,9 @@ Spring Boot와 WebSocket/STOMP로 구현한 실시간 채팅 API 서버입니다
 
 | 항목 | 결과 |
 | --- | --- |
-| 동일 채팅방 동시 요청 | DB 저장 46/60 → 60/60 |
-| Redis Write-Back | 3회 반복 모두 60/60 수신 |
-| 장애/정합성 검증 | Deadlock 증가량 0 · Dirty Set 0 |
+| `sync-db` 문제 재현 | 수신 56/60 · DB 저장 46/60 |
+| Redis Write-Back | 3회 모두 수신 60/60 |
+| DB·Redis 상세 검증 | DB 60/60 · Deadlock 증가량 0 · Dirty Set 0 |
 | 테스트 | 326개 / 실패 0개 |
 | Coverage | Line 64.36% · Branch 65.23% |
 
