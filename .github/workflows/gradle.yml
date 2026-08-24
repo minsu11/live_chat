@@ -5,12 +5,12 @@
       branches:
         - main
         - dev
-        - feature/test-code
 
     push:
       branches:
         - main
         - dev
+        - doc/readme
 
   jobs:
     test:
