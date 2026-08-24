@@ -39,7 +39,7 @@ Spring Boot와 WebSocket/STOMP로 구현한 실시간 채팅 API 서버입니다
 | `sync-db` 문제 재현 | 수신 56/60 · DB 저장 46/60 |
 | Redis Write-Back | 3회 모두 수신 60/60 |
 | DB·Redis 상세 검증 | DB 60/60 · Deadlock 증가량 0 · Dirty Set 0 |
-| Redis Pub/Sub 멀티 인스턴스 | API 2개 인스턴스 간 STOMP 메시지 실시간 전달 검증 |
+| Redis Pub/Sub 멀티 인스턴스 | 서로 다른 API 인스턴스에 연결된 STOMP 사용자 간 실시간 전달 검증 |
 | 테스트 | 326개 / 실패 0개 |
 | Coverage | Line 64.36% · Branch 65.23% |
 
@@ -224,22 +224,22 @@ Front B
 → Front A
 
 ```
-**검증 환경**:
+**검증 환경**
 
-API A: localhost:7070
-API B: localhost:7071
-Front A: localhost:8080
-Front B: localhost:8081
-Shared Redis / MySQL
-Redis Channel: chatroom
+- API A: `localhost:7070`
+- API B: `localhost:7071`
+- Front A: `localhost:8080`
+- Front B: `localhost:8081`
+- Shared Redis / MySQL
+- Redis Channel: `chatroom`
 
-**검증 결과**:
+**검증 결과**
 
-PUBSUB NUMSUB chatroom: Subscriber 2개 확인
-서로 다른 API 인스턴스에 연결된 사용자 간 실시간 메시지 전달 확인
-송신 인스턴스의 Redis Publish와 수신 인스턴스의 Redis Subscriber 동작 확인
-동일 메시지 ID 252693이 수신 인스턴스에서 STOMP 세션으로 브로드캐스트됨을 확인
-DB에 동일 메시지 ID 252693 1건 저장 확인
+- `PUBSUB NUMSUB chatroom`: Subscriber 2개 확인
+- 서로 다른 API 인스턴스에 연결된 사용자 간 실시간 메시지 전달 확인
+- 송신 인스턴스의 Redis Publish와 수신 인스턴스의 Redis Subscriber 동작 확인
+- 동일 메시지 ID `252693`이 수신 인스턴스에서 STOMP 세션으로 브로드캐스트됨을 확인
+- DB에 동일 메시지 ID `252693` 1건 저장 확인
 
 [멀티 인스턴스 검증 상세 결과](docs%2Ftesting%2Fredis-pubsub-multi-instance-result.md)
 
