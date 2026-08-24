@@ -123,7 +123,7 @@ tasks.named('jacocoTestCoverageVerification') {
                 counter = 'LINE'
                 value = 'COVEREDRATIO'
                 minimum = 0.60
-            }
+            }chat_server
         }
 
         rule {
@@ -141,6 +141,10 @@ tasks.named('jacocoTestCoverageVerification') {
 
 tasks.named('check') {
     dependsOn tasks.named('jacocoTestCoverageVerification')
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
 }
 
 sonar {

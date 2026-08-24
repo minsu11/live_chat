@@ -28,8 +28,13 @@ server:
     max-swallow-size: -1
 
 logging:
+  charset:
+    console: UTF-8
+    file: UTF-8
+
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
   level:
     root: info
 
