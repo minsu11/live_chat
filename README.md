@@ -39,6 +39,7 @@ Spring Boot와 WebSocket/STOMP로 구현한 실시간 채팅 API 서버입니다
 | `sync-db` 문제 재현 | 수신 56/60 · DB 저장 46/60 |
 | Redis Write-Back | 3회 모두 수신 60/60 |
 | DB·Redis 상세 검증 | DB 60/60 · Deadlock 증가량 0 · Dirty Set 0 |
+| Redis Pub/Sub 멀티 인스턴스 | API 2개 인스턴스 간 STOMP 메시지 실시간 전달 검증 |
 | 테스트 | 326개 / 실패 0개 |
 | Coverage | Line 64.36% · Branch 65.23% |
 
@@ -207,6 +208,40 @@ STOMP 메시지 수신
 ```
 
 메시지가 DB에 저장되기 전에 WebSocket 전파가 먼저 실행되면 클라이언트에는 보이지만 재조회할 수 없는 메시지가 생길 수 있습니다. 그래서 저장 실패 시 브로드캐스트와 후속 메타데이터 갱신이 실행되지 않는지 테스트로 확인했습니다.
+
+### Redis Pub/Sub 멀티 인스턴스 검증
+
+Redis Pub/Sub 기반 메시지 전파가 단일 API 인스턴스 내부에서만 동작하는지 확인하는 데 그치지 않고,
+로컬에서 API 서버 2개 인스턴스를 실행해 실제 인스턴스 간 메시지 전달을 검증했습니다.
+
+```text
+Front B
+→ API B
+→ Redis Publish
+→ Redis `chatroom`
+→ API A Redis Subscriber
+→ STOMP Broadcast
+→ Front A
+
+```
+**검증 환경**:
+
+API A: localhost:7070
+API B: localhost:7071
+Front A: localhost:8080
+Front B: localhost:8081
+Shared Redis / MySQL
+Redis Channel: chatroom
+
+**검증 결과**:
+
+PUBSUB NUMSUB chatroom: Subscriber 2개 확인
+서로 다른 API 인스턴스에 연결된 사용자 간 실시간 메시지 전달 확인
+송신 인스턴스의 Redis Publish와 수신 인스턴스의 Redis Subscriber 동작 확인
+동일 메시지 ID 252693이 수신 인스턴스에서 STOMP 세션으로 브로드캐스트됨을 확인
+DB에 동일 메시지 ID 252693 1건 저장 확인
+
+[멀티 인스턴스 검증 상세 결과](docs%2Ftesting%2Fredis-pubsub-multi-instance-result.md)
 
 ### 읽음 처리
 
@@ -672,6 +707,14 @@ docs/
 │   ├── ParkMinsu_Chatalk_Summary_Portfolio.pdf
 │   └── ParkMinsu_Chatalk_Detail_Portfolio.pdf
 ├── testing/
+    ├── redis-pubsub-multi-instance-result.md
+    └── redis-pubsub-multi-instance/
+        ├── 01-redis-numsub.png
+        ├── 02-sender-front.png
+        ├── 03-sender-log.png
+        ├── 04-receiver-log.png
+        ├── 05-receiver-front.png
+        └── 06-db-result.png
 │   ├── test-strategy-and-coverage.md
 │   └── chatalk-test-study-notes.md
 ├── Requirements.md
