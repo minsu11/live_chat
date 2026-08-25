@@ -45,6 +45,8 @@ Spring Boot와 WebSocket/STOMP로 구현한 실시간 채팅 API 서버입니다
 
 ---
 
+
+
 ## 전체 아키텍처
 
 ![project_architecture.png](docs%2Fimage%2Fproject_architecture.png)
@@ -422,7 +424,7 @@ JaCoCo 측정에서는 DTO, 설정 바인딩, enum, 단순 예외, Querydsl 자�
 ./gradlew clean test jacocoTestReport jacocoTestCoverageVerification
 ```
 
-리포트 위치:
+### 리포트 위치:
 
 ```text
 build/reports/tests/test/index.html
@@ -430,14 +432,17 @@ build/reports/jacoco/test/html/index.html
 build/reports/jacoco/test/jacocoTestReport.xml
 ```
 
+### Integration Test
+
+- 실제 WebSocket/STOMP 연결 기반으로 CONNECT, 인증, SUBSCRIBE, SEND, MESSAGE 수신 및 사용자별 destination 라우팅 검증
+- Testcontainers 기반 MySQL 8 환경에서 실제 DDL 적용 후 QueryDSL 쿼리 검증
+- MySQL Full-Text Search BOOLEAN MODE, LIKE fallback, createdAt + messageId 복합 Cursor 동작 검증
+
 ### 현재 테스트의 한계
 
-- Querydsl Repository 구현체는 실제 DB 기반 검증이 부족합니다.
-- MySQL Full-Text Search는 H2와 차이가 있어 Testcontainers 기반 테스트가 필요합니다.
-- STOMP CONNECT 인터셉터는 단위 테스트를 추가했지만 실제 WebSocket 연결과 구독까지 포함한 통합 테스트는 남아 있습니다.
 - Redis 장애 fallback은 단위 테스트 중심이며 Redis 프로세스를 실제로 내렸다 복구하는 자동화 테스트는 아직 없습니다.
+- Testcontainers 기반 MySQL 테스트는 실제 DB 동작 검증에 초점을 두며 운영 환경 전체 구성을 재현하지는 않습니다.
 - 회원가입부터 채팅방 생성, 메시지 전송, 재연결까지 이어지는 전체 E2E 테스트는 향후 과제입니다.
-
 테스트 전략과 면접 대비용 상세 정리는 [`docs/testing/chatalk-test-study-notes.md`](docs/testing/chatalk-test-study-notes.md)에 별도로 작성했습니다.
 
 ---
