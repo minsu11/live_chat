@@ -10,7 +10,6 @@
       branches:
         - main
         - dev
-        - doc/readme
 
   jobs:
     test:
