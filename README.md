@@ -34,14 +34,14 @@ Spring Boot와 WebSocket/STOMP로 구현한 실시간 채팅 API 서버입니다
 
 ## 핵심 성과
 
-| 항목 | 결과 |
-| --- | --- |
-| `sync-db` 문제 재현 | 수신 56/60 · DB 저장 46/60 |
-| Redis Write-Back | 3회 모두 수신 60/60 |
-| DB·Redis 상세 검증 | DB 60/60 · Deadlock 증가량 0 · Dirty Set 0 |
+| 항목 | 결과                                        |
+| --- |-------------------------------------------|
+| `sync-db` 문제 재현 | 수신 56/60 · DB 저장 46/60                    |
+| Redis Write-Back | 3회 모두 수신 60/60                            |
+| DB·Redis 상세 검증 | DB 60/60 · Deadlock 증가량 0 · Dirty Set 0   |
 | Redis Pub/Sub 멀티 인스턴스 | 서로 다른 API 인스턴스에 연결된 STOMP 사용자 간 실시간 전달 검증 |
-| 테스트 | 326개 / 실패 0개 |
-| Coverage | Line 64.36% · Branch 65.23% |
+| 테스트 | 335개 / 실패 0개                               |
+| Coverage | Line 62% · Branch 65%                     |
 
 ---
 
