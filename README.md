@@ -4,17 +4,52 @@ Spring Boot와 WebSocket/STOMP로 구현한 실시간 채팅 API 서버입니다
 
 처음에는 1:1 메시지 송수신 기능부터 시작했지만, 실제로 서비스를 운영하려면 연결이 끊겼을 때의 메시지 복구, 사용자별 읽음 상태, 채팅방 목록 정합성, 파일 업로드 실패, Redis 장애처럼 정상 흐름 밖의 문제를 함께 다뤄야 했습니다. 현재는 이러한 문제를 기능 구현과 테스트 코드로 확인하면서 안정성을 보강하고 있습니다.
 
+## 목차
+
+1. 프로젝트 구성
+2. 기술 스택
+3. 주요 기능
+4. 핵심 처리 흐름
+5. Redis Write-Back
+6. 테스트 전략
+7. Troubleshooting
+8. WebSocket / STOMP 경로
+9. 주요 API
+10. 로컬 실행
+11. 패키지 구조
+12. 향후 개선
+13. 관련 문서
+
 ## 프로젝트 링크
 
 - 배포 서비스: https://chatalk.store
-- Front Server: https://github.com/minsu11/live_chat_front
+- Front Repository: https://github.com/minsu11/live_chat_front
 - Auth Server: https://github.com/minsu11/live_chat_auth
 - API Server: https://github.com/minsu11/live_chat
-- 요약 포트폴리오: `docs/portfolio/ParkMinsu_Chatalk_Summary_Portfolio.pdf`
-- 상세 포트폴리오: `docs/portfolio/ParkMinsu_Chatalk_Detail_Portfolio.pdf`
+- [요약 포트폴리오](docs/portfolio/ParkMinsu_Chatalk_Summary_Portfolio.pdf)
+- [상세 포트폴리오](docs/portfolio/ParkMinsu_Chatalk_Detail_Portfolio.pdf)
 - Notion 상세 정리: https://ms-pt.notion.site/343b77b258e780bfac21d407cc70ac72?pvs=74
 
 ---
+
+## 핵심 성과
+
+| 항목 | 결과 |
+| --- | --- |
+| `sync-db` 문제 재현 | 수신 56/60 · DB 저장 46/60 |
+| Redis Write-Back | 3회 모두 수신 60/60 |
+| DB·Redis 상세 검증 | DB 60/60 · Deadlock 증가량 0 · Dirty Set 0 |
+| Redis Pub/Sub 멀티 인스턴스 | 서로 다른 API 인스턴스에 연결된 STOMP 사용자 간 실시간 전달 검증 |
+| 테스트 | 326개 / 실패 0개 |
+| Coverage | Line 64.36% · Branch 65.23% |
+
+---
+
+
+
+## 전체 아키텍처
+
+![project_architecture.png](docs%2Fimage%2Fproject_architecture.png)
 
 ## 1. 프로젝트 구성
 
@@ -22,9 +57,30 @@ Chatalk은 화면, 인증, 채팅 도메인의 책임을 나누기 위해 세 �
 
 | 서버 | 역할 | 저장소 |
 | --- | --- | --- |
-| Front Server | Vue 기반 채팅 UI, WebSocket 연결, 메시지 렌더링 | `live_chat_front` |
+| Vue SPA / Front Repository | Vue 기반 채팅 UI, WebSocket 연결, 메시지 렌더링 | `live_chat_front` |
 | Auth Server | 로그인, JWT 발급·재발급, OAuth2 인증 | `live_chat_auth` |
 | API Server | 채팅방, 메시지, 읽음, 파일, 검색, Redis 동기화 | 현재 저장소 |
+
+### 인증 요청 흐름
+
+**일반 로그인**
+```text
+Client
+→ API Server
+→ Feign Client
+→ Auth Server
+→ 로그인 검증 및 Access/Refresh Token 발급
+→ API Server
+→ Client
+```
+
+**OAuth2**
+```text
+Client
+→ Nginx `/a/**`
+→ Auth Server
+→ OAuth2 Provider
+```
 
 ### API 서버의 주요 책임
 
@@ -33,7 +89,7 @@ Chatalk은 화면, 인증, 채팅 도메인의 책임을 나누기 위해 세 �
 - 사용자별 읽음 상태와 안 읽은 메시지 수 관리
 - WebSocket 재연결 이후 누락 메시지 복구
 - 이미지·파일 메시지 업로드와 고아 첨부파일 정리
-- Redis 메타데이터 캐시와 DB Write-Back
+- Redis 메타데이터 Write-Back 및 Pub/Sub
 - 채팅방 내 메시지 검색과 검색 결과 문맥 조회
 
 ---
@@ -46,6 +102,7 @@ Chatalk은 화면, 인증, 채팅 도메인의 책임을 나누기 위해 세 �
 - Spring Boot 3.4.3
 - Spring Security
 - Spring WebSocket / STOMP
+- Spring Cloud OpenFeign
 - Spring Data JPA
 - Querydsl
 - Spring Data Redis
@@ -66,7 +123,7 @@ Chatalk은 화면, 인증, 채팅 도메인의 책임을 나누기 위해 세 �
 
 - Docker
 - Nginx
-- Cloudflare
+- Cloudflare - DNS / Proxy / SSL
 - GitHub Actions
 
 ---
@@ -146,12 +203,47 @@ STOMP 메시지 수신
 → 메시지 DB 저장
 → 첨부파일 연결
 → Redis 메타데이터 갱신
-→ 수신자별 메시지 전파
-→ 채팅방 목록 갱신 이벤트 전파
-→ 알림 대상 사용자에게 알림 전파
+→ Redis Publish
+→ Redis Subscriber
+→ STOMP 브로드캐스트
+→ 채팅방 목록 / 알림 이벤트 전파
 ```
 
 메시지가 DB에 저장되기 전에 WebSocket 전파가 먼저 실행되면 클라이언트에는 보이지만 재조회할 수 없는 메시지가 생길 수 있습니다. 그래서 저장 실패 시 브로드캐스트와 후속 메타데이터 갱신이 실행되지 않는지 테스트로 확인했습니다.
+
+### Redis Pub/Sub 멀티 인스턴스 검증
+
+Redis Pub/Sub 기반 메시지 전파가 단일 API 인스턴스 내부에서만 동작하는지 확인하는 데 그치지 않고,
+로컬에서 API 서버 2개 인스턴스를 실행해 실제 인스턴스 간 메시지 전달을 검증했습니다.
+
+```text
+Front B
+→ API B
+→ Redis Publish
+→ Redis `chatroom`
+→ API A Redis Subscriber
+→ STOMP Broadcast
+→ Front A
+
+```
+**검증 환경**
+
+- API A: `localhost:7070`
+- API B: `localhost:7071`
+- Front A: `localhost:8080`
+- Front B: `localhost:8081`
+- Shared Redis / MySQL
+- Redis Channel: `chatroom`
+
+**검증 결과**
+
+- `PUBSUB NUMSUB chatroom`: Subscriber 2개 확인
+- 서로 다른 API 인스턴스에 연결된 사용자 간 실시간 메시지 전달 확인
+- 송신 인스턴스의 Redis Publish와 수신 인스턴스의 Redis Subscriber 동작 확인
+- 동일 메시지 ID `252693`이 수신 인스턴스에서 STOMP 세션으로 브로드캐스트됨을 확인
+- DB에 동일 메시지 ID `252693` 1건 저장 확인
+
+[멀티 인스턴스 검증 상세 결과](docs%2Ftesting%2Fredis-pubsub-multi-instance-result.md)
 
 ### 읽음 처리
 
@@ -332,7 +424,7 @@ JaCoCo 측정에서는 DTO, 설정 바인딩, enum, 단순 예외, Querydsl 자�
 ./gradlew clean test jacocoTestReport jacocoTestCoverageVerification
 ```
 
-리포트 위치:
+### 리포트 위치:
 
 ```text
 build/reports/tests/test/index.html
@@ -340,19 +432,22 @@ build/reports/jacoco/test/html/index.html
 build/reports/jacoco/test/jacocoTestReport.xml
 ```
 
+### Integration Test
+
+- 실제 WebSocket/STOMP 연결 기반으로 CONNECT, 인증, SUBSCRIBE, SEND, MESSAGE 수신 및 사용자별 destination 라우팅 검증
+- Testcontainers 기반 MySQL 8 환경에서 실제 DDL 적용 후 QueryDSL 쿼리 검증
+- MySQL Full-Text Search BOOLEAN MODE, LIKE fallback, createdAt + messageId 복합 Cursor 동작 검증
+
 ### 현재 테스트의 한계
 
-- Querydsl Repository 구현체는 실제 DB 기반 검증이 부족합니다.
-- MySQL Full-Text Search는 H2와 차이가 있어 Testcontainers 기반 테스트가 필요합니다.
-- STOMP CONNECT 인터셉터는 단위 테스트를 추가했지만 실제 WebSocket 연결과 구독까지 포함한 통합 테스트는 남아 있습니다.
 - Redis 장애 fallback은 단위 테스트 중심이며 Redis 프로세스를 실제로 내렸다 복구하는 자동화 테스트는 아직 없습니다.
+- Testcontainers 기반 MySQL 테스트는 실제 DB 동작 검증에 초점을 두며 운영 환경 전체 구성을 재현하지는 않습니다.
 - 회원가입부터 채팅방 생성, 메시지 전송, 재연결까지 이어지는 전체 E2E 테스트는 향후 과제입니다.
-
 테스트 전략과 면접 대비용 상세 정리는 [`docs/testing/chatalk-test-study-notes.md`](docs/testing/chatalk-test-study-notes.md)에 별도로 작성했습니다.
 
 ---
 
-## 7. Trouble Shooting
+## 7. Troubleshooting
 
 ### 1. 동일 채팅방 메타데이터 갱신 시 데드락과 커넥션 풀 포화
 
@@ -454,21 +549,25 @@ Full-Text Search를 기본 검색으로 사용하면서, 사용자가 입력한 
 
 ---
 
-## 8. WebSocket 경로
+## 8. WebSocket / STOMP 경로
 
-### 개발 환경
+`dev`와 `prod` 환경 모두 동일한 WebSocket/STOMP 경로 설정을 사용합니다.
 
 | 구분 | 경로 |
 | --- | --- |
-| Endpoint | `/api/ws-chat` |
-| Publish Prefix | `/api/pub` |
-| Subscribe Prefix | `/api/sub` |
+| WebSocket Endpoint | `/api/ws-chat` |
+| STOMP Publish Prefix | `/api/pub` |
+| STOMP Subscribe Prefix | `/api/sub` |
 | 메시지 발송 | `/api/pub/chat/message` |
 | 읽음 이벤트 발송 | `/api/pub/chat/read` |
 | 채팅방 메시지 구독 | `/user/api/sub/chat/rooms/{roomId}` |
 | 읽음 이벤트 구독 | `/user/api/sub/chat/rooms/{roomId}/read` |
 
-운영 profile에서는 `/api` prefix 없이 `/ws-chat`, `/pub`, `/sub`를 사용합니다.
+운영 환경에서는 Client가 `/api/ws-chat`으로 WebSocket/SockJS 연결을 요청하고,
+Nginx가 해당 요청을 API Server로 프록시합니다.
+
+WebSocket 연결 이후 사용하는 `/api/pub/**`, `/api/sub/**`는
+HTTP API 경로가 아니라 STOMP frame의 destination입니다.
 
 ---
 
@@ -613,6 +712,14 @@ docs/
 │   ├── ParkMinsu_Chatalk_Summary_Portfolio.pdf
 │   └── ParkMinsu_Chatalk_Detail_Portfolio.pdf
 ├── testing/
+    ├── redis-pubsub-multi-instance-result.md
+    └── redis-pubsub-multi-instance/
+        ├── 01-redis-numsub.png
+        ├── 02-sender-front.png
+        ├── 03-sender-log.png
+        ├── 04-receiver-log.png
+        ├── 05-receiver-front.png
+        └── 06-db-result.png
 │   ├── test-strategy-and-coverage.md
 │   └── chatalk-test-study-notes.md
 ├── Requirements.md
