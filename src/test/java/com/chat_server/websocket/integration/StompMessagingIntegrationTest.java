@@ -20,7 +20,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -28,6 +27,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.server.LocalServerPort;
 
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
@@ -329,8 +329,7 @@ class StompMessagingIntegrationTest {
         );
     }
 
-
-    @SpringBootConfiguration
+    @Configuration(proxyBeanMethods = false)
     @EnableAutoConfiguration(
             exclude = SecurityAutoConfiguration.class
     )
